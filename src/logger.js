@@ -1,9 +1,10 @@
 // Registro de entrenamientos: pantalla de sesión, historial y edición. Escribe el mismo formato
 // que LiftOff (frontmatter de Workouts/*.md), así el dashboard lo lee sin cambios.
 import { S, save } from "./store.js";
-import { h, toast, hoja, confirmar, iso, hhmm, canon, num, numTxt, fmt, kg, haptic, icono, pantalla, grupo, fila, cabeceraHoja, alCambiarViewport, tecladoAbierto, reducido } from "./ui.js";
+import { h, toast, hoja, confirmar, iso, hhmm, canon, num, numTxt, fmt, kg, haptic, icono, pantalla, grupo, fila, cabeceraHoja, alCambiarViewport, tecladoAbierto, deslizable, reducido } from "./ui.js";
 import { ejecutarDashboard } from "./dvshim.js";
 import { estadoCopia, textoAviso, exportar } from "./copia.js";
+import { objetivoDe, textoObjetivo, editarObjetivo } from "./editores.js";
 
 const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const CFG = { grupos: "Gym/Config/grupos-musculares.md", unil: "Gym/Config/unilaterales.md", horario: "Gym/Config/horario-semanal.md", peso: "Gym/Config/peso-corporal.md", objetivos: "Gym/Config/objetivos.md" };
@@ -295,45 +296,6 @@ document.addEventListener("focusout", (e) => {
   setTimeout(() => { if (!campos.has(document.activeElement)) { campoActivo = null; barra && barra.classList.remove("activa"); document.querySelectorAll(".serie.activa").forEach((x) => x.classList.remove("activa")); } }, 0);
 });
 
-// ───────── deslizar para borrar ─────────
-let cerrarAbierta = null;
-function deslizable(fila, alBorrar) {
-  const ANCHO = 92;
-  let x0 = null, y0 = 0, dx = 0, base = 0, modo = null, abierta = false;
-  const colocar = (x) => { dx = x; fila.style.transform = x ? "translateX(" + x + "px)" : ""; };
-  const cerrar = () => { abierta = false; colocar(0); if (cerrarAbierta === cerrar) cerrarAbierta = null; };
-  fila.addEventListener("pointerdown", (ev) => {
-    if (ev.pointerType === "mouse" && ev.button !== 0) return;
-    if (cerrarAbierta && cerrarAbierta !== cerrar) cerrarAbierta();
-    x0 = ev.clientX; y0 = ev.clientY; modo = null; base = abierta ? -ANCHO : 0;
-  });
-  fila.addEventListener("pointermove", (ev) => {
-    if (x0 == null) return;
-    const ddx = ev.clientX - x0, ddy = ev.clientY - y0;
-    if (!modo) {
-      if (Math.abs(ddx) > 10 && Math.abs(ddx) > Math.abs(ddy) * 1.3) {
-        modo = "h"; fila.classList.add("arrastrando");
-        try { fila.setPointerCapture(ev.pointerId); } catch (e) {}
-        if (document.activeElement && fila.contains(document.activeElement)) document.activeElement.blur();
-      } else if (Math.abs(ddy) > 10) { x0 = null; return; } else return;
-    }
-    ev.preventDefault();
-    let x = Math.min(0, base + ddx);
-    colocar(x);
-  });
-  const fin = () => {
-    if (x0 == null) return; x0 = null;
-    if (modo !== "h") { if (abierta) cerrar(); return; }
-    fila.classList.remove("arrastrando");
-    const w = fila.offsetWidth;
-    if (-dx > w * 0.55) { colocar(-w); haptic(); setTimeout(alBorrar, reducido() ? 0 : 180); }
-    else if (-dx > ANCHO / 2) { abierta = true; colocar(-ANCHO); cerrarAbierta = cerrar; }
-    else cerrar();
-  };
-  fila.addEventListener("pointerup", fin); fila.addEventListener("pointercancel", fin);
-  fila.addEventListener("click", (ev) => { if (modo === "h") { ev.stopPropagation(); ev.preventDefault(); modo = null; } }, true);
-}
-
 // ───────── pantalla de sesión ─────────
 function pintar() { if (raiz) vistaEntrenar(raiz, navegar); }
 
@@ -378,6 +340,7 @@ function tarjetaEj(e) {
   const prev = ultimaDe(e.name, ed.editPath);
   let prox = null;
   try { const p = window.__gym && window.__gym.progresionDe && window.__gym.progresionDe(e.name); if (p) prox = window.__gym.proximaVez(p); } catch (err) {}
+  const obj = objetivoDe(e.name);
   const prog = h("span", { class: "ej-prog" });
   progresoEls.set(e, prog); actualizarProgreso(e);
   const lista = h("div");
@@ -390,7 +353,8 @@ function tarjetaEj(e) {
       prog,
       h("button", { class: "ej-mas", type: "button", "aria-label": "Opciones de " + e.name, onclick: () => menuEj(e) }, icono("puntos"))),
     prev ? h("div", { class: "ant" }, "Anterior (" + prev.s.fm.date.slice(8) + "/" + prev.s.fm.date.slice(5, 7) + "): " + prev.ex.sets.map((s) => kg(s.weight) + "×" + s.reps + (s.setType ? ETQ[s.setType] : "")).join(" · ")) : h("div", { class: "ant" }, "Sin historial de este ejercicio"),
-    prox ? h("div", { class: "prox" }, "Próxima vez: " + prox) : null,
+    prox || obj ? h("div", { class: "prox" }, prox ? "Próxima vez: " + prox : null,
+      obj ? h("span", { class: "rango" }, (prox ? " · objetivo " : "Objetivo: ") + textoObjetivo(obj)) : null) : null,
     h("div", { class: "cols", "aria-hidden": "true" }, h("div", null, "#"), h("div", null, "kg"), h("div", null, "reps"), h("div", null, "tipo"), h("div", null, "")),
     lista,
     h("div", { class: "ej-pie" },
@@ -407,6 +371,7 @@ function menuEj(e) {
     grupo(null, [
       i > 0 ? fila({ texto: "Subir", onclick: () => { c(); ed.exercises.splice(i, 1); ed.exercises.splice(i - 1, 0, e); persistir(); pintar(); }, sinChevron: true }) : null,
       i < ed.exercises.length - 1 ? fila({ texto: "Bajar", onclick: () => { c(); ed.exercises.splice(i, 1); ed.exercises.splice(i + 1, 0, e); persistir(); pintar(); }, sinChevron: true }) : null,
+      fila({ texto: objetivoDe(e.name) ? "Objetivo: " + textoObjetivo(objetivoDe(e.name)) : "Fijar objetivo de repeticiones", sinChevron: true, onclick: () => { c(); editarObjetivo(e.name, async () => { await refrescarAnalisis(); pintar(); }); } }),
       fila({ texto: uni ? "Quitar «reps por lado»" : "Marcar como unilateral (reps por lado)", sinChevron: true, onclick: async () => {
         c();
         if (uni) { S.configs[CFG.unil] = S.configs[CFG.unil].split("\n").filter((l) => !(l.startsWith("unilateral::") && canon(l.slice(12)) === canon(e.name))).join("\n"); await save("configs"); }

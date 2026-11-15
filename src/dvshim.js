@@ -195,6 +195,11 @@ export async function ejecutarDashboard(contenedor) {
   const dv = crearDv(contenedor);
   const AF = Object.getPrototypeOf(async function () {}).constructor;
   // Se exponen las funciones de progresión para usarlas también desde el registro de series.
-  const fn = new AF("dv", codigo + "\n;window.__gym = { progresionDe: typeof progresionDe === 'function' ? progresionDe : null, proximaVez: typeof proximaVez === 'function' ? proximaVez : null, canon: canon, grupoDe: grupoDe, UNILATERALES: typeof UNILATERALES !== 'undefined' ? UNILATERALES : null };");
+  // progresionDe y proximaVez viven dentro del bloque `else { … }` que sólo corre si hay sesiones,
+  // así que un export al final no las ve: se captura justo tras su declaración, en memoria
+  // (dashboard.js no se modifica). Si el dashboard cambia y la línea no está, queda en null.
+  window.__gymProg = null;
+  const conCaptura = codigo.replace(/^const progresionDe = .*$/m, (l) => l + "\n;window.__gymProg = { progresionDe: progresionDe, proximaVez: proximaVez };");
+  const fn = new AF("dv", conCaptura + "\n;window.__gym = { progresionDe: window.__gymProg ? window.__gymProg.progresionDe : null, proximaVez: window.__gymProg ? window.__gymProg.proximaVez : null, canon: canon, grupoDe: grupoDe, UNILATERALES: typeof UNILATERALES !== 'undefined' ? UNILATERALES : null };");
   await fn(dv);
 }

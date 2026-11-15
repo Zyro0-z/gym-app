@@ -295,3 +295,27 @@ body.theme-dark .hoja .resumen-kpis > div { background: #2C2C2E; }
 .celda.elegida .marca { visibility: visible; }
 .celda.tinte .ico { color: var(--ios-tinte); }
 .nav-btn:disabled { color: var(--ios-texto-3); opacity: 1; }
+
+/* ─── Editores ─── */
+.asa { width: 36px; height: 44px; margin: -11px 0 -11px -8px; border: 0; background: none; color: var(--ios-texto-3); display: grid; place-items: center; cursor: grab; }
+.celda.desliza { background: var(--ios-celda); transition: transform .25s cubic-bezier(.2,.8,.2,1); touch-action: pan-y; }
+.celda.desliza.arrastrando { transition: none; }
+.serie-wrap + .serie-wrap .celda::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; border-top: .5px solid var(--ios-sep); }
+.reordenando .serie-wrap { transition: transform .2s ease; }
+.serie-wrap.levantada { transition: none !important; z-index: 3; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.serie-wrap.levantada .celda { background: var(--ios-celda-alta); }
+.linea-prev { background: var(--ios-celda); border-radius: 10px; padding: 12px 14px; font: 14px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ios-texto-2); word-break: break-word; }
+body.theme-dark .hoja .linea-prev { background: #2C2C2E; }
+.grupo > .seg { margin: 0 0 4px; }
+.celda .stepper-v { min-width: 24px; }
+
+/* ─── Dashboard en móvil: solo overrides de CSS acotados a .gym-dashboard (no se toca su lógica) ─── */
+.gym-dashboard { overflow-wrap: anywhere; }
+.gym-dashboard img, .gym-dashboard svg, .gym-dashboard canvas { max-width: 100%; }
+.gym-dashboard .markdown-rendered { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.gym-dashboard .gd-grafica { min-width: 0; max-width: 100%; }
+.gym-dashboard select, .gym-dashboard input { font-size: max(16px, 1em); }
+.gym-dashboard .gd-sec-cab { touch-action: manipulation; }
+/* La capa roja de «Borrar» solo existe mientras la fila se desliza (si no, asoma en las esquinas) */
+.serie-wrap .serie-borrar { visibility: hidden; }
+.serie-wrap:has(> .arrastrando) .serie-borrar, .serie-wrap:has(> [style*="translateX"]) .serie-borrar { visibility: visible; }

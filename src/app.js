@@ -3,6 +3,7 @@ import { exportar as exportarCopia, estadoCopia } from "./copia.js";
 import { h, $, toast, confirmar, alerta, pedirTexto, iso, pantalla, grupo, fila, stepper, interruptor, segmentado, icono, haptic, kg } from "./ui.js";
 import { ejecutarDashboard } from "./dvshim.js";
 import { vistaEntrenar, vistaHistorial, abrirSesion, refrescarAnalisis } from "./logger.js";
+import { vistaPlantilla, vistaObjetivos } from "./editores.js";
 
 const vista = $("#vista");
 let actual = "entrenar";
@@ -57,6 +58,12 @@ function textoAPlantilla(t, txt) {
   });
 }
 
+function abrirPlantilla(t) {
+  window.scrollTo(0, 0);
+  vistaPlantilla(t, montar, () => ir("ajustes"), (t) => editorTexto(t.fm.name, plantillaATexto(t), async (txt) => { textoAPlantilla(t, txt); await save("templates"); },
+    "Una línea por ejercicio: «Nombre | series». El orden es el del entrenamiento."));
+}
+
 const PASOS = [0.5, 1, 1.25, 2, 2.5, 5];
 function vistaAjustes() {
   const { raiz, cuerpo } = pantalla("Ajustes");
@@ -75,15 +82,16 @@ function vistaAjustes() {
 
   // Plantillas
   cuerpo.append(grupo("Plantillas", [
-    ...S.templates.map((t) => fila({ texto: t.fm.name, detalle: t.fm.exercises.length + " ej.", onclick: () => editorTexto(t.fm.name, plantillaATexto(t), async (txt) => { textoAPlantilla(t, txt); await save("templates"); },
-      "Una línea por ejercicio: «Nombre | series». El orden es el del entrenamiento.") })),
+    ...S.templates.map((t) => fila({ texto: t.fm.name, detalle: t.fm.exercises.length + " ej.", onclick: () => abrirPlantilla(t) })),
     fila({ texto: "Nueva plantilla", clase: "tinte", izq: icono("mas"), sinChevron: true, onclick: async () => {
       const n = await pedirTexto("Nueva plantilla", { placeholder: "Nombre", boton: "Crear" }); if (!n) return;
       if (S.templates.some((t) => t.fm.name.toLowerCase() === n.toLowerCase())) { await alerta("Ya existe", "Hay otra plantilla llamada «" + n + "»."); return; }
       S.templates.push({ path: "Workout Templates/" + n + ".md", fm: { type: "workout-template", name: n, exercises: [] } });
-      await save("templates"); haptic(); vistaAjustes();
+      await save("templates"); haptic(); abrirPlantilla(S.templates[S.templates.length - 1]);
     } }),
   ]));
+  cuerpo.append(grupo("Progresión", [fila({ texto: "Objetivos de repeticiones", onclick: () => { window.scrollTo(0, 0); vistaObjetivos(montar, () => ir("ajustes")); } })],
+    "Rango de reps, serie «top» e incremento de la doble progresión de cada ejercicio."));
 
   // Config
   cuerpo.append(grupo("Configuración del análisis", Object.keys(S.configs).sort().map((k) => {

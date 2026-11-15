@@ -258,3 +258,76 @@ export function segmentado(opciones, valor, alCambiar) {
   } }, t));
   return c;
 }
+
+// ───────── deslizar para borrar ─────────
+let cerrarAbierta = null;
+export function deslizable(fila, alBorrar) {
+  const ANCHO = 92;
+  let x0 = null, y0 = 0, dx = 0, base = 0, modo = null, abierta = false;
+  const colocar = (x) => { dx = x; fila.style.transform = x ? "translateX(" + x + "px)" : ""; };
+  const cerrar = () => { abierta = false; colocar(0); if (cerrarAbierta === cerrar) cerrarAbierta = null; };
+  fila.addEventListener("pointerdown", (ev) => {
+    if (ev.pointerType === "mouse" && ev.button !== 0) return;
+    if (cerrarAbierta && cerrarAbierta !== cerrar) cerrarAbierta();
+    x0 = ev.clientX; y0 = ev.clientY; modo = null; base = abierta ? -ANCHO : 0;
+  });
+  fila.addEventListener("pointermove", (ev) => {
+    if (x0 == null) return;
+    const ddx = ev.clientX - x0, ddy = ev.clientY - y0;
+    if (!modo) {
+      if (Math.abs(ddx) > 10 && Math.abs(ddx) > Math.abs(ddy) * 1.3) {
+        modo = "h"; fila.classList.add("arrastrando");
+        try { fila.setPointerCapture(ev.pointerId); } catch (e) {}
+        if (document.activeElement && fila.contains(document.activeElement)) document.activeElement.blur();
+      } else if (Math.abs(ddy) > 10) { x0 = null; return; } else return;
+    }
+    ev.preventDefault();
+    let x = Math.min(0, base + ddx);
+    colocar(x);
+  });
+  const fin = () => {
+    if (x0 == null) return; x0 = null;
+    if (modo !== "h") { if (abierta) cerrar(); return; }
+    fila.classList.remove("arrastrando");
+    const w = fila.offsetWidth;
+    if (-dx > w * 0.55) { colocar(-w); haptic(); setTimeout(alBorrar, reducido() ? 0 : 180); }
+    else if (-dx > ANCHO / 2) { abierta = true; colocar(-ANCHO); cerrarAbierta = cerrar; }
+    else cerrar();
+  };
+  fila.addEventListener("pointerup", fin); fila.addEventListener("pointercancel", fin);
+  fila.addEventListener("click", (ev) => { if (modo === "h") { ev.stopPropagation(); ev.preventDefault(); modo = null; } }, true);
+}
+
+// ───────── reordenar arrastrando ─────────
+// asa: el elemento que se arrastra (☰). Mueve `fila` dentro de su contenedor y llama a
+// alSoltar(desde, hasta) si cambia de sitio. Las filas hermanas se apartan con animación.
+export function reordenable(fila, asa, alSoltar) {
+  asa.style.touchAction = "none";
+  asa.addEventListener("pointerdown", (ev) => {
+    if (ev.pointerType === "mouse" && ev.button !== 0) return;
+    ev.preventDefault();
+    const lista = fila.parentElement, filas = Array.from(lista.children), i0 = filas.indexOf(fila);
+    const alto = fila.offsetHeight, y0 = ev.clientY;
+    let destino = i0;
+    try { asa.setPointerCapture(ev.pointerId); } catch (e) {}
+    fila.classList.add("levantada"); lista.classList.add("reordenando"); haptic();
+    const mover = (e) => {
+      const dy = e.clientY - y0;
+      fila.style.transform = "translateY(" + dy + "px)";
+      const d = Math.max(0, Math.min(filas.length - 1, i0 + Math.round(dy / alto)));
+      if (d !== destino) { destino = d; haptic(); }
+      filas.forEach((f, k) => {
+        if (f === fila) return;
+        const sh = k > i0 && k <= destino ? -alto : (k < i0 && k >= destino ? alto : 0);
+        f.style.transform = sh ? "translateY(" + sh + "px)" : "";
+      });
+    };
+    const soltar = () => {
+      asa.removeEventListener("pointermove", mover); asa.removeEventListener("pointerup", soltar); asa.removeEventListener("pointercancel", soltar);
+      filas.forEach((f) => { f.style.transform = ""; });
+      fila.classList.remove("levantada"); lista.classList.remove("reordenando");
+      if (destino !== i0) alSoltar(i0, destino);
+    };
+    asa.addEventListener("pointermove", mover); asa.addEventListener("pointerup", soltar); asa.addEventListener("pointercancel", soltar);
+  });
+}
