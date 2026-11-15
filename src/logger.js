@@ -1,17 +1,22 @@
 // Registro de entrenamientos: pantalla de sesión, historial y edición. Escribe el mismo formato
 // que LiftOff (frontmatter de Workouts/*.md), así el dashboard lo lee sin cambios.
 import { S, save } from "./store.js";
-import { h, toast, hoja, confirmar, iso, hhmm, canon, num, fmt, kg } from "./ui.js";
+import { h, toast, hoja, confirmar, iso, hhmm, canon, num, numTxt, fmt, kg, haptic, icono, pantalla, grupo, fila, cabeceraHoja, alCambiarViewport, tecladoAbierto, reducido } from "./ui.js";
 import { ejecutarDashboard } from "./dvshim.js";
 
 const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-const CFG = { grupos: "Gym/Config/grupos-musculares.md", unil: "Gym/Config/unilaterales.md", horario: "Gym/Config/horario-semanal.md", peso: "Gym/Config/peso-corporal.md" };
+const CFG = { grupos: "Gym/Config/grupos-musculares.md", unil: "Gym/Config/unilaterales.md", horario: "Gym/Config/horario-semanal.md", peso: "Gym/Config/peso-corporal.md", objetivos: "Gym/Config/objetivos.md" };
 const TIPOS = ["", "warmup", "failure", "drop"], ETQ = { "": "·", warmup: "W", failure: "F", drop: "D" }, CL = { "": "", warmup: "w", failure: "f", drop: "d" };
+const NOMBRE_TIPO = { warmup: "Calentamiento", failure: "Al fallo", drop: "Drop set" };
+const fFecha = new Intl.DateTimeFormat("es-ES", { weekday: "short", day: "numeric", month: "short" });
+const fMes = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" });
+const deISO = (d) => new Date(d + "T12:00:00");
+const fechaCorta = (d) => fFecha.format(deISO(d)).replace(/\./g, "");
 
 let navegar = () => {};
 let raiz = null;
 let ed = null;            // sesión en curso en memoria (S.draft es su copia persistente)
-let descanso = null;      // { fin, total }
+let descanso = null;      // { fin, total, avisado } con timestamps absolutos
 let tick = null, wake = null;
 
 // ───────── análisis en segundo plano (para «Próxima vez») ─────────
@@ -25,7 +30,7 @@ export async function refrescarAnalisis() {
 
 // ───────── utilidades de datos ─────────
 const grupoDe = (n) => { try { return window.__gym ? window.__gym.grupoDe(n) : ""; } catch (e) { return ""; } };
-const esUnilateral = (n) => { try { return window.__gym && window.__gym.UNILATERALES && window.__gym.UNILATERALES.set.has(canon(n)); } catch (e) { return false; } };
+const esUnilateral = (n) => { try { return !!(window.__gym && window.__gym.UNILATERALES && window.__gym.UNILATERALES.set.has(canon(n))); } catch (e) { return false; } };
 const ordenadas = () => S.sessions.slice().sort((a, b) => (b.fm.date + (b.fm.start || "")).localeCompare(a.fm.date + (a.fm.start || "")));
 function ultimaDe(nombre, excluir) {
   const k = canon(nombre);
@@ -36,12 +41,12 @@ function ultimaDe(nombre, excluir) {
   }
   return null;
 }
-function gruposEnUso() {
+export function gruposEnUso() {
   const set = new Set(); const t = S.configs[CFG.grupos] || "";
-  for (const l of t.split("\n")) { const m = l.match(/^[^:\n]+::\s*(.+)$/); if (m && !l.startsWith(">")) set.add(m[1].trim()); }
+  for (const l of t.split("\n")) { const m = l.match(/^[^:\n>`]+::\s*(.+)$/); if (m) set.add(m[1].trim()); }
   return Array.from(set);
 }
-function lineaConfig(clave, linea) {
+export function lineaConfig(clave, linea) {
   S.configs[clave] = (S.configs[clave] || "").replace(/\s*$/, "") + "\n" + linea + "\n";
   return save("configs");
 }
@@ -49,6 +54,7 @@ const horarioHoy = () => {
   const t = S.configs[CFG.horario] || ""; const d = DIAS[new Date().getDay()];
   const m = t.match(new RegExp("^" + d + "::[ \\t]*(.+)$", "mi")); return m ? m[1].trim() : null;
 };
+const series = (fm) => (fm.exercises || []).reduce((a, e) => a + e.sets.length, 0);
 
 // ───────── sesión ─────────
 function crearSesion(plantilla) {
@@ -63,7 +69,7 @@ function nuevoEj(name, n) {
   const base = prev ? prev.ex.sets.filter((s) => !s.setType || s.setType === "working") : [];
   for (let i = 0; i < n; i++) {
     const p = base[Math.min(i, base.length - 1)];
-    sets.push({ weight: p ? String(p.weight).replace(".", ",") : "", reps: p ? String(p.reps) : "", setType: "", done: false });
+    sets.push({ weight: p ? numTxt(p.weight) : "", reps: p ? String(p.reps) : "", setType: "", done: false });
   }
   return { name, target: n, sets };
 }
@@ -79,8 +85,8 @@ function aFm(w) {
 async function terminar() {
   const sinMarcar = ed.exercises.reduce((a, e) => a + e.sets.filter((s) => !s.done && (s.weight !== "" || s.reps !== "")).length, 0);
   const { exs, fin } = aFm(ed);
-  if (!exs.length) { if (await confirmar("No hay ninguna serie marcada. ¿Descartar la sesión?", "Descartar", true)) { ed = null; await persistir(); apagarTimers(); pintar(); } return; }
-  if (sinMarcar && !(await confirmar(sinMarcar + (sinMarcar === 1 ? " serie sin marcar se descartará." : " series sin marcar se descartarán."), "Terminar"))) return;
+  if (!exs.length) { if (await confirmar("No hay ninguna serie marcada. ¿Descartar la sesión?", "Descartar sesión", true)) { ed = null; await persistir(); apagarTimers(); pintar(); } return; }
+  if (sinMarcar && !(await confirmar(sinMarcar + (sinMarcar === 1 ? " serie sin marcar se descartará." : " series sin marcar se descartarán."), ed.editPath ? "Guardar" : "Terminar sesión"))) return;
   const w = ed;
   let fm, path;
   if (w.editPath) {
@@ -95,27 +101,29 @@ async function terminar() {
   }
   ed = null; apagarTimers();
   await save("sessions"); await persistir();
-  toast("Sesión guardada");
+  haptic();
   refrescarAnalisis();
-  resumen(fm, w.editPath ? () => navegar("historial") : () => navegar("dashboard"));
+  resumen(fm, w.editPath ? () => navegar("historial") : () => navegar("dashboard"), !!w.editPath);
   pintar();
 }
 
-function resumen(fm, abrirDash) {
-  let series = 0, vol = 0;
-  for (const e of fm.exercises) for (const s of e.sets) { if (s.setType === "warmup" || s.setType === "drop") continue; series++; vol += s.weight * s.reps * (esUnilateral(e.name) ? 2 : 1); }
-  hoja((c) => h("div", null,
-    h("h1", { class: "t" }, "Sesión guardada"),
-    h("div", { class: "card" }, h("div", { class: "row" },
-      h("div", { class: "sp" }, h("div", { style: { fontSize: "26px", fontWeight: 700 } }, fm.duration + " min"), h("div", { class: "muted" }, "duración")),
-      h("div", { class: "sp" }, h("div", { style: { fontSize: "26px", fontWeight: 700 } }, series), h("div", { class: "muted" }, "series")),
-      h("div", { class: "sp" }, h("div", { style: { fontSize: "26px", fontWeight: 700 } }, fmt(vol)), h("div", { class: "muted" }, "kg de volumen")))),
-    h("button", { class: "btn pri blk", onclick: () => { c(); abrirDash(); } }, "Ver el dashboard"),
-    h("button", { class: "btn blk", style: { marginTop: "8px" }, onclick: c }, "Cerrar")));
+function resumen(fm, abrirDash, editada) {
+  let nSeries = 0, vol = 0;
+  for (const e of fm.exercises) for (const s of e.sets) { if (s.setType === "warmup" || s.setType === "drop") continue; nSeries++; vol += s.weight * s.reps * (esUnilateral(e.name) ? 2 : 1); }
+  hoja((c) => h("div", { class: "resumen" },
+    h("h1", { class: "t" }, editada ? "Sesión actualizada" : "Sesión guardada"),
+    h("p", { class: "sub-t" }, (fm.template || "Workout") + " · " + fechaCorta(fm.date)),
+    h("div", { class: "resumen-kpis" },
+      h("div", null, h("b", null, fm.duration + " min"), h("span", null, "duración")),
+      h("div", null, h("b", null, nSeries), h("span", null, "series")),
+      h("div", null, h("b", null, fmt(vol)), h("span", null, "kg de volumen"))),
+    h("div", { class: "botones" },
+      h("button", { class: "btn pri blk", onclick: () => { c(); abrirDash(); } }, editada ? "Ver el historial" : "Ver el dashboard"),
+      h("button", { class: "btn blk", onclick: () => c() }, "Cerrar"))), { clase: "resumen-hoja" });
 }
 
 // ───────── descanso ─────────
-function apagarTimers() { clearInterval(tick); tick = null; descanso = null; document.querySelector(".descanso")?.remove(); try { wake && wake.release(); } catch (e) {} wake = null; }
+function apagarTimers() { clearInterval(tick); tick = null; descanso = null; document.querySelector(".descanso")?.remove(); document.body.classList.remove("con-descanso"); try { wake && wake.release(); } catch (e) {} wake = null; }
 async function pantallaActiva() { try { if (navigator.wakeLock && !wake && S.settings.keepScreenAwake !== false) wake = await navigator.wakeLock.request("screen"); } catch (e) {} }
 function pitido() {
   try {
@@ -123,205 +131,365 @@ function pitido() {
     o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = 0.2; o.start(); o.stop(a.currentTime + 0.25);
     setTimeout(() => { const o2 = a.createOscillator(); o2.connect(a.destination); o2.frequency.value = 1180; o2.start(); o2.stop(a.currentTime + 0.3); }, 300);
   } catch (e) {}
-  try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) {}
+  haptic();
 }
 function iniciarDescanso(seg) {
   descanso = { fin: Date.now() + seg * 1000, total: seg, avisado: false };
-  if (!tick) tick = setInterval(pintarReloj, 250);
+  arrancarTick();
   pintarReloj();
 }
-const mmss = (s) => Math.floor(s / 60) + ":" + String(Math.max(0, Math.round(s % 60))).padStart(2, "0");
+function arrancarTick() { clearInterval(tick); tick = setInterval(pintarReloj, descanso ? 250 : 1000); }
+const mmss = (s) => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 function pintarReloj() {
-  const r = document.querySelector("[data-reloj]"); if (r && ed) r.textContent = mmss((Date.now() - ed.start) / 1000);
+  const r = document.querySelector("[data-reloj]"); if (r && ed && !ed.editPath) r.textContent = mmss((Date.now() - ed.start) / 1000);
   let d = document.querySelector(".descanso");
-  if (!descanso || !ed) { d && d.remove(); return; }
+  const info = document.querySelector(".bt-info");
+  if (!descanso || !ed) {
+    if (d) { d.remove(); document.body.classList.remove("con-descanso"); arrancarTick(); }
+    if (info) pintarInfoTeclado(info);
+    return;
+  }
   const resto = (descanso.fin - Date.now()) / 1000;
   if (resto <= 0 && !descanso.avisado) { descanso.avisado = true; pitido(); }
-  if (resto <= -8) { descanso = null; d && d.remove(); return; }
+  if (resto <= -8) { descanso = null; pintarReloj(); return; }
   if (!d) {
-    d = h("div", { class: "descanso" },
-      h("div", { class: "t", "data-t": 1 }),
-      h("div", { class: "row sp", style: { justifyContent: "flex-end", flexWrap: "wrap" } },
-        h("button", { class: "btn sm", onclick: () => { descanso.fin -= 15000; descanso.total = Math.max(descanso.total, 15); pintarReloj(); } }, "−15"),
-        h("button", { class: "btn sm", onclick: () => { descanso.fin += 15000; descanso.total += 15; descanso.avisado = false; pintarReloj(); } }, "+15"),
-        h("button", { class: "btn sm", onclick: () => { descanso = null; pintarReloj(); } }, "Saltar")),
+    d = h("div", { class: "descanso", role: "timer" },
+      h("div", { class: "t" }, h("small", null, "Descanso"), h("span", { "data-t": 1 })),
+      h("div", { class: "row sp", style: { justifyContent: "flex-end", gap: "6px" } },
+        h("button", { class: "btn", "aria-label": "Quitar 15 segundos", onclick: () => { descanso.fin -= 15000; pintarReloj(); } }, "−15"),
+        h("button", { class: "btn", "aria-label": "Añadir 15 segundos", onclick: () => { descanso.fin += 15000; descanso.total += 15; descanso.avisado = false; pintarReloj(); } }, "+15"),
+        h("button", { class: "btn", onclick: () => { descanso = null; pintarReloj(); } }, "Saltar")),
       h("div", { class: "barra", "data-b": 1 }));
-    d.style.bottom = "calc(env(safe-area-inset-bottom) + 78px)";
-    document.body.append(d);
+    document.body.append(d); document.body.classList.add("con-descanso");
   }
+  d.classList.toggle("ya", resto <= 0);
   d.querySelector("[data-t]").textContent = resto > 0 ? mmss(resto) : "¡Ya!";
   d.querySelector("[data-b]").style.width = Math.max(0, Math.min(100, (resto / descanso.total) * 100)) + "%";
+  if (info) pintarInfoTeclado(info);
+}
+
+// ───────── barra sobre el teclado: − / + · Siguiente · ✓ ─────────
+const campos = new WeakMap();   // input → { e, s, campo, marcar }
+let barra = null, campoActivo = null;
+const pasoDe = (campo) => campo === "weight" ? (num(S.settings.weightStep) || 2.5) : 1;
+function pintarInfoTeclado(info) {
+  if (descanso) { const r = (descanso.fin - Date.now()) / 1000; info.replaceChildren(h("b", null, r > 0 ? mmss(r) : "¡Ya!"), "descanso"); return; }
+  const c = campoActivo && campos.get(campoActivo);
+  info.replaceChildren(c ? (c.campo === "weight" ? "kg · paso " + kg(pasoDe("weight")) : "repeticiones") : "");
+}
+function crearBarraTeclado() {
+  if (barra) return barra;
+  const sinFoco = (b) => { b.addEventListener("pointerdown", (e) => e.preventDefault()); b.addEventListener("mousedown", (e) => e.preventDefault()); return b; };
+  const ajustar = (signo) => {
+    const inp = campoActivo, c = inp && campos.get(inp); if (!c) return;
+    const v = Math.max(0, num(inp.value) + signo * pasoDe(c.campo));
+    inp.value = c.campo === "reps" ? String(Math.round(v)) : numTxt(v);
+    inp.dispatchEvent(new Event("input")); haptic();
+  };
+  barra = h("div", { class: "barra-teclado", role: "toolbar", "aria-label": "Ajustes de la serie" },
+    sinFoco(h("button", { "aria-label": "Restar", onclick: () => ajustar(-1) }, icono("menos"))),
+    sinFoco(h("button", { "aria-label": "Sumar", onclick: () => ajustar(1) }, icono("mas"))),
+    h("div", { class: "bt-info" }),
+    sinFoco(h("button", { "aria-label": "Marcar serie hecha", onclick: () => { const c = campoActivo && campos.get(campoActivo); if (c) { const inp = campoActivo; c.marcar(true); siguienteFila(inp); } } }, icono("check"))),
+    sinFoco(h("button", { class: "bt-sig", onclick: () => siguiente(campoActivo) }, "Siguiente", icono("siguiente"))));
+  document.body.append(barra);
+  return barra;
+}
+const camposSesion = () => raiz ? Array.from(raiz.querySelectorAll(".serie input")) : [];
+function siguiente(inp) {
+  const l = camposSesion(), i = l.indexOf(inp);
+  if (i >= 0 && i < l.length - 1) enfocar(l[i + 1]); else inp && inp.blur();
+}
+function siguienteFila(inp) {
+  const l = camposSesion(), i = l.indexOf(inp); if (i < 0) return;
+  const c = campos.get(inp);
+  const j = l.findIndex((x, k) => k > i && campos.get(x).campo === "weight" && campos.get(x).s !== c.s && !campos.get(x).s.done);
+  if (j >= 0) enfocar(l[j]); else inp.blur();
+}
+function enfocar(inp) { inp.focus({ preventScroll: true }); try { inp.select(); } catch (e) {} asegurarVisible(); }
+// Mantiene la fila activa entre la cabecera y el teclado (o la barra de pestañas).
+function asegurarVisible() {
+  const a = campoActivo; if (!a || !a.isConnected) return;
+  const f = a.closest(".serie-wrap"); if (!f) return;
+  const vv = window.visualViewport, r = f.getBoundingClientRect();
+  const nav = document.querySelector(".nav"); const navB = nav ? nav.getBoundingClientRect().bottom : 0;
+  const arriba = Math.max(navB, vv ? vv.offsetTop : 0) + 8;
+  const abajoVis = vv ? vv.offsetTop + vv.height : innerHeight;
+  const tapa = tecladoAbierto() ? 52 : Math.max(52, (document.querySelector("#tabs")?.offsetHeight || 0) + (document.querySelector(".descanso")?.offsetHeight || 0) + 16);
+  const abajo = abajoVis - tapa - 8;
+  const b = reducido() ? "auto" : "smooth";
+  if (r.bottom > abajo) window.scrollBy({ top: r.bottom - abajo, behavior: b });
+  else if (r.top < arriba) window.scrollBy({ top: r.top - arriba, behavior: b });
+}
+alCambiarViewport(() => { if (campoActivo) { clearTimeout(asegurarVisible.t); asegurarVisible.t = setTimeout(asegurarVisible, 60); } });
+document.addEventListener("focusin", (e) => {
+  if (!campos.has(e.target)) return;
+  campoActivo = e.target; crearBarraTeclado().classList.add("activa");
+  document.querySelectorAll(".serie.activa").forEach((x) => x.classList.remove("activa"));
+  e.target.closest(".serie")?.classList.add("activa");
+  pintarInfoTeclado(barra.querySelector(".bt-info"));
+  setTimeout(asegurarVisible, 350);
+});
+document.addEventListener("focusout", (e) => {
+  if (!campos.has(e.target)) return;
+  setTimeout(() => { if (!campos.has(document.activeElement)) { campoActivo = null; barra && barra.classList.remove("activa"); document.querySelectorAll(".serie.activa").forEach((x) => x.classList.remove("activa")); } }, 0);
+});
+
+// ───────── deslizar para borrar ─────────
+let cerrarAbierta = null;
+function deslizable(fila, alBorrar) {
+  const ANCHO = 92;
+  let x0 = null, y0 = 0, dx = 0, base = 0, modo = null, abierta = false;
+  const colocar = (x) => { dx = x; fila.style.transform = x ? "translateX(" + x + "px)" : ""; };
+  const cerrar = () => { abierta = false; colocar(0); if (cerrarAbierta === cerrar) cerrarAbierta = null; };
+  fila.addEventListener("pointerdown", (ev) => {
+    if (ev.pointerType === "mouse" && ev.button !== 0) return;
+    if (cerrarAbierta && cerrarAbierta !== cerrar) cerrarAbierta();
+    x0 = ev.clientX; y0 = ev.clientY; modo = null; base = abierta ? -ANCHO : 0;
+  });
+  fila.addEventListener("pointermove", (ev) => {
+    if (x0 == null) return;
+    const ddx = ev.clientX - x0, ddy = ev.clientY - y0;
+    if (!modo) {
+      if (Math.abs(ddx) > 10 && Math.abs(ddx) > Math.abs(ddy) * 1.3) {
+        modo = "h"; fila.classList.add("arrastrando");
+        try { fila.setPointerCapture(ev.pointerId); } catch (e) {}
+        if (document.activeElement && fila.contains(document.activeElement)) document.activeElement.blur();
+      } else if (Math.abs(ddy) > 10) { x0 = null; return; } else return;
+    }
+    ev.preventDefault();
+    let x = Math.min(0, base + ddx);
+    colocar(x);
+  });
+  const fin = () => {
+    if (x0 == null) return; x0 = null;
+    if (modo !== "h") { if (abierta) cerrar(); return; }
+    fila.classList.remove("arrastrando");
+    const w = fila.offsetWidth;
+    if (-dx > w * 0.55) { colocar(-w); haptic(); setTimeout(alBorrar, reducido() ? 0 : 180); }
+    else if (-dx > ANCHO / 2) { abierta = true; colocar(-ANCHO); cerrarAbierta = cerrar; }
+    else cerrar();
+  };
+  fila.addEventListener("pointerup", fin); fila.addEventListener("pointercancel", fin);
+  fila.addEventListener("click", (ev) => { if (modo === "h") { ev.stopPropagation(); ev.preventDefault(); modo = null; } }, true);
 }
 
 // ───────── pantalla de sesión ─────────
 function pintar() { if (raiz) vistaEntrenar(raiz, navegar); }
 
-function filaSerie(e, s, i) {
+function filaSerie(e, s, i, alBorrar) {
+  const wrap = h("div", { class: "serie-wrap" });
   const fila = h("div", { class: "serie" + (s.done ? " hecha" : "") });
-  const peso = h("input", { type: "text", inputmode: "decimal", value: s.weight, placeholder: "kg", "aria-label": "Peso" });
-  const reps = h("input", { type: "text", inputmode: "numeric", value: s.reps, placeholder: "reps", "aria-label": "Repeticiones" });
+  const peso = h("input", { type: "text", inputmode: "decimal", enterkeyhint: "next", autocomplete: "off", value: s.weight, placeholder: "kg", "aria-label": "Peso, serie " + (i + 1) });
+  const reps = h("input", { type: "text", inputmode: "numeric", enterkeyhint: "next", autocomplete: "off", value: s.reps, placeholder: "reps", "aria-label": "Repeticiones, serie " + (i + 1) });
   peso.addEventListener("input", () => { s.weight = peso.value; persistir(); });
   reps.addEventListener("input", () => { s.reps = reps.value; persistir(); });
-  for (const inp of [peso, reps]) inp.addEventListener("focus", () => inp.select());
-  const tp = h("button", { class: "tp " + CL[s.setType], title: "Tipo de serie", onclick: () => {
-    s.setType = TIPOS[(TIPOS.indexOf(s.setType) + 1) % TIPOS.length]; tp.textContent = ETQ[s.setType]; tp.className = "tp " + CL[s.setType]; persistir();
-    if (s.setType) toast({ warmup: "Calentamiento", failure: "Al fallo", drop: "Drop set" }[s.setType], 900);
+  for (const inp of [peso, reps]) {
+    inp.addEventListener("focus", () => { try { inp.select(); } catch (err) {} });
+    inp.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); siguiente(inp); } });
+  }
+  const tp = h("button", { class: "tp " + CL[s.setType], type: "button", "aria-label": "Tipo de serie", onclick: () => {
+    s.setType = TIPOS[(TIPOS.indexOf(s.setType) + 1) % TIPOS.length]; tp.textContent = ETQ[s.setType]; tp.className = "tp " + CL[s.setType]; persistir(); haptic();
+    if (s.setType) toast(NOMBRE_TIPO[s.setType], 900);
   } }, ETQ[s.setType]);
-  const ok = h("button", { class: "ok", onclick: async () => {
-    if (!s.done && (num(s.reps) <= 0)) { reps.focus(); return; }
-    s.done = !s.done; fila.classList.toggle("hecha", s.done); persistir(); pantallaActiva();
+  const marcar = (hecha) => {
+    if (hecha === s.done) return;
+    if (hecha && num(s.reps) <= 0) { enfocar(reps); return; }
+    s.done = hecha; fila.classList.toggle("hecha", s.done); persistir(); pantallaActiva(); haptic();
     if (s.done && !ed.editPath) iniciarDescanso(S.settings.defaultRestDuration || 90);
     actualizarProgreso(e);
-  } }, "✓");
+  };
+  const ok = h("button", { class: "ok", type: "button", "aria-label": "Serie hecha", "aria-pressed": String(!!s.done), onclick: () => { marcar(!s.done); ok.setAttribute("aria-pressed", String(!!s.done)); } }, icono("check"));
+  campos.set(peso, { e, s, campo: "weight", marcar }); campos.set(reps, { e, s, campo: "reps", marcar });
   fila.append(h("div", { class: "n" }, i + 1), peso, reps, tp, ok);
-  return fila;
+  wrap.append(h("button", { class: "serie-borrar", type: "button", tabindex: "-1", onclick: alBorrar }, icono("papelera"), "Borrar"), fila);
+  deslizable(fila, alBorrar);
+  return wrap;
 }
 const progresoEls = new Map();
-function actualizarProgreso(e) { const el = progresoEls.get(e); if (el) el.textContent = e.sets.filter((s) => s.done).length + "/" + Math.max(e.target, e.sets.length); }
+function actualizarProgreso(e) {
+  const el = progresoEls.get(e); if (!el) return;
+  const n = e.sets.filter((s) => s.done).length, t = Math.max(e.target, e.sets.length);
+  el.textContent = n + "/" + t; el.classList.toggle("completo", n > 0 && n >= e.sets.length);
+}
 
 function tarjetaEj(e) {
   const g = grupoDe(e.name), uni = esUnilateral(e.name);
   const prev = ultimaDe(e.name, ed.editPath);
   let prox = null;
   try { const p = window.__gym && window.__gym.progresionDe && window.__gym.progresionDe(e.name); if (p) prox = window.__gym.proximaVez(p); } catch (err) {}
-  const prog = h("span", { class: "muted", style: { marginLeft: "auto" } });
+  const prog = h("span", { class: "ej-prog" });
   progresoEls.set(e, prog); actualizarProgreso(e);
-  const card = h("div", { class: "card ej" },
-    h("div", { class: "row" }, h("div", { class: "ej-n" }, e.name, g && g !== "Sin categorizar" ? h("span", { class: "chip" }, g) : null, uni ? h("span", { class: "chip", style: { "--c": "var(--color-cyan)" } }, "reps por lado") : null),
+  const lista = h("div");
+  const pintarLista = () => { lista.replaceChildren(...e.sets.map((s, i) => filaSerie(e, s, i, () => borrarSerie(s)))); actualizarProgreso(e); };
+  const borrarSerie = (s) => { const i = e.sets.indexOf(s); if (i < 0) return; e.sets.splice(i, 1); persistir(); pintarLista(); toast("Serie borrada", 1000); };
+  pintarLista();
+  return h("section", { class: "ej" },
+    h("div", { class: "ej-cab" },
+      h("div", { class: "ej-n" }, e.name, g && g !== "Sin categorizar" ? h("span", { class: "chip" }, g) : null, uni ? h("span", { class: "chip", style: { "--c": "var(--color-cyan)" } }, "por lado") : null),
       prog,
-      h("button", { class: "btn sm", style: { padding: "4px 10px" }, "aria-label": "Más", onclick: () => menuEj(e) }, "⋯")),
+      h("button", { class: "ej-mas", type: "button", "aria-label": "Opciones de " + e.name, onclick: () => menuEj(e) }, icono("puntos"))),
     prev ? h("div", { class: "ant" }, "Anterior (" + prev.s.fm.date.slice(8) + "/" + prev.s.fm.date.slice(5, 7) + "): " + prev.ex.sets.map((s) => kg(s.weight) + "×" + s.reps + (s.setType ? ETQ[s.setType] : "")).join(" · ")) : h("div", { class: "ant" }, "Sin historial de este ejercicio"),
     prox ? h("div", { class: "prox" }, "Próxima vez: " + prox) : null,
-    h("div", { class: "cols" }, h("div", null, "#"), h("div", null, "kg"), h("div", null, "reps"), h("div", null, "tipo"), h("div", null, "")));
-  const lista = h("div");
-  e.sets.forEach((s, i) => lista.append(filaSerie(e, s, i)));
-  card.append(lista, h("div", { class: "row" },
-    h("button", { class: "btn sm sp", onclick: () => { const u = e.sets[e.sets.length - 1]; e.sets.push({ weight: u ? u.weight : "", reps: u ? u.reps : "", setType: "", done: false }); persistir(); lista.append(filaSerie(e, e.sets[e.sets.length - 1], e.sets.length - 1)); actualizarProgreso(e); } }, "+ Serie"),
-    h("button", { class: "btn sm", onclick: () => { if (e.sets.length > 1) { e.sets.pop(); lista.lastChild.remove(); persistir(); actualizarProgreso(e); } } }, "− Serie")));
-  return card;
+    h("div", { class: "cols", "aria-hidden": "true" }, h("div", null, "#"), h("div", null, "kg"), h("div", null, "reps"), h("div", null, "tipo"), h("div", null, "")),
+    lista,
+    h("div", { class: "ej-pie" },
+      h("button", { class: "btn", type: "button", onclick: () => {
+        const u = e.sets[e.sets.length - 1]; e.sets.push({ weight: u ? u.weight : "", reps: u ? u.reps : "", setType: "", done: false }); persistir(); pintarLista(); haptic();
+      } }, icono("mas"), "Serie")));
 }
 
 function menuEj(e) {
   const uni = esUnilateral(e.name);
-  const cerrar = hoja((c) => h("div", { class: "lista-sel" },
-    h("button", { onclick: async () => { c(); const i = ed.exercises.indexOf(e); if (i > 0) { ed.exercises.splice(i, 1); ed.exercises.splice(i - 1, 0, e); persistir(); pintar(); } } }, "Subir"),
-    h("button", { onclick: async () => { c(); const i = ed.exercises.indexOf(e); if (i < ed.exercises.length - 1) { ed.exercises.splice(i, 1); ed.exercises.splice(i + 1, 0, e); persistir(); pintar(); } } }, "Bajar"),
-    h("button", { onclick: async () => { c(); if (uni) { S.configs[CFG.unil] = S.configs[CFG.unil].split("\n").filter((l) => !(l.startsWith("unilateral::") && canon(l.slice(12)) === canon(e.name))).join("\n"); await save("configs"); } else await lineaConfig(CFG.unil, "unilateral:: " + e.name); await refrescarAnalisis(); pintar(); } }, uni ? "Quitar «reps por lado»" : "Marcar como unilateral (reps por lado)"),
-    h("button", { style: { color: "var(--gd-mal)" }, onclick: async () => { c(); if (await confirmar("¿Quitar «" + e.name + "» de esta sesión?", "Quitar", true)) { ed.exercises.splice(ed.exercises.indexOf(e), 1); persistir(); pintar(); } } }, "Quitar de la sesión")));
+  const i = ed.exercises.indexOf(e);
+  hoja((c) => h("div", null,
+    cabeceraHoja(e.name, null, h("button", { class: "nav-btn fuerte", onclick: () => c() }, "OK")),
+    grupo(null, [
+      i > 0 ? fila({ texto: "Subir", onclick: () => { c(); ed.exercises.splice(i, 1); ed.exercises.splice(i - 1, 0, e); persistir(); pintar(); }, sinChevron: true }) : null,
+      i < ed.exercises.length - 1 ? fila({ texto: "Bajar", onclick: () => { c(); ed.exercises.splice(i, 1); ed.exercises.splice(i + 1, 0, e); persistir(); pintar(); }, sinChevron: true }) : null,
+      fila({ texto: uni ? "Quitar «reps por lado»" : "Marcar como unilateral (reps por lado)", sinChevron: true, onclick: async () => {
+        c();
+        if (uni) { S.configs[CFG.unil] = S.configs[CFG.unil].split("\n").filter((l) => !(l.startsWith("unilateral::") && canon(l.slice(12)) === canon(e.name))).join("\n"); await save("configs"); }
+        else await lineaConfig(CFG.unil, "unilateral:: " + e.name);
+        await refrescarAnalisis(); pintar();
+      } }),
+    ]),
+    grupo(null, [fila({ texto: "Quitar de la sesión", peligro: true, onclick: async () => { c(); if (await confirmar("¿Quitar «" + e.name + "» de esta sesión?", "Quitar", true)) { ed.exercises.splice(ed.exercises.indexOf(e), 1); persistir(); pintar(); } } })])));
 }
 
-function anadirEjercicio() {
+// Hoja de búsqueda en la biblioteca. alElegir(nombre) recibe el ejercicio (existente o recién creado).
+export function elegirEjercicio(alElegir, titulo = "Añadir ejercicio") {
   hoja((c) => {
-    const q = h("input", { placeholder: "Buscar o crear ejercicio", autocomplete: "off" });
-    const lista = h("div", { class: "lista-sel", style: { marginTop: "8px" } });
+    const q = h("input", { class: "campo", type: "search", placeholder: "Buscar o crear ejercicio", autocomplete: "off", enterkeyhint: "search", "aria-label": "Buscar ejercicio" });
+    const cont = h("div");
     const pintarL = () => {
-      lista.replaceChildren();
-      const t = canon(q.value);
-      for (const l of S.library.filter((x) => canon(x.name).includes(t)).slice(0, 40))
-        lista.append(h("button", { onclick: () => { c(); ed.exercises.push(nuevoEj(l.name, 3)); persistir(); pintar(); } }, l.name, h("span", { class: "muted" }, "  " + (grupoDe(l.name) || ""))));
+      const t = canon(q.value), filas = [];
       if (q.value.trim() && !S.library.some((x) => canon(x.name) === t))
-        lista.append(h("button", { style: { color: "var(--gd-acento)" }, onclick: () => { c(); crearEjercicio(q.value.trim()); } }, "+ Crear «" + q.value.trim() + "»"));
+        filas.push(fila({ texto: "Crear «" + q.value.trim() + "»", clase: "tinte", izq: icono("mas"), sinChevron: true, onclick: () => { c(); crearEjercicio(q.value.trim(), alElegir); } }));
+      for (const l of S.library.filter((x) => canon(x.name).includes(t)).sort((a, b) => a.name.localeCompare(b.name, "es")).slice(0, 60))
+        filas.push(fila({ texto: l.name, detalle: grupoDe(l.name) || "", sinChevron: true, onclick: () => { c(); alElegir(l.name); } }));
+      cont.replaceChildren(filas.length ? grupo(null, filas) : h("div", { class: "vacio" }, "Escribe un nombre para crearlo."));
     };
-    q.addEventListener("input", pintarL); pintarL(); setTimeout(() => q.focus(), 50);
-    return h("div", null, q, lista);
+    q.addEventListener("input", pintarL); pintarL();
+    return h("div", null, cabeceraHoja(titulo, h("button", { class: "nav-btn", onclick: () => c() }, "Cancelar"), null),
+      h("div", { class: "hoja-cuerpo", style: { paddingBottom: "16px" } }, q), cont);
   });
 }
-function crearEjercicio(nombre) {
+function anadirEjercicio() { elegirEjercicio((n) => { ed.exercises.push(nuevoEj(n, 3)); persistir(); pintar(); }); }
+
+// Nuevo ejercicio: hay que elegir grupo muscular (no se preselecciona ninguno).
+function crearEjercicio(nombre, alCrear) {
   const gs = gruposEnUso();
+  let elegido = null;
   hoja((c) => {
-    const sel = h("select", null, ...gs.map((g) => h("option", { value: g }, g)));
-    return h("div", null, h("p", { style: { margin: "0 0 10px" } }, "¿A qué grupo muscular pertenece «" + nombre + "»?"), sel,
-      h("button", { class: "btn pri blk", style: { marginTop: "12px" }, onclick: async () => {
-        c(); S.library.push({ name: nombre, exerciseType: "weight" }); await save("library");
-        await lineaConfig(CFG.grupos, nombre + ":: " + sel.value);
-        await refrescarAnalisis();
-        ed.exercises.push(nuevoEj(nombre, 3)); persistir(); pintar();
-      } }, "Añadir"));
+    const btn = h("button", { class: "nav-btn fuerte", disabled: true, onclick: async () => {
+      if (!elegido) return;
+      c(); S.library.push({ name: nombre, exerciseType: "weight" }); await save("library");
+      await lineaConfig(CFG.grupos, nombre + ":: " + elegido);
+      await refrescarAnalisis();
+      alCrear(nombre);
+    } }, "Añadir");
+    const filas = gs.map((g) => {
+      const f = fila({ texto: g, sinChevron: true, der: icono("check", "ico marca"), onclick: () => {
+        elegido = g; btn.disabled = false; haptic();
+        f.parentElement.querySelectorAll(".celda").forEach((x) => x.classList.toggle("elegida", x === f));
+      } });
+      return f;
+    });
+    return h("div", { class: "elegir-grupo" }, cabeceraHoja("Grupo muscular", h("button", { class: "nav-btn", onclick: () => c() }, "Cancelar"), btn),
+      h("p", { class: "pie", style: { margin: "0 32px 12px" } }, "¿A qué grupo muscular pertenece «" + nombre + "»?"),
+      grupo(null, filas));
   });
 }
 
 function sesionActiva() {
-  const v = h("div");
-  const titulo = ed.editPath ? "Editar · " + ed.template : ed.template;
-  v.append(h("div", { class: "cab-ses" }, h("div", { class: "row" },
-    h("div", { class: "sp" }, h("div", { class: "tit" }, titulo), ed.editPath ? h("div", { class: "reloj" }, ed.date) : h("div", { class: "reloj", "data-reloj": 1 }, mmss((Date.now() - ed.start) / 1000))),
-    h("button", { class: "btn sm mal", onclick: async () => {
-      if (await confirmar(ed.editPath ? "¿Salir sin guardar los cambios?" : "¿Descartar esta sesión? Se perderán las series.", "Descartar", true)) { ed = null; await persistir(); apagarTimers(); pintar(); } } }, ed.editPath ? "Salir" : "Descartar"),
-    h("button", { class: "btn sm pri", onclick: terminar }, ed.editPath ? "Guardar" : "Terminar"))));
+  const editando = !!ed.editPath;
+  const reloj = h("span", { "data-reloj": editando ? null : 1 }, editando ? fechaCorta(ed.date) : mmss((Date.now() - ed.start) / 1000));
+  const { raiz: v, cuerpo, nav } = pantalla(editando ? "Editar · " + ed.template : ed.template, {
+    grande: false, sub: reloj,
+    izq: h("button", { class: "nav-btn peligro", onclick: async () => {
+      if (await confirmar(editando ? "¿Salir sin guardar los cambios?" : "¿Descartar esta sesión? Se perderán las series.", editando ? "Salir sin guardar" : "Descartar sesión", true)) { ed = null; await persistir(); apagarTimers(); pintar(); } } }, editando ? "Cancelar" : "Descartar"),
+    der: h("button", { class: "nav-btn pildora", onclick: terminar }, editando ? "Guardar" : "Terminar"),
+  });
+  nav.classList.add("sesion");
   progresoEls.clear();
-  for (const e of ed.exercises) v.append(tarjetaEj(e));
-  v.append(h("button", { class: "btn blk", onclick: anadirEjercicio }, "+ Añadir ejercicio"));
+  for (const e of ed.exercises) cuerpo.append(tarjetaEj(e));
+  if (!ed.exercises.length) cuerpo.append(h("div", { class: "vacio" }, "Sesión vacía. Añade el primer ejercicio."));
+  cuerpo.append(h("button", { class: "btn blk anadir-ej", onclick: anadirEjercicio }, icono("mas"), "Añadir ejercicio"));
   return v;
 }
 
 // ───────── inicio ─────────
 function inicio() {
-  const v = h("div");
-  v.append(h("h1", { class: "t" }, "Entrenar"));
+  const { raiz: v, cuerpo } = pantalla("Entrenar");
   const hoy = horarioHoy();
   const tpl = hoy && S.templates.find((t) => canon(t.fm.name) === canon(hoy));
-  if (tpl) v.append(h("div", { class: "card" }, h("div", { class: "muted" }, "Hoy toca"), h("div", { style: { fontSize: "22px", fontWeight: 700, margin: "2px 0 12px" } }, tpl.fm.name),
+  if (tpl) cuerpo.append(h("div", { class: "destacado" }, h("div", { class: "eti" }, "Hoy toca"), h("div", { class: "tit" }, tpl.fm.name),
+    h("div", { class: "sub" }, tpl.fm.exercises.length + " ejercicios"),
     h("button", { class: "btn pri blk", onclick: () => empezar(tpl.fm.name) }, "Empezar")));
-  else if (hoy) v.append(h("div", { class: "card" }, h("div", { class: "muted" }, "Hoy"), h("div", { style: { fontSize: "22px", fontWeight: 700 } }, hoy)));
-  v.append(h("h2", { class: "t" }, "Plantillas"));
-  const l = h("div", { class: "card", style: { padding: "4px 14px" } });
-  for (const t of S.templates) l.append(h("div", { class: "lista-sel" }, h("button", { onclick: () => empezar(t.fm.name) }, t.fm.name, h("span", { class: "muted" }, "  · " + t.fm.exercises.length + " ejercicios"))));
-  l.append(h("div", { class: "lista-sel" }, h("button", { onclick: () => empezar(null) }, "Sesión vacía")));
-  v.append(l);
+  else if (hoy) cuerpo.append(h("div", { class: "destacado" }, h("div", { class: "eti" }, "Hoy"), h("div", { class: "tit", style: { marginBottom: 0 } }, hoy)));
+
+  cuerpo.append(grupo("Plantillas", [
+    ...S.templates.map((t) => fila({ texto: t.fm.name, detalle: t.fm.exercises.length + " ej.", onclick: () => empezar(t.fm.name) })),
+    fila({ texto: "Sesión vacía", clase: "tinte", onclick: () => empezar(null) }),
+  ]));
 
   // Peso corporal
-  const pi = h("input", { type: "text", inputmode: "decimal", placeholder: "Peso de hoy (kg)", style: { flex: 1 } });
-  v.append(h("h2", { class: "t" }, "Peso corporal"));
-  v.append(h("div", { class: "card row" }, pi, h("button", { class: "btn pri", onclick: async () => {
-    const x = num(pi.value); if (!x) return;
-    await lineaConfig(CFG.peso, iso() + ":: " + String(x).replace(".", ",") + " kg"); pi.value = ""; toast("Peso apuntado"); refrescarAnalisis();
-  } }, "Apuntar")));
+  const pi = h("input", { class: "inline", type: "text", inputmode: "decimal", enterkeyhint: "done", placeholder: "kg", "aria-label": "Peso de hoy en kg", style: { maxWidth: "90px" } });
+  const apuntar = async () => {
+    const x = num(pi.value); if (!x) { pi.focus(); return; }
+    await lineaConfig(CFG.peso, iso() + ":: " + numTxt(x) + " kg"); pi.value = ""; pi.blur(); haptic(); toast("Peso apuntado"); refrescarAnalisis();
+  };
+  pi.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); apuntar(); } });
+  cuerpo.append(grupo("Peso corporal", [h("div", { class: "celda" }, h("div", { class: "celda-txt" }, "Hoy"), pi, h("button", { class: "btn sm pri", onclick: apuntar }, "Apuntar"))]));
 
   // Última sesión
   const u = ordenadas()[0];
-  if (u) {
-    v.append(h("h2", { class: "t" }, "Última sesión"));
-    v.append(h("div", { class: "card", onclick: () => abrirSesion(u, () => pintar()) }, h("b", null, u.fm.template), h("span", { class: "muted" }, "  " + u.fm.date.slice(8) + "/" + u.fm.date.slice(5, 7) + " · " + u.fm.duration + " min · " + (u.fm.exercises || []).reduce((a, e) => a + e.sets.length, 0) + " series")));
-  }
+  if (u) cuerpo.append(grupo("Última sesión", [fila({ texto: u.fm.template || "Workout", sub: fechaCorta(u.fm.date) + " · " + u.fm.duration + " min · " + series(u.fm) + " series", onclick: () => abrirSesion(u, () => pintar()) })]));
   return v;
 }
 function empezar(plantilla) {
-  ed = crearSesion(plantilla); persistir(); pantallaActiva(); pintar();
+  ed = crearSesion(plantilla); persistir(); pantallaActiva(); haptic(); pintar();
 }
 
 export function vistaEntrenar(cont, ir) {
   raiz = cont; navegar = ir;
   if (!ed && S.draft && !S.draft.editPath) { ed = S.draft; }
-  document.body.classList.toggle("sin-tabs", false);
   cont.replaceChildren(ed ? sesionActiva() : inicio());
-  if (ed) { pintarReloj(); if (!tick) tick = setInterval(pintarReloj, 1000); pantallaActiva(); }
+  if (ed) { arrancarTick(); pintarReloj(); pantallaActiva(); }
 }
+export const haySesion = () => !!ed;
 
 // ───────── historial ─────────
 export function abrirSesion(s, alCerrar) {
   hoja((c) => {
     const f = s.fm;
     return h("div", null,
-      h("h1", { class: "t", style: { marginBottom: "2px" } }, f.template || "Workout"),
-      h("div", { class: "muted", style: { marginBottom: "12px" } }, f.date + (f.start ? " · " + f.start + "–" + f.end : "") + (f.duration ? " · " + f.duration + " min" : "")),
-      ...(f.exercises || []).map((e) => h("div", { class: "card", style: { padding: "10px 12px" } }, h("div", { style: { fontWeight: 700 } }, e.name),
-        h("div", { class: "muted" }, e.sets.map((x) => kg(x.weight) + "×" + x.reps + (x.setType ? " " + ETQ[x.setType] : "")).join("  ·  ")))),
-      h("div", { class: "row", style: { marginTop: "6px" } },
-        h("button", { class: "btn sp", onclick: () => { c(); editar(s); } }, "Editar"),
-        h("button", { class: "btn mal sp", onclick: async () => { if (await confirmar("¿Borrar esta sesión?", "Borrar", true)) { S.sessions.splice(S.sessions.indexOf(s), 1); await save("sessions"); c(); refrescarAnalisis(); toast("Sesión borrada"); alCerrar && alCerrar(); } } }, "Borrar")));
+      cabeceraHoja("", null, h("button", { class: "nav-btn fuerte", onclick: () => c() }, "OK")),
+      h("h1", { class: "t" }, f.template || "Workout"),
+      h("p", { class: "sub-t" }, fechaCorta(f.date) + (f.start ? " · " + f.start + "–" + f.end : "") + (f.duration ? " · " + f.duration + " min" : "")),
+      ...(f.exercises || []).map((e) => grupo(e.name, e.sets.map((x, i) => fila({ texto: kg(x.weight) + " kg × " + x.reps, izq: h("span", { class: "celda-num" }, i + 1), detalle: x.setType ? NOMBRE_TIPO[x.setType] : null })))),
+      grupo(null, [
+        fila({ texto: "Editar sesión", clase: "tinte centro", sinChevron: true, onclick: () => { c(); editar(s); } }),
+        fila({ texto: "Borrar sesión", peligro: true, onclick: async () => { if (await confirmar("¿Borrar esta sesión? No se puede deshacer.", "Borrar sesión", true)) { S.sessions.splice(S.sessions.indexOf(s), 1); await save("sessions"); c(); refrescarAnalisis(); toast("Sesión borrada"); alCerrar && alCerrar(); } } }),
+      ]));
   });
 }
 function editar(s) {
+  if (ed && !ed.editPath) { toast("Termina primero la sesión en curso"); return; }
   ed = { template: s.fm.template || "Workout", date: s.fm.date, start: Date.now(), editPath: s.path,
-    exercises: (s.fm.exercises || []).map((e) => ({ name: e.name, target: e.sets.length, sets: e.sets.map((x) => ({ weight: String(x.weight).replace(".", ","), reps: String(x.reps), setType: x.setType || "", done: true })) })) };
+    exercises: (s.fm.exercises || []).map((e) => ({ name: e.name, target: e.sets.length, sets: e.sets.map((x) => ({ weight: numTxt(x.weight), reps: String(x.reps), setType: x.setType || "", done: true })) })) };
   navegar("entrenar");
 }
 export function vistaHistorial(cont) {
-  const v = h("div"); v.append(h("h1", { class: "t" }, "Historial"));
+  const { raiz: v, cuerpo } = pantalla("Historial");
   const l = ordenadas();
-  if (!l.length) v.append(h("div", { class: "vacio" }, "Aún no hay sesiones."));
-  for (const s of l) v.append(h("div", { class: "card", onclick: () => abrirSesion(s, () => vistaHistorial(cont)) },
-    h("div", { class: "row" }, h("b", { class: "sp" }, s.fm.template || "Workout"), h("span", { class: "muted" }, s.fm.date.slice(8) + "/" + s.fm.date.slice(5, 7) + "/" + s.fm.date.slice(2, 4))),
-    h("div", { class: "muted" }, (s.fm.duration ? s.fm.duration + " min · " : "") + (s.fm.exercises || []).reduce((a, e) => a + e.sets.length, 0) + " series · " + (s.fm.exercises || []).length + " ejercicios")));
+  if (!l.length) cuerpo.append(h("div", { class: "vacio" }, "Aún no hay sesiones."));
+  const meses = new Map();
+  for (const s of l) { const k = s.fm.date.slice(0, 7); if (!meses.has(k)) meses.set(k, []); meses.get(k).push(s); }
+  for (const [k, ss] of meses) {
+    const t = fMes.format(deISO(k + "-01"));
+    cuerpo.append(grupo(t, ss.map((s) => fila({ texto: s.fm.template || "Workout", sub: fechaCorta(s.fm.date) + (s.fm.duration ? " · " + s.fm.duration + " min" : "") + " · " + series(s.fm) + " series", onclick: () => abrirSesion(s, () => vistaHistorial(cont)) }))));
+  }
   cont.replaceChildren(v);
 }
