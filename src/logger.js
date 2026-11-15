@@ -3,6 +3,7 @@
 import { S, save } from "./store.js";
 import { h, toast, hoja, confirmar, iso, hhmm, canon, num, numTxt, fmt, kg, haptic, icono, pantalla, grupo, fila, cabeceraHoja, alCambiarViewport, tecladoAbierto, reducido } from "./ui.js";
 import { ejecutarDashboard } from "./dvshim.js";
+import { estadoCopia, textoAviso, exportar } from "./copia.js";
 
 const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const CFG = { grupos: "Gym/Config/grupos-musculares.md", unil: "Gym/Config/unilaterales.md", horario: "Gym/Config/horario-semanal.md", peso: "Gym/Config/peso-corporal.md", objetivos: "Gym/Config/objetivos.md" };
@@ -49,6 +50,18 @@ export function gruposEnUso() {
 export function lineaConfig(clave, linea) {
   S.configs[clave] = (S.configs[clave] || "").replace(/\s*$/, "") + "\n" + linea + "\n";
   return save("configs");
+}
+// Una línea por día: si ya hay una de hoy se reemplaza (y se quitan duplicados de hoy).
+export async function apuntarPeso(x, dia = iso()) {
+  const linea = dia + ":: " + numTxt(x) + " kg";
+  const lineas = (S.configs[CFG.peso] || "").split("\n");
+  const esHoy = (l) => l.startsWith(dia + "::");
+  if (!lineas.some(esHoy)) { await lineaConfig(CFG.peso, linea); return false; }
+  let puesta = false;
+  const res = [];
+  for (const l of lineas) { if (!esHoy(l)) res.push(l); else if (!puesta) { res.push(linea); puesta = true; } }
+  S.configs[CFG.peso] = res.join("\n"); await save("configs");
+  return true;
 }
 const horarioHoy = () => {
   const t = S.configs[CFG.horario] || ""; const d = DIAS[new Date().getDay()];
@@ -123,22 +136,69 @@ function resumen(fm, abrirDash, editada) {
 }
 
 // ───────── descanso ─────────
-function apagarTimers() { clearInterval(tick); tick = null; descanso = null; document.querySelector(".descanso")?.remove(); document.body.classList.remove("con-descanso"); try { wake && wake.release(); } catch (e) {} wake = null; }
-async function pantallaActiva() { try { if (navigator.wakeLock && !wake && S.settings.keepScreenAwake !== false) wake = await navigator.wakeLock.request("screen"); } catch (e) {} }
+function apagarTimers() { clearInterval(tick); tick = null; descanso = null; document.querySelector(".descanso")?.remove(); document.body.classList.remove("con-descanso"); soltarPantalla(); }
+
+// Wake Lock: iOS lo suelta al bloquear o salir de la app; se vuelve a pedir al volver.
+async function pantallaActiva() {
+  if (!navigator.wakeLock || wake || S.settings.keepScreenAwake === false || document.visibilityState !== "visible") return;
+  try {
+    const w = await navigator.wakeLock.request("screen");
+    if (!ed) { w.release().catch(() => {}); return; }
+    wake = w; w.addEventListener("release", () => { if (wake === w) wake = null; });
+  } catch (e) {}
+}
+function soltarPantalla() { const w = wake; wake = null; try { w && w.release().catch(() => {}); } catch (e) {} }
+
+// Audio: iOS solo deja sonar un AudioContext creado o reanudado dentro de un gesto. Se crea uno
+// en el primer toque, se reanuda en cada toque si iOS lo ha suspendido y se reutiliza siempre.
+let actx = null;
+function desbloquearAudio() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    if (!actx) {
+      actx = new AC();
+      const b = actx.createBuffer(1, 1, 22050), src = actx.createBufferSource();   // sonido vacío: desbloquea en iOS
+      src.buffer = b; src.connect(actx.destination); src.start(0);
+    }
+    if (actx.state !== "running") actx.resume().catch(() => {});
+  } catch (e) {}
+}
+for (const t of ["pointerdown", "touchend", "keydown"]) document.addEventListener(t, desbloquearAudio, { capture: true, passive: true });
+function tono(f, t, d) {
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = "sine"; o.frequency.value = f;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + d + 0.03);
+}
 function pitido() {
   try {
-    const a = new (window.AudioContext || window.webkitAudioContext)(); const o = a.createOscillator(), g = a.createGain();
-    o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = 0.2; o.start(); o.stop(a.currentTime + 0.25);
-    setTimeout(() => { const o2 = a.createOscillator(); o2.connect(a.destination); o2.frequency.value = 1180; o2.start(); o2.stop(a.currentTime + 0.3); }, 300);
+    if (actx) {
+      const sonar = () => { const t = actx.currentTime + 0.02; tono(880, t, 0.22); tono(1175, t + 0.28, 0.3); };
+      if (actx.state === "running") sonar(); else actx.resume().then(sonar).catch(() => {});
+    }
   } catch (e) {}
   haptic();
 }
+
+// Al volver a la app (desbloquear, cambiar de app): el descanso se recalcula con timestamps
+// absolutos, se reanuda el audio, se vuelve a pedir el Wake Lock y se guarda el borrador al salir.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    if (ed) { pintarReloj(); pantallaActiva(); }
+    if (actx && actx.state !== "running") actx.resume().catch(() => {});
+  } else if (ed) persistir();
+});
+addEventListener("pagehide", () => { if (ed) persistir(); });
+
 function iniciarDescanso(seg) {
   descanso = { fin: Date.now() + seg * 1000, total: seg, avisado: false };
+  guardarDescanso();
   arrancarTick();
   pintarReloj();
 }
 function arrancarTick() { clearInterval(tick); tick = setInterval(pintarReloj, descanso ? 250 : 1000); }
+// El descanso va en el borrador para sobrevivir a que iOS cierre la app.
+function guardarDescanso() { if (ed && !ed.editPath) { ed.rest = descanso ? { fin: descanso.fin, total: descanso.total, avisado: descanso.avisado } : null; persistir(); } }
 const mmss = (s) => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 function pintarReloj() {
   const r = document.querySelector("[data-reloj]"); if (r && ed && !ed.editPath) r.textContent = mmss((Date.now() - ed.start) / 1000);
@@ -150,15 +210,15 @@ function pintarReloj() {
     return;
   }
   const resto = (descanso.fin - Date.now()) / 1000;
-  if (resto <= 0 && !descanso.avisado) { descanso.avisado = true; pitido(); }
-  if (resto <= -8) { descanso = null; pintarReloj(); return; }
+  if (resto <= 0 && !descanso.avisado) { descanso.avisado = true; guardarDescanso(); if (resto > -8) pitido(); }
+  if (resto <= -8) { descanso = null; guardarDescanso(); pintarReloj(); return; }
   if (!d) {
     d = h("div", { class: "descanso", role: "timer" },
       h("div", { class: "t" }, h("small", null, "Descanso"), h("span", { "data-t": 1 })),
       h("div", { class: "row sp", style: { justifyContent: "flex-end", gap: "6px" } },
-        h("button", { class: "btn", "aria-label": "Quitar 15 segundos", onclick: () => { descanso.fin -= 15000; pintarReloj(); } }, "−15"),
-        h("button", { class: "btn", "aria-label": "Añadir 15 segundos", onclick: () => { descanso.fin += 15000; descanso.total += 15; descanso.avisado = false; pintarReloj(); } }, "+15"),
-        h("button", { class: "btn", onclick: () => { descanso = null; pintarReloj(); } }, "Saltar")),
+        h("button", { class: "btn", "aria-label": "Quitar 15 segundos", onclick: () => { descanso.fin -= 15000; guardarDescanso(); pintarReloj(); } }, "−15"),
+        h("button", { class: "btn", "aria-label": "Añadir 15 segundos", onclick: () => { descanso.fin += 15000; descanso.total += 15; descanso.avisado = false; guardarDescanso(); pintarReloj(); } }, "+15"),
+        h("button", { class: "btn", onclick: () => { descanso = null; guardarDescanso(); pintarReloj(); } }, "Saltar")),
       h("div", { class: "barra", "data-b": 1 }));
     document.body.append(d); document.body.classList.add("con-descanso");
   }
@@ -422,6 +482,10 @@ function sesionActiva() {
 // ───────── inicio ─────────
 function inicio() {
   const { raiz: v, cuerpo } = pantalla("Entrenar");
+  const ec = estadoCopia();
+  if (ec.avisar) cuerpo.append(h("div", { class: "aviso", role: "alert" }, icono("aviso"),
+    h("div", { class: "sp" }, h("b", null, "Haz una copia de seguridad"), textoAviso(ec),
+      h("button", { class: "btn sm pri", onclick: async () => { if (await exportar()) pintar(); } }, "Exportar ahora"))));
   const hoy = horarioHoy();
   const tpl = hoy && S.templates.find((t) => canon(t.fm.name) === canon(hoy));
   if (tpl) cuerpo.append(h("div", { class: "destacado" }, h("div", { class: "eti" }, "Hoy toca"), h("div", { class: "tit" }, tpl.fm.name),
@@ -438,7 +502,7 @@ function inicio() {
   const pi = h("input", { class: "inline", type: "text", inputmode: "decimal", enterkeyhint: "done", placeholder: "kg", "aria-label": "Peso de hoy en kg", style: { maxWidth: "90px" } });
   const apuntar = async () => {
     const x = num(pi.value); if (!x) { pi.focus(); return; }
-    await lineaConfig(CFG.peso, iso() + ":: " + numTxt(x) + " kg"); pi.value = ""; pi.blur(); haptic(); toast("Peso apuntado"); refrescarAnalisis();
+    const cambiado = await apuntarPeso(x); pi.value = ""; pi.blur(); haptic(); toast(cambiado ? "Peso de hoy actualizado" : "Peso apuntado"); refrescarAnalisis();
   };
   pi.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); apuntar(); } });
   cuerpo.append(grupo("Peso corporal", [h("div", { class: "celda" }, h("div", { class: "celda-txt" }, "Hoy"), pi, h("button", { class: "btn sm pri", onclick: apuntar }, "Apuntar"))]));
@@ -454,7 +518,10 @@ function empezar(plantilla) {
 
 export function vistaEntrenar(cont, ir) {
   raiz = cont; navegar = ir;
-  if (!ed && S.draft && !S.draft.editPath) { ed = S.draft; }
+  if (!ed && S.draft && !S.draft.editPath) {
+    ed = S.draft;   // sesión recuperada tras cerrar o matar la app: start y descanso son timestamps absolutos
+    if (ed.rest && !descanso && ed.rest.fin > Date.now() - 8000) descanso = { fin: ed.rest.fin, total: ed.rest.total, avisado: !!ed.rest.avisado };
+  }
   cont.replaceChildren(ed ? sesionActiva() : inicio());
   if (ed) { arrancarTick(); pintarReloj(); pantallaActiva(); }
 }

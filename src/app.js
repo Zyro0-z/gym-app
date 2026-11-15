@@ -1,4 +1,5 @@
-import { S, load, save, exportJSON, importJSON, vacio } from "./store.js";
+import { S, load, save, importJSON, vacio } from "./store.js";
+import { exportar as exportarCopia, estadoCopia } from "./copia.js";
 import { h, $, toast, confirmar, alerta, pedirTexto, iso, pantalla, grupo, fila, stepper, interruptor, segmentado, icono, haptic, kg } from "./ui.js";
 import { ejecutarDashboard } from "./dvshim.js";
 import { vistaEntrenar, vistaHistorial, abrirSesion, refrescarAnalisis } from "./logger.js";
@@ -91,12 +92,12 @@ function vistaAjustes() {
   }), "Los mismos archivos que tenías en Gym/Config. Se editan como texto."));
 
   // Copia de seguridad
-  let ultima = null; try { ultima = localStorage.getItem("gym-ultima-copia"); } catch (e) {}
+  const ec = estadoCopia();
   const file = selectorImportar(true, () => ir("ajustes"));
   cuerpo.append(grupo("Copia de seguridad", [
     fila({ texto: "Exportar copia", clase: "tinte", sinChevron: true, onclick: exportar }),
     fila({ texto: "Importar copia", clase: "tinte", sinChevron: true, onclick: () => file.click() }),
-  ], "Los datos viven solo en este iPhone. Exporta a menudo y guarda el archivo en iCloud Drive. " + (ultima ? "Última copia: " + ultima.split("-").reverse().join("/") + "." : "Aún no has hecho ninguna copia.")), file);
+  ], "Los datos viven solo en este iPhone. Exporta a menudo y guarda el archivo en iCloud Drive. " + (ec.nunca ? "Aún no has hecho ninguna copia." : "Última copia: " + ec.fecha.split("-").reverse().join("/") + (ec.nuevas ? " · " + ec.nuevas + (ec.nuevas === 1 ? " sesión nueva" : " sesiones nuevas") + " desde entonces." : "."))), file);
 
   cuerpo.append(h("p", { class: "pie", style: { textAlign: "center", margin: "0 32px 24px" } },
     "Diagrama muscular: body-muscles (licencia en ", h("a", { href: "assets/licencias/LICENSE-body-muscles.txt" }, "assets/licencias"), ")."));
@@ -126,17 +127,7 @@ function vistaBienvenida() {
   montar(raiz);
 }
 
-async function exportar() {
-  const txt = exportJSON();
-  const nombre = "gym-backup-" + iso() + ".json";
-  const f = new File([txt], nombre, { type: "application/json" });
-  try {
-    if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: nombre }); }
-    else { const a = h("a", { href: URL.createObjectURL(f), download: nombre }); document.body.append(a); a.click(); a.remove(); }
-    try { localStorage.setItem("gym-ultima-copia", iso()); } catch (e) {}
-    haptic(); toast("Copia exportada"); ir("ajustes");
-  } catch (e) { if (e.name !== "AbortError") await alerta("No se pudo exportar", e.message); }
-}
+async function exportar() { if (await exportarCopia()) ir("ajustes"); }
 
 export async function ir(v) {
   const cambia = v !== actual;
