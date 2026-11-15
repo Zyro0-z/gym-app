@@ -12,51 +12,52 @@
 ## 2. Módulos
 
 ```
-index.html            arranque mínimo: tema antes del primer pintado, <main>, tab bar
-sw.js                 service worker: precache versionado, cache-first, aviso de actualización
+index.html            arranque mínimo: tema y acento antes del primer pintado, #app y la tab bar
+sw.js                 service worker: precache versionado (FICHEROS + V), cache-first
 src/
-  app.js              arranque, router (pestañas + pilas), tema y acento, banner de actualización
-  store.js            almacén en memoria con suscripciones (estado persistido + estado efímero de UI)
+  app.js              arranque: apariencia, carga y migración, navegación, service worker
+  store.js            estado persistido con suscripciones; análisis bajo demanda, memoizado por versión
   core/               PURO: sin DOM ni almacenamiento; recibe datos y `hoy`, devuelve datos
-    fechas.js         día ISO, lunes de la semana, claves de semana/mes, numDia, días entre fechas
+    fechas.js         día ISO, lunes de la semana, claves de semana/mes, numDia, meses
+    formato.js        números en es-ES (coma decimal, punto de miles)
     nombres.js        canon(), Levenshtein, posibles variantes, nombre visible
+    constantes.js     umbrales y textos fijos de la lógica
+    legacy.js         lector del formato antiguo (para migrar y para importar copias antiguas)
+    contexto.js       contexto de cálculo: catálogo, grupos, objetivos, bloques, horario, ligas
     sesiones.js       normaliza sesiones: series que cuentan, volumen, e1RM, duración fiable
-    rm.js             Epley, conversión lb→kg, fiabilidad, PRs por ejercicio
     estancamiento.js  semáforo, días sin PR descontando bloques, flecha de tendencia
-    progresion.js     doble progresión, incrementos, texto «próxima vez»
-    semanal.js        series y volumen por semana y grupo; series previstas; vs objetivo
-    bloques.js        bloques (deload/especialización), grupos protegidos, días protegidos
-    peso.js           pesajes, medias de 21 días, ritmo, tendencia por fase, «has ganado»
-    ligas.js          estándares, percentiles, puntuación, divisiones con histéresis, grupos, general
-    racha.js          racha de semanas ISO
-    horario.js        hoy toca, previstas por día
-    calidad.js        avisos de calidad de los datos, con el destino que los arregla
-    analisis.js       orquesta todo lo anterior → un objeto `Analisis` memoizado por versión de datos
-    formato.js        números en es-ES (coma decimal, punto de miles), fechas con Intl
+    progresion.js     doble progresión, incrementos, «próxima vez»
+    semanal.js        semanas, racha, hoy toca, series vs objetivo, volumen por grupo, balance
+    peso.js           pesajes, medias, ritmo, tendencia por fase
+    ligas.js          estándares, puntuación, divisiones con histéresis, grupos, general
+    calidad.js        avisos de calidad de los datos
+    analisis.js       orquesta todo lo anterior → un objeto `Analisis`
   data/
     db.js             IndexedDB versionada (onupgradeneeded) y transacciones
-    migraciones.js    del formato antiguo (kv con textos de config) al modelo nuevo
-    repos.js          sesiones, catálogo, rutinas, ajustes, pesajes, borrador
-    importar.js       seed.json, copias antiguas (version 1) y copias nuevas (version 2)
-    exportar.js       copia con `version`, hoja de compartir, recordatorio de copia
-    espejo.js         réplica compacta en localStorage del borrador y de la fecha de la copia
+    modelo.js         modelo, ajustes por defecto, plan de migración, copias (crear/leer/estado)
+    repos.js          cargar (migrando o rescatando), guardar cada parte, importar con respaldo
+    espejo.js         réplica en localStorage del borrador
   ui/
-    tokens.css        variables (§3 de DISENO.md)
-    base.css          reset, tipografía y utilidades
-    componentes.css   estilos de los componentes
-    iconos.js         SVG propios
+    tokens.css, base.css, componentes.css   variables (§3 de DISENO.md), estructura, componentes
+    dom.js            h()/s() para crear nodos, animar() con la Web Animations API
+    iconos.js         iconos SVG propios
+    navegacion.js     pilas por pestaña, History API, gesto de borde, tab bar, barra de navegación
+    capas.js          hoja con alturas, alerta, hoja de acciones, toast
+    controles.js      secciones, listas y celdas, deslizar para borrar, interruptor, segmentado,
+                      stepper, chip, estado vacío, botones, anillo, barra fina
+    graficas.js       barras (simples y apiladas), línea con área, sparkline, selección por arrastre
+    calor.js          mapa de calor mensual
+    cuerpo.js         diagrama corporal coloreado por grupo
+    insignias.js      generador de las insignias de liga
+    tema.js           tema, acento y color de cada grupo
+    textos.js         fechas y cifras para la interfaz
     haptica.js, sonido.js
-    navstack.js, tabbar.js, navbar.js, sheet.js, list.js, segmented.js, stepper.js,
-    chip.js, charts.js (barras/línea/área/sparkline), ring.js, heatmap.js,
-    bodymap.js, insignias.js, emptystate.js, toast.js
-  views/              una pantalla por fichero (hoy.js, entreno.js, resumen.js, progreso-*.js,
-                      ejercicio.js, grupo.js, ligas.js, historial.js, sesion.js, ajustes-*.js, guia.js)
+  views/              una pantalla por fichero; indice.js registra pestañas y rutas
 tests/
-  core/*.test.mjs     node:test sobre src/core
-  golden/*.json       salida del dashboard anterior con seed.json y fecha fija
-  golden.test.mjs     el núcleo nuevo reproduce el golden master
-  migracion.test.mjs  fixture del formato antiguo → modelo nuevo, sin pérdida
-  e2e/*.mjs           Playwright (chromium y WebKit en contenedor)
+  core/*.test.mjs     node:test sobre src/core y src/data, golden master, lista del service worker
+  golden/             generador y salida del dashboard anterior (sintético y, en local, seed)
+  e2e/*.mjs           Playwright: migración en IndexedDB, navegación, capturas
+  webkit.sh           ejecuta una prueba con WebKit en un contenedor Ubuntu (docker)
 docs/                 DISENO.md, ARQUITECTURA.md
 ```
 
@@ -64,7 +65,8 @@ docs/                 DISENO.md, ARQUITECTURA.md
 
 - `core/` no importa nada de `data/`, `ui/` ni `views/`.
 - Las vistas leen `Analisis` del store y nunca recalculan por su cuenta.
-- No hay variables globales (`window.*`): todo pasa por imports y por el store.
+- No hay variables globales (`window.*`): todo pasa por imports y por el store. La única excepción es
+  `window.__gym`, que solo existe bajo Playwright (`navigator.webdriver`) para las pruebas.
 
 ## 3. Modelo de datos (esquema 3)
 

@@ -552,3 +552,19 @@ sesión» en rojo con una confirmación.
 5. ¿Parece iOS (barras, listas, hojas y tipografía)?
 6. ¿Se entiende la jerarquía en 2 s?
 7. ¿Funciona en claro, en oscuro y con texto grande?
+
+## 7. Decisiones de implementación (fase 3)
+
+| Decisión | Motivo |
+|---|---|
+| Barra de estado `default` en lugar de `black-translucent` | Con `black-translucent` el texto de la barra de estado es siempre blanco y desaparece en el tema claro. Con `default`, iOS la pinta según la apariencia del sistema y el contenido empieza debajo. |
+| Cambiar de pestaña no deja entradas en el historial | En iOS el gesto de atrás nunca cruza pestañas. Al salir de una pestaña se rebobina su parte del historial y al volver se reconstruye, así que su pila se conserva. |
+| Las hojas no entran en el historial | Una hoja es modal y efímera (HIG · Sheets). Si llega un «atrás» del sistema con una hoja abierta, la hoja se cierra y la navegación vuelve con normalidad. |
+| Botón atrás con el título anterior, o «Atrás» si pasa de 14 caracteres | Es la regla de UINavigationBar: el título anterior solo si cabe. |
+| Gesto de borde de 24 pt, con umbral del 35 % del ancho o un lanzamiento rápido | Coincide con la sensación de UINavigationController. La velocidad se suaviza para que un arrastre lento y corto no cuente como lanzamiento. |
+| Segmentado y stepper de 34 pt de alto, con el área táctil ampliada a 44 pt | El tamaño visual es el del sistema y el área táctil cumple el mínimo de 44 pt (HIG · Layout). |
+| Etiquetas de la tab bar a 11 pt | iOS usa 10 pt, pero la regla de esta app fija 11 px como mínimo absoluto. |
+| Colores de grupo del usuario si existen; si no, la paleta del sistema | Los colores migrados son datos del usuario. Siguen usándose solo como punto, barra fina o relleno del diagrama. |
+| Animaciones con la Web Animations API y un temporizador de respaldo | Algunos WebKit no resuelven `finished` en animaciones recién creadas; sin respaldo, la pila quedaría con dos pantallas visibles. |
+| Háptica: interruptor oculto en iOS, `navigator.vibrate` en el resto | Safari no tiene API de vibración. Un `<input switch>` da el toque háptico del sistema al cambiar. |
+| Velo de alertas y hojas de acciones con `--veil` | Con un velo del 20 %, en oscuro el contenido de detrás competía con el texto de la alerta. |

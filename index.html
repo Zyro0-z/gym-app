@@ -1,45 +1,32 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="light" data-accent="azul">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
-<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#F2F2F7">
+<meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Gym">
+<meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="assets/gym-dashboard.css">
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="src/ui/tokens.css">
+<link rel="stylesheet" href="src/ui/base.css">
+<link rel="stylesheet" href="src/ui/componentes.css">
 <title>Gym</title>
+<script>/* tema y acento antes del primer pintado, sin parpadeo */
+(function () { var p = {}; try { p = JSON.parse(localStorage.getItem("gym-apariencia") || "{}"); } catch (e) {}
+  var t = p.tema || "auto", o = t === "oscuro" || (t === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+  var r = document.documentElement; r.dataset.theme = o ? "dark" : "light"; r.dataset.accent = p.acento || "azul";
+  document.querySelector('meta[name="theme-color"]').content = o ? "#000000" : "#F2F2F7"; })();</script>
 </head>
-<body class="theme-dark">
-<script>/* tema antes del primer pintado, sin parpadeo */
-(function () { var p = "auto"; try { p = localStorage.getItem("gym-tema") || "auto"; } catch (e) {}
-  var o = p === "oscuro" || (p === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
-  document.body.className = o ? "theme-dark" : "theme-light"; })();</script>
-<main id="vista"></main>
-<nav id="tabs" aria-label="Secciones">
-  <button data-v="entrenar" aria-label="Entrenar"><svg viewBox="0 0 28 26" aria-hidden="true">
-    <g class="o"><rect x="2.5" y="10" width="3" height="6" rx="1"/><rect x="6.5" y="6.5" width="4" height="13" rx="1.4"/><path d="M10.5 13h7"/><rect x="17.5" y="6.5" width="4" height="13" rx="1.4"/><rect x="22.5" y="10" width="3" height="6" rx="1"/></g>
-    <g class="f"><rect x="1.5" y="9.5" width="4" height="7" rx="1.3"/><rect x="6" y="5.5" width="5" height="15" rx="1.8"/><rect x="10" y="11.5" width="8" height="3" rx="1"/><rect x="17" y="5.5" width="5" height="15" rx="1.8"/><rect x="22.5" y="9.5" width="4" height="7" rx="1.3"/></g></svg><span>Entrenar</span></button>
-  <button data-v="dashboard" aria-label="Dashboard"><svg viewBox="0 0 28 26" aria-hidden="true">
-    <g class="o"><rect x="4" y="13" width="5" height="9.5" rx="1.4"/><rect x="11.5" y="3.5" width="5" height="19" rx="1.4"/><rect x="19" y="8.5" width="5" height="14" rx="1.4"/></g>
-    <g class="f"><rect x="3.5" y="12.5" width="6" height="10.5" rx="1.6"/><rect x="11" y="3" width="6" height="20" rx="1.6"/><rect x="18.5" y="8" width="6" height="15" rx="1.6"/></g></svg><span>Dashboard</span></button>
-  <button data-v="historial" aria-label="Historial"><svg viewBox="0 0 28 26" aria-hidden="true">
-    <g class="o"><circle cx="14" cy="13" r="10"/><path d="M14 7.5V13l3.8 2.4"/></g>
-    <g class="f"><circle cx="14" cy="13" r="10.8"/><path class="hueco" d="M14 7.5V13l3.8 2.4"/></g></svg><span>Historial</span></button>
-  <button data-v="ajustes" aria-label="Ajustes"><svg viewBox="0 0 28 26" aria-hidden="true">
-    <g class="o"><circle cx="14" cy="13" r="3.3"/><path d="M21.4 16a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H5a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g>
-    <g class="f"><path fill-rule="evenodd" d="M21.4 16a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H5a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1zM14 16.6a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2z"/></g></svg><span>Ajustes</span></button>
-</nav>
-<script src="vendor/luxon.min.js"></script>
-<script src="vendor/marked.min.js"></script>
-<script src="vendor/chart.min.js"></script>
+<body>
+<div id="app"></div>
+<nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
+<noscript>Esta app necesita JavaScript.</noscript>
 <script type="module" src="src/app.js"></script>
 </body>
 </html>

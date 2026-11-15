@@ -1,0 +1,125 @@
+/* Tokens del sistema de diseño (docs/DISENO.md §3). Todo color de la interfaz sale de aquí. */
+
+:root {
+  color-scheme: light;
+  --bg: #FFFFFF;
+  --bg-grouped: #F2F2F7;
+  --cell: #FFFFFF;
+  --cell-2: #F2F2F7;
+  --cell-pressed: #D1D1D6;
+  --fill: rgba(120, 120, 128, .2);
+  --fill-2: rgba(120, 120, 128, .12);
+  --label: #000000;
+  --label-2: rgba(60, 60, 67, .6);
+  --label-3: rgba(60, 60, 67, .3);
+  --separator: rgba(60, 60, 67, .29);
+  --bar-bg: rgba(249, 249, 249, .94);
+  --sheet-bg: #F2F2F7;
+  --veil: rgba(0, 0, 0, .4);
+  --shadow-sheet: 0 -2px 24px rgba(0, 0, 0, .12);
+  --shadow-pill: 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04);
+  --ok: #34C759;
+  --warn: #FF9500;
+  --bad: #FF3B30;
+  --yellow: #FFCC00;
+  --on-accent: #FFFFFF;
+  --tab-off: #8E8E93;
+  --seg-pill: #FFFFFF;
+  --chevron: #C4C4C6;
+  --hud: rgba(44, 44, 46, .96);
+  --alert-bg: rgba(242, 242, 242, .92);
+
+  /* acento: azul por defecto */
+  --accent: #007AFF;
+  --accent-ink: #0062CC;
+
+  /* paleta de grupos (solo como punto, barra fina o relleno del diagrama) */
+  --g-rosa: #FF2D55; --g-azul: #007AFF; --g-verde: #34C759; --g-naranja: #FF9500;
+  --g-morado: #AF52DE; --g-indigo: #5856D6; --g-amarillo: #FFCC00; --g-cian: #32ADE6;
+
+  /* tipografía (rem sobre el tamaño de texto del sistema; 1rem = 17 pt por defecto) */
+  --f-large: 2rem;          /* 34 */
+  --f-title1: 1.647rem;     /* 28 */
+  --f-title2: 1.294rem;     /* 22 */
+  --f-title3: 1.176rem;     /* 20 */
+  --f-headline: 1rem;       /* 17 */
+  --f-body: 1rem;           /* 17 */
+  --f-callout: .941rem;     /* 16 */
+  --f-subhead: .882rem;     /* 15 */
+  --f-footnote: .765rem;    /* 13 */
+  --f-caption1: .706rem;    /* 12 */
+  --f-caption2: .647rem;    /* 11 */
+
+  /* geometría */
+  --gutter: 16px;
+  --r-control: 10px;
+  --r-cell: 12px;
+  --r-card: 16px;
+  --r-sheet: 10px;
+  --tap: 44px;
+  --nav-h: 44px;
+  --tab-h: 49px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+
+  /* movimiento */
+  --spring: cubic-bezier(.32, .72, 0, 1);
+  --t-push: 350ms;
+  --t-fast: 250ms;
+}
+
+@media (min-width: 430px) { :root { --gutter: 20px; } }
+
+/* ── oscuro ── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --bg-grouped: #000000;
+  --cell: #1C1C1E;
+  --cell-2: #2C2C2E;
+  --cell-pressed: #3A3A3C;
+  --fill: rgba(120, 120, 128, .36);
+  --fill-2: rgba(120, 120, 128, .24);
+  --label: #FFFFFF;
+  --label-2: rgba(235, 235, 245, .6);
+  --label-3: rgba(235, 235, 245, .3);
+  --separator: rgba(84, 84, 88, .6);
+  --bar-bg: rgba(22, 22, 22, .94);
+  --sheet-bg: #1C1C1E;
+  --veil: rgba(0, 0, 0, .5);
+  --shadow-sheet: none;
+  --shadow-pill: none;
+  --tab-off: #8E8E93;
+  --seg-pill: #636366;
+  --chevron: #5A5A5F;
+  --hud: rgba(58, 58, 60, .96);
+  --alert-bg: rgba(44, 44, 46, .94);
+  --ok: #30D158;
+  --warn: #FF9F0A;
+  --bad: #FF453A;
+  --yellow: #FFD60A;
+  --accent: #0A84FF;
+  --accent-ink: #0A84FF;
+  --g-rosa: #FF375F; --g-azul: #0A84FF; --g-verde: #30D158; --g-naranja: #FF9F0A;
+  --g-morado: #BF5AF2; --g-indigo: #5E5CE6; --g-amarillo: #FFD60A; --g-cian: #64D2FF;
+}
+/* En oscuro, las celdas de una hoja suben un nivel (la hoja ya es #1C1C1E) */
+:root[data-theme="dark"] .hoja { --cell: #2C2C2E; --cell-2: #3A3A3C; --cell-pressed: #48484A; }
+
+/* ── acentos (Ajustes › Apariencia) ── */
+:root[data-accent="indigo"]  { --accent: #5856D6; --accent-ink: #4644C4; }
+:root[data-accent="morado"]  { --accent: #AF52DE; --accent-ink: #8E3BB8; }
+:root[data-accent="rosa"]    { --accent: #FF2D55; --accent-ink: #D70F3C; }
+:root[data-accent="rojo"]    { --accent: #FF3B30; --accent-ink: #D70015; }
+:root[data-accent="naranja"] { --accent: #FF9500; --accent-ink: #C25E00; }
+:root[data-accent="verde"]   { --accent: #34C759; --accent-ink: #248A3D; }
+:root[data-accent="grafito"] { --accent: #8E8E93; --accent-ink: #636366; }
+:root[data-theme="dark"][data-accent="indigo"]  { --accent: #5E5CE6; --accent-ink: #5E5CE6; }
+:root[data-theme="dark"][data-accent="morado"]  { --accent: #BF5AF2; --accent-ink: #BF5AF2; }
+:root[data-theme="dark"][data-accent="rosa"]    { --accent: #FF375F; --accent-ink: #FF375F; }
+:root[data-theme="dark"][data-accent="rojo"]    { --accent: #FF453A; --accent-ink: #FF453A; }
+:root[data-theme="dark"][data-accent="naranja"] { --accent: #FF9F0A; --accent-ink: #FF9F0A; }
+:root[data-theme="dark"][data-accent="verde"]   { --accent: #30D158; --accent-ink: #30D158; }
+:root[data-theme="dark"][data-accent="grafito"] { --accent: #98989D; --accent-ink: #98989D; }

@@ -1,0 +1,123 @@
+/* Base: reinicio, tipografía y estructura de la app (pestañas, pantallas, barras). */
+
+html { font-size: 17px; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+@supports (font: -apple-system-body) { html { font: -apple-system-body; } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg-grouped);
+  color: var(--label);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+  font-size: var(--f-body);
+  line-height: 1.294;
+  letter-spacing: -.024em;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+input, textarea, select { -webkit-user-select: text; user-select: text; }
+button, input, select, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+button { background: none; border: 0; padding: 0; margin: 0; cursor: pointer; -webkit-appearance: none; appearance: none; }
+svg { display: block; }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; font: inherit; }
+
+.num { font-variant-numeric: tabular-nums; }
+.t-large    { font-size: var(--f-large);    line-height: 1.206; font-weight: 700; letter-spacing: .011em; }
+.t-title1   { font-size: var(--f-title1);   line-height: 1.214; font-weight: 700; letter-spacing: .013em; }
+.t-title2   { font-size: var(--f-title2);   line-height: 1.273; font-weight: 700; letter-spacing: -.012em; }
+.t-title3   { font-size: var(--f-title3);   line-height: 1.25;  font-weight: 600; letter-spacing: -.022em; }
+.t-headline { font-size: var(--f-headline); line-height: 1.294; font-weight: 600; letter-spacing: -.024em; }
+.t-body     { font-size: var(--f-body);     line-height: 1.294; }
+.t-callout  { font-size: var(--f-callout);  line-height: 1.313; letter-spacing: -.02em; }
+.t-subhead  { font-size: var(--f-subhead);  line-height: 1.333; letter-spacing: -.015em; }
+.t-footnote { font-size: var(--f-footnote); line-height: 1.385; letter-spacing: -.005em; }
+.t-caption1 { font-size: var(--f-caption1); line-height: 1.333; letter-spacing: 0; }
+.t-caption2 { font-size: var(--f-caption2); line-height: 1.182; letter-spacing: .006em; font-weight: 500; }
+.c-2 { color: var(--label-2); }
+.c-3 { color: var(--label-3); }
+.c-accent { color: var(--accent-ink); }
+.c-ok { color: var(--ok); } .c-warn { color: var(--warn); } .c-bad { color: var(--bad); }
+.visualmente-oculto { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── estructura ── */
+#app { position: fixed; inset: 0; overflow: hidden; }
+.pestana { position: absolute; inset: 0; display: none; }
+.pestana.activa { display: block; }
+.pantalla { position: absolute; inset: 0; background: var(--bg-grouped); overflow: hidden; contain: layout paint; }
+.pantalla.plana { background: var(--bg); }
+.pantalla > .scroll {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+  padding: calc(var(--safe-t) + var(--nav-h)) var(--safe-r) calc(var(--tab-h) + var(--safe-b) + 32px) var(--safe-l);
+  overscroll-behavior-y: contain;
+}
+body.sin-tabbar .pantalla > .scroll { padding-bottom: calc(var(--safe-b) + 32px); }
+.pantalla > .sombra { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 5; }
+
+/* barra de navegación: transparente arriba del todo, translúcida al hacer scroll */
+.barra-nav {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+  padding: var(--safe-t) calc(var(--safe-r) + 8px) 0 calc(var(--safe-l) + 8px);
+  height: calc(var(--safe-t) + var(--nav-h));
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center;
+  transition: background-color var(--t-fast) linear, box-shadow var(--t-fast) linear;
+}
+.pantalla.con-fondo > .barra-nav {
+  background: var(--bar-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: inset 0 -.5px 0 var(--separator);
+}
+.barra-nav .titulo {
+  grid-column: 2; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
+  font-size: var(--f-headline); font-weight: 600; opacity: 1; transition: opacity 150ms linear;
+}
+.pantalla.titulo-grande:not(.colapsada) > .barra-nav .titulo { opacity: 0; }
+.barra-nav .izq { grid-column: 1; justify-self: stretch; display: flex; min-width: 0; }
+.barra-nav .der { grid-column: 3; justify-self: end; display: flex; gap: 4px; align-items: center; }
+.btn-atras {
+  display: flex; align-items: center; min-height: var(--tap); min-width: var(--tap); padding: 0 8px 0 0; margin-left: -2px;
+  color: var(--accent-ink); font-size: var(--f-body); min-width: 0; max-width: 100%;
+}
+.btn-atras svg { width: 24px; height: 24px; flex: none; stroke-width: 2.4; margin-right: 1px; }
+.btn-atras span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-barra { min-height: var(--tap); min-width: var(--tap); padding: 0 8px; color: var(--accent-ink); font-size: var(--f-body); display: flex; align-items: center; justify-content: center; }
+.btn-barra.fuerte { font-weight: 600; }
+.btn-barra svg { width: 24px; height: 24px; }
+.btn-barra:disabled { color: var(--label-3); }
+
+.cab-grande { padding: 0 calc(var(--gutter) + 0px); margin: 2px 0 12px; }
+.cab-grande .sobre { color: var(--label-2); font-size: var(--f-footnote); line-height: 1.385; font-weight: 600; margin-bottom: 1px; }
+.cab-grande h1 { font-size: var(--f-large); line-height: 1.206; font-weight: 700; letter-spacing: .011em; overflow-wrap: anywhere; }
+.cab-grande .bajo { margin-top: 6px; }
+
+/* ── tab bar ── */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  height: calc(var(--tab-h) + var(--safe-b)); padding: 0 var(--safe-r) var(--safe-b) var(--safe-l);
+  display: flex; background: var(--bar-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: inset 0 .5px 0 var(--separator);
+  transition: transform var(--t-fast) var(--spring);
+}
+body.sin-tabbar .tabbar { transform: translateY(110%); }
+.tabbar button {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding-top: 6px; gap: 2px; color: var(--tab-off); position: relative; min-height: var(--tab-h);
+}
+.tabbar button svg { width: 28px; height: 26px; }
+.tabbar button .contorno { display: contents; }
+.tabbar button .relleno { display: none; }
+.tabbar button[aria-selected="true"] { color: var(--accent); }
+.tabbar button[aria-selected="true"] .contorno { display: none; }
+.tabbar button[aria-selected="true"] .relleno { display: contents; }
+.tabbar span { font-size: 10.5px; line-height: 12px; font-weight: 500; letter-spacing: .01em; }
+@supports (font: -apple-system-body) { .tabbar span { font-size: 11px; } }
+.tabbar .punto { position: absolute; top: 5px; left: calc(50% + 9px); width: 9px; height: 9px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 0 1.5px var(--bar-bg); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}

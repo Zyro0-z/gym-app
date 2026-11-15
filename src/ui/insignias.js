@@ -1,47 +1,11 @@
-// Generador de las 15 insignias de liga (README §23).
+// Insignias de liga: 15 ligas, cada una con su silueta, color dominante y emblema, en dos
+// niveles de detalle (completa para 96 px, simplificada para 32 px) y con la división (I, II, III)
+// en una cinta. Diseño propio, en SVG generado; sin dependencias.
 //
-//   node Gym/Scripts/insignias-ligas.mjs --escribir   → borra y reescribe los SVG y copia el núcleo al dashboard
-//   node Gym/Scripts/insignias-ligas.mjs              → sólo la ayuda: no toca ningún archivo
-//   (también --help, -h o cualquier otro argumento: la ayuda, sin tocar nada)
-//
-// Versión 2 (2026-09-25): legibles de lejos, con tres principios de las insignias de rango
-// de los videojuegos, en diseño propio:
-//   1. Silueta única por liga, reconocible sólo por la forma.
-//   2. Un color dominante que ocupa casi toda la insignia.
-//   3. Un emblema central grande y simple. Texturas y grabados, capa secundaria.
-// Tamaño y presencia crecen con la liga. La división es un numeral romano grande en una
-// cinta bajo el emblema (en 32 px, una placa compacta). Sin librerías ni filtros; animación
-// sólo CSS (transform/opacity), escalonada y parada con prefers-reduced-motion. Semilla
-// fija: dos ejecuciones dan exactamente los mismos archivos.
-//
-// Escribe en Gym/Dashboards/assets/ligas/ cada liga en sus tres divisiones y sin división, en dos tamaños:
-//   NN-nombre-III.svg · NN-nombre-II.svg · NN-nombre-I.svg      completa, para 96 px
-//   NN-nombre-III-32.svg · …                                     simplificada, para 32 px
-//   NN-nombre.svg · NN-nombre-32.svg                             sin división (la escalera de
-//                                                                ligas); Leyenda sólo tiene ésta
-//
-// Interfaz: crearInsignias().svg(n, simple, numeral), con n = 1-15 y numeral «I», «II»,
-// «III» o «». Sin numeral no hay cinta, y el cuerpo baja hasta quedar centrado (su `cy` pasa
-// a 64): la variante sin división, para ver la liga sin su división (2026-09-26). Los id de <defs> llevan el prefijo «Lnn-» (o «Lnns-» en la de 32 px): quien
-// inserte varias copias en una página debe renombrarlo en cada una, porque si dos SVG
-// comparten id y el primero está dentro de un <details> cerrado, algunos navegadores no
-// pintan los degradados del segundo. Las clases de animación (lNN-…) sí pueden repetirse.
-
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..", "Dashboards", "assets", "ligas");
-const DASHBOARD = join(dirname(fileURLToPath(import.meta.url)), "..", "Dashboards", "Gym Dashboard.md");
-
-// ═══════════════════════════ NÚCLEO ═══════════════════════════
-// Todo lo que dibuja vive dentro de crearInsignias(), sin dependencias de Node. Este script
-// copia la función tal cual (su texto, con toString) al final del bloque del dashboard, entre
-// las marcas «INSIGNIAS · NÚCLEO». Así el dashboard dibuja las insignias con este mismo
-// código, sin leer ficheros (dv.io es zona gris en iOS), y los .svg de assets son la misma
-// salida guardada para verla y reutilizarla. No edites la copia del dashboard: edita aquí y
-// vuelve a ejecutar el script.
-function crearInsignias() {
+// Interfaz: crearInsignias().svg(n, simple, numeral), con n = 1-15 y numeral «I», «II», «III» o «».
+// Los id de <defs> llevan el prefijo «Lnn-» (o «Lnns-»): quien inserte varias copias en una página
+// debe renombrarlos en cada una (lo hace `insignia()` más abajo).
+export function crearInsignias() {
 const C = 64;
 const f = (n) => Math.round(n * 100) / 100;
 const rad2 = (g) => (g * Math.PI) / 180;
@@ -564,7 +528,7 @@ function montar(n, simple, num) {
   const nombre = o.nombre + (num ? " " + num : "");
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" class="liga liga-${nn}${simple ? " liga-32" : ""}" data-liga="${n}" role="img" aria-label="Liga ${nombre}">
 <title>${nombre}</title>
-<!-- Insignia de liga ${n}/15 · ${nombre}${simple ? " · versión de 32 px" : ""}. Diseño propio, generado por Gym/Scripts/insignias-ligas.mjs. -->
+<!-- Insignia de liga ${n}/15 · ${nombre}${simple ? " · versión de 32 px" : ""}. Diseño propio. -->
 <defs>${defs}</defs>${anim ? estiloAnim(c, anim) : ""}
 <g class="cuerpo">${cuerpoTodo}</g>
 ${cintaSvg}
@@ -583,56 +547,25 @@ function svg(n, simple, numeral) {
 return { svg, total: L.length, nombres: L.map((o) => o.nombre) };
 }
 
-// ═══════════════════════════ argumentos ═══════════════════════════
-// Escribe SÓLO con --escribir, y sólo si es el único argumento. Sin argumentos, con --help o
-// con cualquier otra cosa, enseña la ayuda y sale sin tocar nada: al empezar, borra todos los
-// .svg de la carpeta, así que ejecutarlo por error no puede tener efectos (pasó el 2026-09-26).
-const ARGS = process.argv.slice(2);
-if (ARGS.length !== 1 || ARGS[0] !== "--escribir") {
-  const desconocidos = ARGS.filter((a) => a !== "--help" && a !== "-h" && a !== "--escribir");
-  console.log(`Generador de las insignias de liga (README §23).
+// Color dominante de cada liga (1-15), para su barra de progreso.
+export const COLOR_LIGA = ["#9a6232", "#d9722e", "#8a96a3", "#c48a3a", "#c3cfdc", "#f5b800", "#4fb5a8", "#3b6ff0", "#12b366",
+  "#e0284f", "#8fd8ff", "#9b5cf0", "#e0337a", "#f5c400", "#8b6cff"];
 
-Uso:
-  node Gym/Scripts/insignias-ligas.mjs --escribir
-      Borra los .svg de Gym/Dashboards/assets/ligas/, escribe las insignias (15 ligas, sus
-      divisiones y la variante sin división, en dos tamaños) y copia el núcleo de dibujo al
-      dashboard, entre las marcas «INSIGNIAS · NÚCLEO».
-  node Gym/Scripts/insignias-ligas.mjs --help
-      Esta ayuda.
-
-Sin --escribir no se escribe ni se borra nada.`);
-  if (desconocidos.length || ARGS.indexOf("--escribir") >= 0) {
-    console.error("\n" + (desconocidos.length ? "Argumento no reconocido: " + desconocidos.join(" ") + ". "
-      : "--escribir tiene que ir solo. ") + "No se ha tocado ningún archivo.");
-    process.exit(1);
-  }
-  process.exit(0);
+let INS = null, nCopia = 0;
+/**
+ * Insignia como elemento: nivel { insignia: 1-15, div: "I" | "II" | "III" | "" } y tamaño en px
+ * (20, 32 o 96). Hasta 48 px usa la versión simplificada.
+ */
+export function insignia(nivel, px = 32) {
+  if (!INS) INS = crearInsignias();
+  const el = document.createElement("span");
+  el.className = "insignia";
+  el.style.width = el.style.height = px + "px";
+  if (!nivel || !nivel.insignia) return el;
+  const simple = px <= 48, n = nivel.insignia;
+  const pre = "L" + String(n).padStart(2, "0") + (simple ? "s" : "") + "-";
+  el.innerHTML = INS.svg(n, simple, nivel.div || "").split(pre).join(pre + "u" + ++nCopia + "-")
+    .replace('width="128" height="128"', 'width="' + px + '" height="' + px + '"');
+  return el;
 }
-
-// ═══════════════════════════ escritura ═══════════════════════════
-const ARCHIVOS = ["madera", "cobre", "hierro", "bronce", "plata", "oro", "platino", "zafiro", "esmeralda", "rubi",
-                  "diamante", "maestro", "gran-maestro", "elite", "leyenda"];
-const INS = crearInsignias();
-mkdirSync(RAIZ, { recursive: true });
-for (const a of readdirSync(RAIZ)) if (a.endsWith(".svg")) unlinkSync(join(RAIZ, a));
-let escritas = 0;
-for (let n = 1; n <= INS.total; n++)
-  for (const simple of [false, true])
-    for (const num of n === 15 ? [""] : ["III", "II", "I", ""]) {
-      writeFileSync(join(RAIZ, String(n).padStart(2, "0") + "-" + ARCHIVOS[n - 1] + (num ? "-" + num : "") + (simple ? "-32" : "") + ".svg"),
-                    INS.svg(n, simple, num));
-      escritas++;
-    }
-console.log("escritas " + escritas + " insignias en " + RAIZ);
-
-// Copia del núcleo en el dashboard, entre las dos marcas. Si no están, no toca nada.
-const INICIO = "// ▼▼▼ INSIGNIAS · NÚCLEO", FIN = "// ▲▲▲ INSIGNIAS · NÚCLEO";
-const dash = readFileSync(DASHBOARD, "utf8");
-const i0 = dash.indexOf(INICIO), i1 = dash.indexOf(FIN);
-if (i0 < 0 || i1 < i0) console.log("el dashboard no tiene las marcas del núcleo: no se ha copiado");
-else {
-  const cabecera = dash.slice(i0, dash.indexOf("\n", i0) + 1);
-  const nuevo = dash.slice(0, i0) + cabecera + crearInsignias.toString() + "\n" + dash.slice(i1);
-  if (nuevo !== dash) { writeFileSync(DASHBOARD, nuevo); console.log("núcleo copiado al dashboard"); }
-  else console.log("el núcleo del dashboard ya estaba al día");
-}
+export const nombresLigas = () => { if (!INS) INS = crearInsignias(); return INS.nombres; };

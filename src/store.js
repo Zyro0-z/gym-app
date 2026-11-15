@@ -1,75 +1,74 @@
-// Almacén local (IndexedDB). Todo vive en el iPhone; no hay servidor.
-// Esquema versionado: la clave "schema" guarda la versión de los datos. Antes de migrar se guarda
-// una copia completa en "backup-esquema-v<n>" para no perder nada si una migración falla.
-const DB = "gymapp", ST = "kv";
-let db;
-const open = () => new Promise((ok, ko) => {
-  const r = indexedDB.open(DB, 1);
-  r.onupgradeneeded = () => r.result.createObjectStore(ST);
-  r.onsuccess = () => ok(r.result);
-  r.onerror = () => ko(r.error);
-});
-const tx = (mode, fn) => new Promise((ok, ko) => {
-  const t = db.transaction(ST, mode), s = t.objectStore(ST), r = fn(s);
-  t.oncomplete = () => ok(r && r.result);
-  t.onerror = () => ko(t.error);
-  t.onabort = () => ko(t.error);
-});
-const leer = (k) => tx("readonly", (s) => s.get(k));
-const escribir = (k, v) => tx("readwrite", (s) => s.put(v, k));
+// Store: el estado de la app (lo que hay en IndexedDB) más el análisis, calculado bajo demanda y
+// guardado hasta el siguiente cambio. Las vistas se suscriben y se repintan al cambiar algo.
+// Cada escritura va primero a IndexedDB y solo después cambia el estado en memoria.
+import * as repos from "./data/repos.js";
+import { crearCopia, leerCopia, estadoCopia } from "./data/modelo.js";
+import { analizar } from "./core/analisis.js";
+import { hoyISO } from "./core/fechas.js";
 
-export const S = { sessions: [], templates: [], configs: {}, settings: {}, library: [], draft: null };
-const KEYS = ["sessions", "templates", "configs", "settings", "library", "draft"];
+const copiar = (x) => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
 
-export const ESQUEMA = 2;
-const MIGRACIONES = {
-  // v2: la fecha de la última copia pasa de localStorage a IndexedDB (settings.backup), que es
-  // donde están el resto de datos y donde la usa el aviso de copia de seguridad.
-  2: async () => {
-    let f = null; try { f = localStorage.getItem("gym-ultima-copia"); } catch (e) {}
-    if (f && !S.settings.backup) { S.settings.backup = { at: f + "T12:00:00", sessions: S.sessions.length }; await save("settings"); }
-  },
-};
-async function migrar(recienSembrado) {
-  const v = (await leer("schema")) || 1;
-  if (v >= ESQUEMA) return;
-  if (!recienSembrado && !vacio()) {
-    const datos = {}; for (const k of KEYS) datos[k] = S[k];
-    await escribir("backup-esquema-v" + v, JSON.parse(JSON.stringify({ fecha: new Date().toISOString(), datos })));
-  }
-  for (let n = v + 1; n <= ESQUEMA; n++) { if (MIGRACIONES[n]) await MIGRACIONES[n](); await escribir("schema", n); }
-}
+export function crearStore({ reloj = () => new Date() } = {}) {
+  let estado = null, version = 0;
+  let cache = null, cacheV = -1, cacheHoy = null;
+  const subs = new Set();
 
-export async function load() {
-  db = await open();
-  for (const k of KEYS) { const v = await leer(k); if (v !== undefined && v !== null) S[k] = v; }
-  let sembrado = false;
-  if (vacio() && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
-    // seed.json solo existe en local (no se publica: lleva datos personales). En GitHub Pages
-    // la app arranca vacía y la pantalla de bienvenida pide importar una copia.
-    try {
-      const r = await fetch("seed.json", { cache: "no-store" });
-      if (r.ok) { const seed = await r.json(); for (const k of ["sessions", "templates", "configs", "settings", "library"]) if (seed[k] !== undefined) S[k] = seed[k]; await saveAll(); sembrado = true; }
-    } catch (e) {}
-  }
-  await migrar(sembrado || vacio());
-  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
-}
-export const vacio = () => !S.sessions.length && !S.templates.length && !Object.keys(S.configs).length;
-export const save = (k) => escribir(k, JSON.parse(JSON.stringify(S[k] === undefined ? null : S[k])));
-export const saveAll = async () => { for (const k of KEYS) await save(k); };
+  const avisar = (tema) => { for (const fn of [...subs]) { try { fn(tema); } catch (e) { console.error(e); } } };
+  const cambio = (tema, analitico = true) => { if (analitico) version++; avisar(tema); };
 
-export const exportJSON = () => JSON.stringify({ version: 1, schema: ESQUEMA, exportado: new Date().toISOString(),
-  sessions: S.sessions, templates: S.templates, configs: S.configs, settings: S.settings, library: S.library }, null, 1);
-export async function importJSON(txt) {
-  let d;
-  try { d = JSON.parse(txt); } catch (e) { throw new Error("El archivo no es un JSON válido."); }
-  if (!d || !Array.isArray(d.sessions) || !d.configs || typeof d.configs !== "object") throw new Error("No parece una copia de Gym: faltan las sesiones o la configuración.");
-  if (d.schema && d.schema > ESQUEMA) throw new Error("La copia es de una versión más nueva de la app. Actualízala antes de importar.");
-  for (const k of ["sessions", "templates", "configs", "settings", "library"]) if (d[k] !== undefined) S[k] = d[k];
-  // Lo importado viene de un archivo: cuenta como copia hecha ahora.
-  S.settings = S.settings || {};
-  S.settings.backup = { at: new Date().toISOString(), sessions: S.sessions.length };
-  await saveAll();
-  await escribir("schema", ESQUEMA);
+  const store = {
+    get estado() { return estado; },
+    hoy: () => hoyISO(reloj()),
+    suscribir(fn) { subs.add(fn); return () => subs.delete(fn); },
+
+    async cargar(opciones) { estado = await repos.cargar(opciones); version++; return estado.informe; },
+
+    /** Análisis completo (≈ 100 ms con 80 sesiones); se recalcula solo si cambian los datos o el día. */
+    analisis() {
+      const hoy = store.hoy();
+      if (!cache || cacheV !== version || cacheHoy !== hoy) {
+        cache = analizar({ sesiones: estado.sesiones, catalogo: estado.catalogo, rutinas: estado.rutinas, pesajes: estado.pesajes, ajustes: estado.ajustes }, hoy);
+        cacheV = version; cacheHoy = hoy;
+      }
+      return cache;
+    },
+
+    async guardarAjustes(mutar, { analitico = true } = {}) {
+      const a = copiar(estado.ajustes); mutar(a);
+      await repos.guardarAjustes(a);
+      estado.ajustes = a; cambio("ajustes", analitico);
+    },
+    async guardarSesion(s) {
+      await repos.guardarSesion(s);
+      const i = estado.sesiones.findIndex((x) => x.id === s.id);
+      if (i >= 0) estado.sesiones[i] = copiar(s); else estado.sesiones.push(copiar(s));
+      cambio("sesiones");
+    },
+    async borrarSesion(id) {
+      await repos.borrarSesion(id);
+      estado.sesiones = estado.sesiones.filter((x) => x.id !== id);
+      cambio("sesiones");
+    },
+    async guardarPesajes(p) { await repos.guardarPesajes(p); estado.pesajes = copiar(p); cambio("pesajes"); },
+    async guardarRutinas(r) { await repos.guardarRutinas(r); estado.rutinas = copiar(r); cambio("rutinas"); },
+    async guardarCatalogo(c) { await repos.guardarCatalogo(c); estado.catalogo = copiar(c); cambio("catalogo"); },
+    /** El borrador del entrenamiento en curso no afecta al análisis. */
+    async guardarBorrador(b) { await repos.guardarBorrador(b); estado.borrador = b ? copiar(b) : null; avisar("borrador"); },
+
+    // ── copias ──
+    textoCopia() { return JSON.stringify(crearCopia(estado, reloj().toISOString()), null, 1); },
+    async marcarCopia() { await store.guardarAjustes((a) => { a.copia = { at: reloj().toISOString(), sesiones: estado.sesiones.length }; }, { analitico: false }); },
+    estadoCopia() { return estadoCopia(estado.ajustes.copia, estado.sesiones.length, reloj().getTime()); },
+    /** Lee una copia (lanza Error con el motivo) sin aplicarla. */
+    leerCopia(texto) { return leerCopia(texto, { ahora: reloj().toISOString() }); },
+    /** Sustituye todo por la copia `m`; los datos actuales quedan en «respaldo-importacion». */
+    async importar(m) {
+      await repos.reemplazarTodo(m, estado);
+      estado = Object.assign({}, estado, { sesiones: copiar(m.sesiones), catalogo: copiar(m.catalogo), rutinas: copiar(m.rutinas), pesajes: copiar(m.pesajes), ajustes: copiar(m.ajustes) });
+      cambio("todo");
+    },
+    estadoAlmacen: () => repos.estadoAlmacen(),
+    pedirPersistencia: () => repos.pedirPersistencia(),
+  };
+  return store;
 }

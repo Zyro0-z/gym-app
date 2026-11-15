@@ -1,30 +1,41 @@
-# Gym (PWA)
-Registro de entrenamientos + el dashboard completo de Obsidian, 100 % local en el iPhone.
-Sin build: son ficheros estáticos publicados en GitHub Pages (rama `main`, carpeta raíz).
-En Safari: Compartir → Añadir a pantalla de inicio.
+# Gym
+
+App de registro de entrenamientos y análisis de progreso para iPhone. Es una PWA estática, sin build ni
+dependencias en tiempo de ejecución, publicada en GitHub Pages. Funciona sin conexión y los datos viven
+solo en el dispositivo (IndexedDB).
+
+Instalar: en Safari, Compartir → Añadir a pantalla de inicio.
 
 ## Estructura
-- `src/dashboard.js`: el bloque dataviewjs original, **sin tocar**. `src/dvshim.js` le da la API de Dataview
-  y captura en memoria `progresionDe`/`proximaVez` para el registro («Próxima vez»).
-- `src/store.js`: IndexedDB (almacén `kv`) con esquema versionado (`schema`). Antes de migrar guarda una
-  copia completa en `backup-esquema-v<n>`.
-- `src/logger.js`: Entrenar (sesión, series, descanso, barra sobre el teclado) e Historial.
-- `src/editores.js`: editor de plantillas y de objetivos de doble progresión (escribe en `objetivos.md`).
-- `src/copia.js`: exportar copia y aviso (>7 días o >5 sesiones nuevas sin copia).
-- `src/ui.js`: piezas iOS (hojas, listas agrupadas, steppers, háptica, viewport visual).
-- `sw.js`: service worker; todo fichero nuevo va en `FICHEROS` y se sube la versión `V`.
+
+| Carpeta | Contenido |
+|---|---|
+| `src/core/` | Lógica de cálculo pura (progresión, estancamiento, ligas, peso, semanas, calidad). Sin DOM. |
+| `src/data/` | Modelo de datos, IndexedDB, migraciones versionadas y copias de seguridad. |
+| `src/ui/` | Sistema de diseño: tokens, iconos propios, navegación, hojas, listas, gráficas SVG. |
+| `src/views/` | Pantallas. |
+| `src/store.js` | Estado de la app con suscripciones; el análisis se calcula bajo demanda. |
+| `docs/` | `DISENO.md` (decisiones de diseño) y `ARQUITECTURA.md` (módulos, modelo y migración). |
+| `tests/` | Pruebas de núcleo (`node:test`), golden master y extremo a extremo (Playwright). |
+
+`sw.js` cachea todos los ficheros: cada fichero nuevo va en `FICHEROS` y cada publicación sube `V`.
 
 ## Datos
-- `seed.json` **no se publica** (lleva datos personales; está en `.gitignore`). En local siembra la base de
-  datos; en el iPhone la app pide «Importar copia» la primera vez: vale `seed.json` o cualquier copia exportada.
-- Ajustes → Copia de seguridad para exportar/importar. El formato de las sesiones es el de LiftOff.
+
+- Las migraciones son atómicas y conservan siempre una copia íntegra de los datos anteriores.
+- Ajustes › Datos exporta e importa la copia de seguridad (JSON). Importar guarda antes los datos actuales.
+- `seed.json` es personal y no se publica (`.gitignore`).
 
 ## Pruebas
+
 ```
-cd tests && npm i && npx playwright install chromium webkit
-node run.mjs [chromium,webkit] [--shots carpeta]   # extremo a extremo, claro y oscuro, 390×844 @2x
-node fase3.mjs   # audio, bloqueo/desbloqueo, Wake Lock, app matada, peso, copia, migración
-node fase4.mjs   # editores, rango en la tarjeta, dashboard a 375/390/430 y al girar
-node sinseed.mjs # arranque como en Pages (sin seed)
-node remoto.mjs  # la versión publicada: HTTPS, service worker, manifest, offline
+cd tests && npm i && npx playwright install chromium
+npm run core                                   # núcleo y golden master
+node e2e/migracion-idb.mjs                     # migración en IndexedDB real
+node e2e/capturas.mjs <carpeta> [chromium|webkit]   # capturas 390×844 y 430×932, claro y oscuro
 ```
+
+## Licencias
+
+El diagrama corporal es [body-muscles](assets/licencias/NOTICE-body-muscles.txt) (Apache-2.0). El resto
+del código, los iconos y las insignias son propios.
