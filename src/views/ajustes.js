@@ -15,13 +15,26 @@ export function vistaAjustes(_p, app) {
       const est = store.estado, ec = store.estadoCopia();
       let problemas = 0;
       try { problemas = store.analisis().calidad.problemas; } catch (e) {}
-      const avisos = (ec.avisar ? 1 : 0) + (problemas ? 1 : 0);
       poner(c, 
+        seccion({}, lista([
+          celda({ icono: "lista", colorIcono: "var(--g-naranja)", titulo: "Rutinas", valor: est.rutinas.length ? String(est.rutinas.length) : null, chevron: true, alPulsar: () => app.nav.ir("rutinas") }),
+          celda({ icono: "calendario", colorIcono: "var(--bad)", titulo: "Horario", chevron: true, alPulsar: () => app.nav.ir("horario") }),
+          celda({ icono: "pesa", colorIcono: "var(--g-azul)", titulo: "Ejercicios", valor: est.catalogo.length ? String(est.catalogo.length) : null, chevron: true, alPulsar: () => app.nav.ir("ejercicios") }),
+          celda({ icono: "cronometro", colorIcono: "var(--g-verde)", titulo: "Entrenamiento", chevron: true, alPulsar: () => app.nav.ir("entrenamiento") }),
+        ], { iconos: true })),
+        seccion({}, lista([
+          celda({ icono: "diana", colorIcono: "var(--g-rosa)", titulo: "Objetivos", chevron: true, alPulsar: () => app.nav.ir("objetivos") }),
+          celda({ icono: "bascula", colorIcono: "var(--g-morado)", titulo: "Peso corporal", chevron: true, alPulsar: () => app.nav.ir("cuerpo") }),
+          celda({ icono: "capas", colorIcono: "var(--g-indigo)", titulo: "Bloques", chevron: true, alPulsar: () => app.nav.ir("bloques") }),
+          celda({ icono: "cuerpo", colorIcono: "var(--g-cian)", titulo: "Grupos musculares", chevron: true, alPulsar: () => app.nav.ir("grupos") }),
+        ], { iconos: true })),
         seccion({}, lista([
           celda({ icono: "apariencia", colorIcono: "var(--g-azul)", titulo: "Apariencia", chevron: true, alPulsar: () => app.nav.ir("apariencia") }),
         ], { iconos: true })),
         seccion({}, lista([
-          celda({ icono: "datos", colorIcono: "var(--tab-off)", titulo: "Datos", valor: avisos ? h("span", { class: "chip bad" }, h("span", { class: "punto" }), plural(avisos, "aviso", "avisos")) : null, chevron: true, alPulsar: () => app.nav.ir("datos") }),
+          celda({ icono: "datos", colorIcono: "var(--tab-off)", titulo: "Datos", valor: ec.avisar ? h("span", { class: "chip bad" }, h("span", { class: "punto" }), "Copia pendiente") : null, chevron: true, alPulsar: () => app.nav.ir("datos") }),
+          celda({ icono: "escudo", colorIcono: "var(--g-verde)", titulo: "Calidad de los datos", valor: problemas ? h("span", { class: "chip bad" }, h("span", { class: "punto" }), plural(problemas, "aviso", "avisos")) : null, chevron: true, alPulsar: () => app.nav.ir("calidad") }),
+          celda({ icono: "ajustar", colorIcono: "var(--tab-off)", titulo: "Avanzado", chevron: true, alPulsar: () => app.nav.ir("avanzado") }),
         ], { iconos: true })),
         h("p", { class: "pie-app" }, "Versión " + VERSION + " · " + plural(est.sesiones.length, "sesión", "sesiones")),
       );

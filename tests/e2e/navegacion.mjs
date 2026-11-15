@@ -29,7 +29,7 @@ await p.goBack(); await espera();
 e = await estado();
 ok(e.hash === "#/ajustes" && e.prof === 0 && e.ruta === "ajustes", "atrás del sistema hace pop");
 
-await p.getByText("Datos").click(); await espera();
+await p.getByText("Datos", { exact: true }).click(); await espera();
 await p.locator(".tabbar [data-tab=hoy]").click(); await espera();
 e = await estado();
 ok(e.tab === "hoy" && e.hash === "#/hoy" && e.prof === 0, "cambiar de pestaña con una pila abierta");

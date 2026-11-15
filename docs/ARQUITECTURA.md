@@ -51,12 +51,20 @@ src/
     insignias.js      generador de las insignias de liga
     tema.js           tema, acento y color de cada grupo
     textos.js         fechas y cifras para la interfaz
+    teclado.js        barra sobre el teclado numérico (−, +, Siguiente)
     haptica.js, sonido.js
-  views/              una pantalla por fichero; indice.js registra pestañas y rutas
+  views/              indice.js registra pestañas y rutas; una pantalla o familia por fichero:
+    hoy.js, progreso.js, historial.js, ajustes.js     raíces de las cuatro pestañas
+    entreno.js        entrenamiento a pantalla completa, barra minimizada, edición y resumen
+    ejercicio.js, ligas.js                            detalle de ejercicio, grupo y ligas
+    editores.js       editores de Ajustes (rutinas, horario, ejercicios, grupos, objetivos,
+                      peso corporal, bloques, entrenamiento, calidad de los datos, avanzado)
+    selector.js, pesaje.js, datos.js, guia.js, comun.js
 tests/
   core/*.test.mjs     node:test sobre src/core y src/data, golden master, lista del service worker
   golden/             generador y salida del dashboard anterior (sintético y, en local, seed)
-  e2e/*.mjs           Playwright: migración en IndexedDB, navegación, capturas
+  e2e/*.mjs           Playwright: migración en IndexedDB, arranque con datos v1, navegación,
+                      entrenamiento completo y recorrido de todas las pantallas con capturas
   webkit.sh           ejecuta una prueba con WebKit en un contenedor Ubuntu (docker)
 docs/                 DISENO.md, ARQUITECTURA.md
 ```

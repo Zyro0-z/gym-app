@@ -7,6 +7,10 @@ import { vistaHistorial, vistaSesion } from "./historial.js";
 import { vistaAjustes, vistaApariencia } from "./ajustes.js";
 import { vistaDatos } from "./datos.js";
 import { vistaGuia } from "./guia.js";
+import { vistaEjercicio, vistaGrupo } from "./ejercicio.js";
+import { vistaLigas, vistaLiga } from "./ligas.js";
+import { vistaRutinas, vistaRutina, vistaHorario, vistaEjercicios, vistaEjercicioCat, vistaGrupos, vistaObjetivos, vistaCuerpo,
+  vistaBloques, vistaBloque, vistaEntrenamiento, vistaCalidad, vistaAvanzado } from "./editores.js";
 
 export const PESTANAS = [
   { id: "hoy", titulo: "Hoy", icono: "hoy" },
@@ -22,5 +26,9 @@ function vistaNoEncontrada() {
 export const VISTAS = {
   hoy: vistaHoy, progreso: vistaProgreso, historial: vistaHistorial, ajustes: vistaAjustes,
   sesion: vistaSesion, apariencia: vistaApariencia, datos: vistaDatos, guia: vistaGuia,
+  ejercicio: vistaEjercicio, grupo: vistaGrupo, ligas: vistaLigas, liga: vistaLiga,
+  rutinas: vistaRutinas, rutina: vistaRutina, horario: vistaHorario, ejercicios: vistaEjercicios, ejercicioCat: vistaEjercicioCat,
+  grupos: vistaGrupos, objetivos: vistaObjetivos, cuerpo: vistaCuerpo, bloques: vistaBloques, bloque: vistaBloque,
+  entrenamiento: vistaEntrenamiento, calidad: vistaCalidad, avanzado: vistaAvanzado,
   noEncontrada: vistaNoEncontrada,
 };

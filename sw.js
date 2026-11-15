@@ -1,6 +1,6 @@
 // Service worker: la app funciona sin conexión. Cache primero y actualización en segundo plano.
 // Cada publicación sube V; todo fichero nuevo de la app va en FICHEROS (lo comprueba tests/core/sw.test.mjs).
-const V = "gym-v6";
+const V = "gym-v7";
 const FICHEROS = [
   "./",
   "index.html",
@@ -20,17 +20,24 @@ const FICHEROS = [
   "src/ui/insignias.js",
   "src/ui/navegacion.js",
   "src/ui/sonido.js",
+  "src/ui/teclado.js",
   "src/ui/tema.js",
   "src/ui/textos.js",
   "src/ui/tokens.css",
   "src/views/ajustes.js",
   "src/views/comun.js",
   "src/views/datos.js",
+  "src/views/editores.js",
+  "src/views/ejercicio.js",
+  "src/views/entreno.js",
   "src/views/guia.js",
   "src/views/historial.js",
   "src/views/hoy.js",
   "src/views/indice.js",
+  "src/views/ligas.js",
+  "src/views/pesaje.js",
   "src/views/progreso.js",
+  "src/views/selector.js",
   "src/core/analisis.js",
   "src/core/calidad.js",
   "src/core/constantes.js",

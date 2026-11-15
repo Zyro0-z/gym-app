@@ -174,3 +174,59 @@ export function barrita(frac, color = null) {
   const f = Math.max(0, Math.min(1, frac || 0));
   return h("div", { class: "barrita", role: "presentation" }, h("i", { style: { width: (f * 100).toFixed(1) + "%", background: color } }));
 }
+
+/**
+ * Hace reordenable una lista: se arrastra desde el asa (.asa) de cada fila. Al soltar llama a
+ * alMover(desde, hasta) con los índices de las filas hijas de `listaEl`.
+ */
+export function reordenable(listaEl, alMover) {
+  listaEl.addEventListener("pointerdown", (e) => {
+    const asa = e.target.closest(".asa");
+    if (!asa || !listaEl.contains(asa)) return;
+    const filas = [...listaEl.children];
+    const fila = filas.find((f) => f.contains(asa));
+    if (!fila) return;
+    e.preventDefault();
+    const desde = filas.indexOf(fila), rects = filas.map((f) => f.getBoundingClientRect());
+    const alto = rects[desde].height, y0 = e.clientY;
+    let hasta = desde;
+    fila.classList.add("arrastrando");
+    try { asa.setPointerCapture(e.pointerId); } catch (_) {}
+    const mover = (ev) => {
+      const dy = ev.clientY - y0;
+      fila.style.transform = `translateY(${dy}px)`;
+      const centro = rects[desde].top + alto / 2 + dy;
+      let n = 0;
+      rects.forEach((r, i) => { if (i !== desde && r.top + r.height / 2 < centro) n++; });
+      if (n !== hasta) { hasta = n; seleccion(); }
+      filas.forEach((f, i) => {
+        if (i === desde) return;
+        const t = desde < hasta && i > desde && i <= hasta ? -alto : hasta < desde && i >= hasta && i < desde ? alto : 0;
+        f.style.transform = t ? `translateY(${t}px)` : "";
+      });
+    };
+    const fin = () => {
+      asa.removeEventListener("pointermove", mover); asa.removeEventListener("pointerup", fin); asa.removeEventListener("pointercancel", fin);
+      fila.classList.remove("arrastrando");
+      filas.forEach((f) => { f.style.transform = ""; });
+      if (hasta !== desde) alMover(desde, hasta);
+    };
+    asa.addEventListener("pointermove", mover); asa.addEventListener("pointerup", fin); asa.addEventListener("pointercancel", fin);
+  });
+}
+
+/** Hoja con un campo de texto. Devuelve el texto (recortado) o null. */
+export function pedirTexto(app, { titulo, valor = "", placeholder = "", accion = "Guardar" }) {
+  return new Promise((res) => {
+    let r = null;
+    const input = h("input", { type: "text", class: "campo-texto", value: valor, placeholder, autocomplete: "off", "aria-label": titulo,
+      onKeydown: (e) => { if (e.key === "Enter" && input.value.trim()) { r = input.value.trim(); hoja.cerrar(); } } });
+    const hoja = app.abrirHoja({
+      titulo, alturas: ["media"],
+      accion: { texto: accion, alPulsar: () => { if (!input.value.trim()) return false; r = input.value.trim(); } },
+      sucio: () => input.value.trim() !== valor,
+      render(c) { c.replaceChildren(h("div", { class: "seccion" }, input)); setTimeout(() => { input.focus(); input.select(); }, 380); },
+      alCerrar: () => res(r),
+    });
+  });
+}

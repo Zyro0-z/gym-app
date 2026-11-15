@@ -7,6 +7,11 @@ export const VERSION_COPIA = 2;    // versión del fichero de copia de seguridad
 export const CLAVES_ANTIGUAS = ["sessions", "templates", "configs", "settings", "library", "draft"];
 
 export const GRUPOS_BASE = ["Pecho", "Espalda", "Pierna", "Hombro", "Bíceps", "Tríceps", "Core", "Antebrazo"];
+export const REGIONES_BASE = {
+  Pecho: ["chest-*"], Espalda: ["lats-*", "traps-*", "spine", "lower-back-*"], Hombro: ["shoulder-front-*", "shoulder-side-*", "deltoid-rear-*"],
+  "Bíceps": ["biceps-*"], "Tríceps": ["triceps-*"], Core: ["abs-*", "obliques-*", "serratus-*"],
+  Pierna: ["quads-*", "adductors-*", "hamstrings-*", "calves-*", "tibialis-*", "hip-flexor-*", "gluteus-*"], Antebrazo: ["forearm-*"],
+};
 export const ACENTOS = ["azul", "indigo", "morado", "rosa", "rojo", "naranja", "verde", "grafito"];
 
 /** Ajustes por defecto de una instalación nueva. */
@@ -19,7 +24,7 @@ export function ajustesBase() {
     bloques: [], umbrales: [],
     objetivos: { seriesSemana: [], incrementos: [{ tipo: "máquina", kg: 2.5 }, { tipo: "polea", kg: 2.5 }, { tipo: "mancuerna", kg: 2 }, { tipo: "barra", kg: 2.5 }] },
     cuerpo: { sexo: null, fases: [] },
-    grupos: GRUPOS_BASE.map((nombre) => ({ nombre, color: null, regiones: [] })),
+    grupos: GRUPOS_BASE.map((nombre) => ({ nombre, color: null, regiones: REGIONES_BASE[nombre].slice() })),
     ligas: { activa: false, escala: [], puntos: 5, margen: 1, semCarga: 8, semSeries: 4, correccionPolea: 1 },
     estandares: {},
     copia: null,

@@ -6,6 +6,9 @@ import { capital, mesAnio, DIAS_CORTOS, fechaCorta, kg } from "../ui/textos.js";
 import { claveMes, diaSemana, menosMeses } from "../core/fechas.js";
 import { plural } from "../core/formato.js";
 import { lineaSesion, sesionesOrdenadas, totalesSesion } from "./comun.js";
+import { editarSesion } from "./entreno.js";
+import { elegirRutina } from "./hoy.js";
+import { fmt } from "../core/formato.js";
 
 export function vistaHistorial(_p, app) {
   const { store } = app;
@@ -15,7 +18,7 @@ export function vistaHistorial(_p, app) {
     render(c) {
       const est = store.estado, hoy = store.hoy();
       const ses = sesionesOrdenadas(est);
-      if (!ses.length) { poner(c, vacio({ icono: "historial", titulo: "Sin entrenamientos", texto: "Aquí aparecerá cada sesión que registres." })); return; }
+      if (!ses.length) { poner(c, vacio({ icono: "historial", titulo: "Sin entrenamientos", texto: "Aquí aparecerá cada sesión que registres.", acciones: [{ texto: "Empezar", alPulsar: () => elegirRutina(app) }] })); return; }
       if (!mes) mes = claveMes(ses[0].fecha);
       const porDia = new Map();
       for (const s of ses) porDia.set(s.fecha, (porDia.get(s.fecha) || 0) + totalesSesion(s).series);
@@ -41,23 +44,53 @@ export function vistaHistorial(_p, app) {
   };
 }
 
-/** Detalle de una sesión. */
+/** Detalle de una sesión, con la comparación frente a la anterior de la misma rutina. */
 export function vistaSesion([id], app) {
   const { store } = app;
   const buscar = () => store.estado.sesiones.find((s) => s.id === id);
   return {
     titulo: () => { const s = buscar(); return s ? s.rutina || "Entrenamiento" : "Sesión"; },
     tituloAtras: "Sesión",
+    derecha: () => (buscar() ? [h("button", { class: "btn-barra", onClick: () => editarSesion(buscar()) }, "Editar")] : null),
     render(c) {
       const s = buscar();
       if (!s) { poner(c, vacio({ icono: "historial", titulo: "Sesión no encontrada", texto: "Puede que se haya borrado." })); return; }
-      const cab = h("div", { class: "seccion" }, h("div", { class: "t-title2" }, capital(fechaCorta(s.fecha, store.hoy())) + (s.inicio ? " · " + s.inicio : "")),
+      const hoy = store.hoy();
+      const previa = (ejercicioId) => {
+        let mejor = null;
+        for (const x of store.estado.sesiones) {
+          if (x.id === s.id || x.fecha > s.fecha || (x.fecha === s.fecha && x.id > s.id)) continue;
+          if (s.rutina && x.rutina !== s.rutina) continue;
+          const e = x.ejercicios.find((y) => y.ejercicioId === ejercicioId);
+          if (e && (!mejor || x.fecha > mejor.x.fecha || (x.fecha === mejor.x.fecha && x.id > mejor.x.id))) mejor = { x, e };
+        }
+        return mejor;
+      };
+      const delta = (st, ant) => {
+        if (!ant) return null;
+        const dp = Math.round((st.peso - ant.peso) * 10) / 10, dr = st.reps - ant.reps;
+        if (dp) return h("span", { class: "delta " + (dp > 0 ? "c-ok" : "c-bad") }, (dp > 0 ? "+" : "−") + fmt(Math.abs(dp), Number.isInteger(dp) ? 0 : 1) + " kg");
+        if (dr) return h("span", { class: "delta " + (dr > 0 ? "c-ok" : "c-bad") }, (dr > 0 ? "+" : "−") + Math.abs(dr) + (Math.abs(dr) === 1 ? " rep" : " reps"));
+        return null;
+      };
+      const cab = h("div", { class: "seccion" }, h("div", { class: "t-title2" }, capital(fechaCorta(s.fecha, hoy)) + (s.inicio ? " · " + s.inicio : "")),
         h("div", { class: "t-subhead c-2", style: { marginTop: "2px" } }, lineaSesion(s)));
-      const ejs = s.ejercicios.map((e) => seccion({ cab: e.nombre }, lista(e.series.map((x, i) => celda({
-        titulo: "Serie " + (i + 1) + (x.tipo && x.tipo !== "normal" ? " · " + x.tipo : ""),
-        valor: x.peso > 0 ? kg(x.peso) + " × " + x.reps : x.reps ? x.reps + " reps" : "—",
-      }))), e.nota ? null : null));
-      poner(c, cab, ejs);
+      const ejs = s.ejercicios.map((e) => {
+        const p = previa(e.ejercicioId);
+        let n = 0;
+        return seccion({ cab: e.nombre || e.ejercicioId, pie: e.nota || (p ? "Comparado con el " + fechaCorta(p.x.fecha, hoy) : null) }, lista(e.series.map((x, i) => {
+          if (x.tipo !== "calentamiento") n++;
+          const etq = x.tipo === "calentamiento" ? "Calentamiento" : "Serie " + n + (x.tipo === "fallo" ? " · al fallo" : x.tipo === "descendente" ? " · descendente" : "");
+          return celda({ titulo: etq, valor: h("span", null, x.peso > 0 ? kg(x.peso) + " × " + x.reps : x.reps ? x.reps + " reps" : "—", delta(x, p && p.e.series[i])) });
+        })));
+      });
+      poner(c, cab, ejs, seccion({}, lista([celda({ titulo: "Borrar sesión", estilo: "destructiva", alPulsar: async () => {
+        const ok = await app.confirmar("¿Borrar la sesión?", "Se borrará la sesión del " + fechaCorta(s.fecha, hoy) + ". No se puede deshacer.", "Borrar", true);
+        if (!ok) return;
+        await store.borrarSesion(s.id);
+        app.toast("Sesión borrada", { icono: "papelera" });
+        app.nav.atras();
+      } })])));
     },
   };
 }

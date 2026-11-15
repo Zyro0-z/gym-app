@@ -568,3 +568,21 @@ sesión» en rojo con una confirmación.
 | Animaciones con la Web Animations API y un temporizador de respaldo | Algunos WebKit no resuelven `finished` en animaciones recién creadas; sin respaldo, la pila quedaría con dos pantallas visibles. |
 | Háptica: interruptor oculto en iOS, `navigator.vibrate` en el resto | Safari no tiene API de vibración. Un `<input switch>` da el toque háptico del sistema al cambiar. |
 | Velo de alertas y hojas de acciones con `--veil` | Con un velo del 20 %, en oscuro el contenido de detrás competía con el texto de la alerta. |
+
+
+## 8. Decisiones de implementación (fase 4)
+
+| Decisión | Por qué |
+|---|---|
+| Ajustes guarda al momento, sin botón «Guardar» | Es el patrón de Ajustes de iOS. Solo las altas (rutina, grupo, fase, bloque) y los nombres usan una hoja o un botón explícito, porque crean algo nuevo. |
+| Raíz de Ajustes en cuatro grupos (entrenar, planificar, aspecto, datos) | Las HIG piden listas agrupadas por tarea. Los avisos aparecen como chip rojo en la celda afectada («Copia pendiente», «N avisos»), no como insignia en otra parte. |
+| Cambiar el nombre de un ejercicio o rutina reescribe las sesiones | El análisis agrupa por nombre canónico; sin reescribir, el historial quedaría partido en dos. Se pide confirmación con el número de sesiones afectadas. Si el nombre nuevo ya existe, se ofrece unirlos. |
+| Un ejercicio con sesiones no se puede borrar | Borrarlo dejaría series huérfanas. El pie explica cómo unirlo con otro. |
+| Reordenar con asa y arrastre; quitar deslizando | Igual que las listas editables de iOS. El asa ocupa 44 pt y tiene `touch-action: none` para que el desplazamiento de la página no interfiera. |
+| Stepper compacto en el editor de rutina | Con el stepper normal, los nombres de ejercicio se partían en tres líneas a 390 pt. Las zonas táctiles siguen siendo de 44 pt de alto. |
+| Valores de celda en una línea con puntos suspensivos | iOS nunca parte el valor de una celda; el título manda. |
+| Calidad de los datos: cada aviso lleva a la pantalla que lo arregla | Un aviso que no se puede resolver con un toque es ruido. Los informativos (rutinas que ya no existen) no llevan chevron. |
+| Liga «última conocida» cuando no hay series recientes | El cálculo no cambia: sin series en las últimas semanas no hay liga de hoy. La interfaz enseña la última, atenuada y con la fecha, en vez de un estado vacío que haría pensar que se perdieron los datos. |
+| El entrenamiento se reabre como se dejó | Si se cerró la app con el entrenamiento minimizado, vuelve la barra; si estaba a pantalla completa, vuelve la pantalla completa. Se recuerda en el almacenamiento local, que no guarda datos de entrenamiento. |
+| Sin barra de descanso mientras se escribe | En iPhone el teclado la tapa; con teclado físico o en pruebas, se ocultaba a medias bajo la barra del teclado. |
+| Instalaciones nuevas con regiones del cuerpo por grupo | Así el mapa de Músculos funciona desde el primer día, con el mismo reparto que los datos migrados. |

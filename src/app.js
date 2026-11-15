@@ -7,9 +7,15 @@ import { prepararSonido } from "./ui/sonido.js";
 import { abrirHoja, cerrarHojaAbierta, hayCapaAbierta, alerta, confirmar, hojaAcciones, toast } from "./ui/capas.js";
 import { h } from "./ui/dom.js";
 import { VISTAS, PESTANAS } from "./views/indice.js";
+import { iniciarEntreno, modalAbierto, minimizarSiAbierto, empezarEntreno } from "./views/entreno.js";
 
 const store = crearStore();
-const ctx = { store, abrirHoja, alerta, confirmar, hojaAcciones, toast, hayCapaAbierta, alAtrasSistema: () => { cerrarHojaAbierta(); return false; } };
+const ctx = {
+  store, abrirHoja, cerrarHoja: cerrarHojaAbierta, alerta, confirmar, hojaAcciones, toast,
+  hayCapaAbierta: () => hayCapaAbierta() || modalAbierto(),
+  // «atrás» del sistema con una capa abierta: se cierra la hoja y se minimiza el entrenamiento
+  alAtrasSistema: () => { cerrarHojaAbierta(); minimizarSiAbierto(); return false; },
+};
 
 // el estado :active de iOS necesita un manejador de touchstart; y el audio se desbloquea en un gesto
 document.addEventListener("touchstart", () => {}, { passive: true });
@@ -39,11 +45,13 @@ async function arrancar() {
   });
   await nav.iniciar(location.hash);
   marcarAvisos(nav);
+  iniciarEntreno(ctx);
   if (informe && informe.tipo === "migracion") toast("Datos actualizados al nuevo formato");
   if (informe && informe.tipo === "rescate" && informe.sesiones) toast("Recuperadas " + informe.sesiones + " sesiones");
   store.pedirPersistencia();
   registrarSW();
-  if (navigator.webdriver) window.__gym = { store, nav };   // solo bajo Playwright, para las pruebas
+  // Solo bajo Playwright, para las pruebas
+  if (navigator.webdriver) window.__gym = { store, nav, entreno: { empezar: empezarEntreno, descartar: async () => { minimizarSiAbierto(); await store.guardarBorrador(null); } } };
 }
 
 /** Preferencia de tema de la versión anterior, para conservarla al migrar. */
