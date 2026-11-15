@@ -153,32 +153,51 @@ app se rechaza.
 
 ## 5. Golden master
 
-`tests/golden/generar.mjs` ejecuta el dashboard anterior en Chromium (Playwright), tal y como estaba
-publicado:
+`tests/golden/generar.mjs` ejecuta en Chromium (Playwright) el dashboard de la versión 1, conservado
+sin cambios en `tests/golden/legacy/` junto con su capa de compatibilidad y sus librerías:
 
-- con seed.json;
-- con dos relojes fijos: el día siguiente a la última sesión de los datos, y el 15 de noviembre de
-  2026, cuando todo está inactivo;
-- con una línea de volcado inyectada en memoria al final del cálculo.
+- usa un reloj fijo (zona Europe/Madrid) y una lista de fechas por conjunto de datos;
+- inyecta en memoria sentencias de volcado (`tests/golden/inyectar.mjs`); el fichero en disco no se
+  toca;
+- guarda un JSON por conjunto y fecha.
 
-Se escribe un fichero por bloque:
+Hay dos conjuntos de datos:
 
-| Fichero | Contenido |
+| Conjunto | Origen | Se publica | Fechas |
+|---|---|---|---|
+| `sintetico` | `tests/golden/fixture.mjs` | sí, no tiene datos personales | 7, de mayo de 2026 a enero de 2027 |
+| `seed` | `seed.json` | no (`.gitignore`) | 6, alrededor de los datos reales |
+
+`sintetico` cubre lo que los datos reales aún no tienen: estancado, retroceso, inactivo, lb,
+calentamiento/drop/fallo, duración y temporizador, suma de lados, erratas, duraciones raras,
+bloques solapados, las tres fases de peso y líneas de configuración erróneas.
+
+`tests/core/golden.test.mjs` convierte los datos antiguos al modelo nuevo (`desdeLegacy`), ejecuta
+`analizar(modelo, fecha)` y compara campo a campo con una tolerancia relativa de 1e-9. Compara:
+
+- sesiones, series, volumen, 1RM y PRs;
+- el semáforo con su detalle, la tendencia y la doble progresión con el texto «próxima vez»;
+- las ligas por ejercicio, grupo y general, con su línea semanal, lo que falta y los cambios;
+- las semanas, el resumen, la racha, «hoy toca» y las series frente al objetivo con las previstas;
+- el reparto por grupo, el balance por periodo, el peso con sus medias, ritmo y color, y su texto;
+- la calidad de los datos.
+
+Antes de dar el test por bueno se comprobó que falla al alterar un umbral o la fórmula de Epley.
+
+Los textos que la versión 2 redacta de otra manera se comparan a través de un traductor explícito
+dentro del test. Así cuenta la lógica y no la redacción. Son estos:
+
+| Versión 1 | Versión 2 |
 |---|---|
-| `ejercicios.json` | por ejercicio: e1RM por sesión, PRs, semáforo, días sin PR, flecha |
-| `progresion.json` | estado de la doble progresión y texto «próxima vez» |
-| `semanal.json` | series y volumen por semana y por grupo; series vs objetivo con previstas |
-| `ligas.json` | puntuación, liga y división por ejercicio, por grupo y general; cambios de la semana |
-| `peso.json` | análisis de peso: medias, ritmo, tendencia y «has ganado» |
-| `racha.json` | racha y estado |
-| `calidad.json` | errores y avisos de configuración, y líneas de calidad de los datos |
+| estados con emoji («🟡 Estancado») | código (`estancado`) y etiqueta sin emoji |
+| «⚠ Pocas series: 2 de 3» | «Pocas series: 2 de 3» |
+| «sin plantilla «X»» | «sin rutina «X»» |
+| «(sin incremento en objetivos)» | «(sin incremento definido)» |
+| motivos de duración con nombres de campos | los mismos motivos, sin nombres de campos |
+| errores de configuración con su motivo | solo se comparan el fichero y la línea rechazada |
 
-`tests/golden.test.mjs` ejecuta `src/core` con las mismas entradas y compara campo a campo, con
-tolerancia de 1e-9 en los números.
-
-Cuando el dashboard anterior tiene un fallo, el núcleo nuevo lo reproduce y el fallo se anota en §8
-con el caso, el antes y el después propuesto. Solo se corrige cuando se decide explícitamente, y
-entonces se actualiza el golden.
+Cuando el dashboard antiguo tiene un fallo, el núcleo nuevo lo reproduce y el fallo se anota en §8.
+Solo se corrige cuando se decide explícitamente, y entonces se regenera el golden.
 
 ## 6. Decisiones
 
@@ -210,7 +229,34 @@ iconos, textos ni medios. Ideas reinterpretadas:
    `currentColor`, un solo grosor y sin emojis.
 6. Un componente de estado vacío con una acción clara, y un mapa de calor de actividad.
 
-## 8. Fallos de la lógica original
+## 8. Fallos y rarezas de la lógica original
 
-Se rellena en la fase 1, al construir el golden master. Cada entrada lleva el caso, el resultado
-original, el resultado esperado y la decisión tomada.
+El núcleo nuevo reproduce todos los casos de esta lista y no se ha corregido ninguno en silencio.
+Ninguno cambia un resultado con los datos reales actuales.
+
+1. **Datos con fecha posterior a «hoy».** El dashboard no filtra por fecha, así que con sesiones o
+   pesajes posteriores a hoy:
+   - la racha puede salir «cortada hace −18 semanas»;
+   - el texto del peso mezcla la fase de hoy con el color del último pesaje, por ejemplo «Objetivo
+     cut · ritmo +0,35 kg/semana (sube), a favor».
+
+   *Antes:* esos textos. *Después:* igual. La versión 2 no permite guardar sesiones ni pesajes con
+   fecha futura, así que el caso no puede darse. Solo aparece en el golden sintético, que evalúa
+   fechas pasadas con todos los datos cargados.
+2. **Grafía de un grupo según el orden de las sesiones.** Si el mapeo antiguo escribe el mismo grupo
+   de dos formas («Hombro» y «hombro»), todos los ejercicios del grupo se muestran con la primera
+   grafía que aparece al recorrer las sesiones de la más reciente a la más antigua.
+
+   *Antes y después:* igual. La migración fija esa grafía una sola vez en `ajustes.grupos`, y desde
+   entonces el grupo se elige de una lista, así que no puede volver a pasar.
+3. **Dos sesiones el mismo día.** «Última sesión» es la primera que se guardó ese día, no la que
+   empezó más tarde. Esto afecta a los récords de la última sesión y a la sesión que evalúa la doble
+   progresión.
+
+   *Antes y después:* igual. Las sesiones nuevas tienen un id con la fecha y la hora de inicio, así
+   que el orden coincide con el de guardado.
+4. **Grupos del objetivo semanal que no existen** (por ejemplo «Glúteo» si ningún ejercicio lo
+   usa). Siempre tienen 0 series y salen como «no llegará».
+
+   *Antes y después:* igual. En la versión 2 el objetivo semanal se elige de la lista de grupos, así
+   que solo puede ocurrir con datos migrados, y Calidad de los datos lo avisa.

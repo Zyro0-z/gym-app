@@ -2,3 +2,4 @@ seed.json
 gym-backup*.json
 node_modules/
 tests/salida/
+tests/golden/seed/

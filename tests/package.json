@@ -1,1 +1,13 @@
-{"name":"gym-app-tests","private":true,"type":"module","scripts":{"test":"node run.mjs"},"devDependencies":{"playwright":"^1.65.1"}}
+{
+  "name": "gym-app-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test core/ && node run.mjs && node fase3.mjs && node sinseed.mjs",
+    "core": "node --test core/",
+    "golden": "node golden/generar.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.65.1"
+  }
+}
