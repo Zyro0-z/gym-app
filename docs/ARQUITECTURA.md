@@ -70,86 +70,103 @@ docs/                 DISENO.md, ARQUITECTURA.md
 
 IndexedDB `gymapp`, versión de base de datos 2:
 
-| Almacén | Clave | Contenido |
-|---|---|---|
-| `sesiones` | `id` | `{id, rutina, fecha:"YYYY-MM-DD", inicio:"HH:MM", fin:"HH:MM", duracion:min, notas?, ejercicios:[{ejercicioId, notas?, series:[{peso, reps, segundos?, tipo:"normal"\|"calentamiento"\|"fallo"\|"descendente", hecha}]}], origen?}` |
-| `ejercicios` | `id` | `{id, nombre, grupo, unilateral, tipoMaterial, incremento?, rangoReps:{min,max}?, top, tipoAncla:"peso"\|"duracion"\|"temporizador", estandar?:{slug, factor, aproximado, polea}\|{sin:true}}` |
-| `rutinas` | `id` | `{id, nombre, orden, ejercicios:[{ejercicioId, series}]}` |
-| `pesajes` | `fecha` | `{fecha, kg}` |
-| `kv` | clave | `ajustes`, `borrador`, `legacy`, `schema`, `backup-esquema-v<n>` |
+- un almacén `sesiones`, con clave `id`, que puede crecer a miles;
+- un almacén `kv` con documentos pequeños, guardados como listas para conservar su orden.
 
-`ajustes` es JSON estructurado y se edita desde la UI:
+| Dónde | Contenido |
+|---|---|
+| `sesiones` | `{id, rutina, fecha:"AAAA-MM-DD", inicio:"HH:MM", fin:"HH:MM", duracion, ejercicios:[{ejercicioId, nombre?, tipo?, series:[{peso, reps, segundos?, tipo:"normal"\|"fallo"\|"calentamiento"\|"descendente", hecha}]}], origen?}` |
+| `kv.catalogo` | `[{id, nombre, grupo, unilateral, tipoAncla:"peso"\|"duracion"\|"temporizador", tipoMaterial, incremento, rangoReps:{min,max}, top, estandar:{slug, factor, revisado, aproximado, polea}\|{sin:true}}]` |
+| `kv.rutinas` | `[{id, nombre, ejercicios:[{ejercicioId, series}]}]` |
+| `kv.pesajes` | `[{fecha, kg}]` |
+| `kv.ajustes` | JSON estructurado (abajo) |
+| `kv.borrador` | el entrenamiento en curso, con una réplica en `localStorage` (`gym-espejo`) |
+| `kv.schema` | `3` |
+| `kv.legacy`, `kv.backup-esquema-v<n>` | copia íntegra del formato antiguo; no se borran nunca |
+| `kv.respaldo-importacion` | los datos que había antes de la última importación |
+| `kv.rescate-<t>` | lo que escribió una versión antigua después de migrar |
+
+Las sesiones guardan el `ejercicioId`. Así, renombrar un ejercicio no rompe su historia. El id es el
+`canon()` del nombre en el momento de crearlo, de modo que las variantes antiguas («Jalón al pecho
+prono» y «jalon al pecho prono») se fusionan igual que antes.
+
+El id de una sesión es `fecha-<marca de tiempo de inicio>-<azar>`; las migradas usan
+`fecha-v1-<orden original>`. El análisis ordena por fecha y, dentro de un mismo día, por id, que es
+el orden en que se guardaron las sesiones, igual que en la versión 1.
+
+`ajustes`:
 
 ```js
 {
   apariencia: { tema: "auto", acento: "azul", haptica: true },
-  entreno: { descanso: 90, presets: [30, 60, 90, 120], pasoPeso: 2.5, sonido: true, pantallaEncendida: true },
-  horario: { 1: "rutinaId" | null, ... 7: null },       // ISO: 1 = lunes
-  bloques: [{ id, inicio, fin, tipo: "deload" | "especializacion", nombre, grupos: [] }],
-  umbrales: { [rutinaId]: { duracion, porSerie } },
-  objetivos: { seriesSemana: { Pecho: {min, max}, ... }, incrementos: [{ tipo, kg }] },
-  cuerpo: { sexo: "hombre" | "mujer" | null, fases: [{ objetivo: "bulk" | "cut" | "mantener", desde }] },
-  grupos: [{ nombre, color, regiones: ["chest-*"] }],
-  ligas: { escala: [{ nombre, desde, hasta, ndiv }], puntos: 5, margen: 1, semCarga: 8, semSeries: 4, correccionPolea: 1.4 },
+  entreno: { descanso: 90, presets: [30, 60, 90, 120, 180], pasoPeso: 2.5, sonido: true, pantallaEncendida: true },
+  horario: { 1: "Torso A", 2: "Descanso", ... 7: null },      // 1 = lunes
+  bloques: [{ id, inicio, fin, tipo: "deload" | texto, grupos: [] }],
+  umbrales: [{ rutina, maxDur, maxSerie }],
+  objetivos: { seriesSemana: [{ grupo, min, max }], incrementos: [{ tipo, kg }] },
+  cuerpo: { sexo: "h" | "m" | null, fases: [{ tipo: "bulk" | "cut" | "mantener", desde }] },
+  grupos: [{ nombre, color: { oscuro, claro } | null, regiones: ["chest-*"] }],
+  ligas: { activa, escala: [{ nombre, desde, hasta, ndiv }], puntos, margen, semCarga, semSeries, correccionPolea },
   estandares: { [slug]: [{ pc, niveles: [5] }] },
-  copia: { at, sesiones }
+  copia: { at, sesiones } | null,
+  migracion: { fecha, desde, sesiones, errores, avisos } | null
 }
 ```
 
-Las sesiones guardan el `ejercicioId`, no el nombre, para que renombrar un ejercicio no rompa la
-historia. El id es el `canon()` del nombre en el momento de crearlo, así que las variantes antiguas
-(«Jalón al pecho prono» y «jalon al pecho prono») se fusionan igual que antes, por `canon`.
+## 4. Migración (esquema 1-2 → 3)
 
-## 4. Migración (esquema 2 → 3)
+`src/data/repos.js › cargar()`:
 
-1. Al abrir, si `kv.schema < 3`:
-   - se escribe `kv["backup-esquema-v2"]` con todo el contenido antiguo (sessions, templates,
-     configs, settings, library, draft);
-   - se escribe `kv.legacy` con el mismo contenido, que no se borra nunca.
-2. Los textos de configuración se parsean una sola vez, con las mismas reglas que el dashboard
-   anterior (`src/core/legacy-config.js`, probado con el golden master):
-   - grupos-musculares → `ejercicios[].grupo`;
-   - unilaterales → `ejercicios[].unilateral`;
-   - objetivos → `rangoReps`, `top`, `incremento`, `tipoMaterial`; los `incremento::` van a
-     `ajustes.objetivos.incrementos`;
-   - estandares → `ejercicios[].estandar` y `ajustes.estandares`;
-   - horario-semanal → `ajustes.horario`, `ajustes.bloques` y `ajustes.umbrales`;
-   - peso-corporal → `pesajes`, `ajustes.cuerpo`;
-   - volumen-objetivo → `ajustes.objetivos.seriesSemana`;
-   - colores-grupos y regiones-svg → `ajustes.grupos`;
-   - ligas → `ajustes.ligas`.
-3. Las sesiones se convierten así:
-   - `fm.template` pasa a `rutina`; `date`, `start`, `end` y `duration` a sus equivalentes;
-   - los sets pasan a series, con `peso` en kg (lb × 0,45359237) y el tipo traducido;
-   - la clave `reps_por_lado` se conserva en `origen`.
-4. Las plantillas pasan a ser rutinas, con `targetSets` como `series` (3 si falta). La biblioteca y
-   todos los nombres vistos en sesiones o configs pasan al catálogo.
-5. Un borrador de entrenamiento en curso se convierte al formato nuevo.
-6. Todo se escribe en una sola transacción. Si algo falla, no se escribe nada, se queda el esquema 2
-   y la app muestra el error con un botón para exportar la copia antigua.
-7. Se prueba con `tests/migracion.test.mjs`, que usa seed.json y un fixture con casos límite:
-   - lb;
-   - warmup, drop y failure;
-   - duración y temporizador;
-   - nombres con variantes;
-   - configs con líneas erróneas;
-   - un borrador a medias.
+1. Abre la base. La versión 2 añade el almacén `sesiones`; la versión de los datos va aparte, en
+   `kv.schema`.
+2. Si `schema < 3` y existe alguna clave antigua (`sessions`, `templates`, `configs`, `settings`,
+   `library`, `draft`), calcula el plan con `planMigracion()`. Es puro y se prueba en node:
+   - los textos de configuración se leen una sola vez con las mismas reglas que la versión 1
+     (`src/core/legacy.js`);
+   - de ellos salen el catálogo, las rutinas, los pesajes y los ajustes estructurados;
+   - `settings` y el tema de `localStorage` pasan a `ajustes.entreno` y `ajustes.apariencia`;
+   - el borrador antiguo se convierte;
+   - los errores y avisos de la configuración antigua quedan en `ajustes.migracion`.
+3. Todo se escribe en **una sola transacción** sobre `kv` y `sesiones`:
+   - `legacy` y `backup-esquema-v<n>` con el original íntegro;
+   - el modelo nuevo y `schema = 3`;
+   - las claves antiguas se retiran del uso (su contenido queda en `legacy`).
 
-   Comprobaciones:
-   - el `Analisis` calculado sobre el modelo nuevo es igual al golden master;
-   - `legacy` contiene el original byte a byte.
+   Si algo falla, IndexedDB deshace la transacción y la base queda exactamente como estaba.
+4. **Rescate.** Si después de migrar vuelve a aparecer `sessions` (lo escribió una pestaña con la
+   versión antigua), se añaden las sesiones que falten por su ruta y se guarda todo en
+   `rescate-<t>`.
 
-**Importar.** Se aceptan seed.json, las copias antiguas (`version: 1`, con configs de texto, que
-pasan por el mismo migrador) y las nuevas (`version: 2`). Una copia de un esquema más nuevo que la
-app se rechaza.
+Pruebas:
+
+- `tests/core/migracion.test.mjs` (node), sobre el plan puro:
+  - `legacy` contiene el original byte a byte;
+  - el análisis tras migrar es igual al del golden master;
+  - se conservan ajustes, tema y borrador;
+  - instalación vacía;
+  - copias v1, v2 y seed.json; las copias más nuevas se rechazan;
+  - recordatorio de copia;
+  - rescate.
+- `tests/e2e/migracion-idb.mjs` (navegador), sobre IndexedDB real:
+  - de una base v1 al modelo nuevo;
+  - segunda apertura sin cambios;
+  - rescate;
+  - importar guardando antes lo que había.
+
+**Copias.**
+
+- Exportar crea `{app:"gym", version:2, esquema:3, exportado, sesiones, catalogo, rutinas, pesajes, ajustes}`.
+- Importar acepta la versión 2, las copias antiguas (`version: 1`, que pasan por el mismo migrador) y
+  `seed.json`.
+- Una copia de una versión más nueva se rechaza con un motivo claro.
+- Importar guarda antes los datos actuales en `respaldo-importacion`.
 
 **Persistencia.**
 
-- Al arrancar se llama a `navigator.storage.persist()`. Su estado y `storage.estimate()` se muestran
-  en Ajustes › Datos.
+- Al arrancar se llama a `navigator.storage.persist()`. Su estado y el espacio usado se muestran en
+  Ajustes › Datos.
 - El recordatorio de copia salta si han pasado más de 7 días o hay más de 5 sesiones nuevas desde la
-  última copia. Exportar usa la hoja de compartir (`navigator.share` con un fichero) y, si no está
-  disponible, una descarga.
+  última.
 
 ## 5. Golden master
 
