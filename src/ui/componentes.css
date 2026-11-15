@@ -412,3 +412,16 @@ body.con-barra-entreno .toast { bottom: calc(var(--tab-h) + var(--safe-b) + 76px
 .stepper.compacto .valor { min-width: 26px; padding: 0; }
 .liga-vieja .insignia { opacity: .72; }
 .con-teclado .barra-descanso { visibility: hidden; }
+
+/* aviso de versión nueva (arriba, no tapa las barras de abajo) */
+.aviso-actualizacion {
+  position: fixed; left: 50%; top: calc(var(--safe-t) + 8px); z-index: 75; display: flex; align-items: center; gap: 12px;
+  padding: 6px 6px 6px 16px; border-radius: 22px; background: var(--hud); color: #fff; font-size: var(--f-subhead); font-weight: 500;
+  transform: translate(-50%, -12px); opacity: 0; transition: opacity 200ms linear, transform 300ms var(--spring); max-width: calc(100% - 32px);
+}
+.aviso-actualizacion.visible { opacity: 1; transform: translate(-50%, 0); }
+.aviso-actualizacion button { min-height: 32px; padding: 0 14px; border-radius: 16px; background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: var(--f-subhead); }
+.aviso-actualizacion button:disabled { opacity: .6; }
+body.con-modal .aviso-actualizacion { display: none; }
+.progreso-cab { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; }
+.progreso-cab span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 300ms var(--spring); }

@@ -49,6 +49,8 @@ function marcarMin(v) { try { if (v) localStorage.setItem(CLAVE_MIN, "1"); else 
 export const hayEntreno = () => !!(app && app.store.estado.borrador);
 export const modalAbierto = () => !!M;
 export const minimizarSiAbierto = () => { if (M) cerrarModal(); };
+/** Guarda ya el entrenamiento en curso (antes de recargar la app). */
+export const guardarEntrenoYa = () => Promise.resolve(guardarYa());
 
 function pintarBarraMin() {
   if (!barraMin) return;
@@ -159,8 +161,19 @@ function soltarWake() { try { if (wake) wake.release(); } catch (e) {} wake = nu
 // ─────────── guardar el borrador ───────────
 
 function guardarPronto() { if (!M || M.modo !== "entreno") return; clearTimeout(guardarT); guardarT = setTimeout(guardarYa, 400); }
+/** «· 5/20 series» junto al reloj y una línea fina con lo hecho, bajo la cabecera. */
+function pintarProgresoCab() {
+  if (!M || M.modo !== "entreno") return;
+  const t = M.cab.querySelector("[data-progreso]"), barra = M.cab.querySelector(".progreso-cab span");
+  if (!t || !barra) return;
+  const todas = M.d.ejercicios.flatMap((e) => e.series), hechas = todas.filter((x) => x.hecha).length;
+  t.textContent = todas.length ? " · " + hechas + "/" + todas.length + " series" : "";
+  barra.style.width = (todas.length ? (100 * hechas) / todas.length : 0) + "%";
+}
+
 function guardarYa() {
   clearTimeout(guardarT);
+  pintarProgresoCab();
   if (M && M.modo === "entreno") return app.store.guardarBorrador(M.d);
 }
 
@@ -173,8 +186,10 @@ function pintarCab() {
       h("div", { class: "izq" },
         h("button", { class: "btn-barra", "aria-label": "Minimizar", onClick: () => { guardarYa(); cerrarModal(); } }, icono("chevron-abajo")),
         h("button", { class: "btn-barra", "aria-label": "Descanso", onClick: elegirDescanso }, icono("cronometro"))),
-      h("div", { class: "centro" }, h("div", { class: "titulo" }, d.rutina || "Entrenamiento"), h("div", { class: "sub num", dataset: { reloj: "1" } }, reloj((Date.now() - d.inicio) / 1000))),
-      h("div", { class: "der" }, h("button", { class: "btn-barra fuerte", onClick: terminar }, "Terminar")));
+      h("div", { class: "centro" }, h("div", { class: "titulo" }, d.rutina || "Entrenamiento"), h("div", { class: "sub num" }, h("span", { dataset: { reloj: "1" } }, reloj((Date.now() - d.inicio) / 1000)), h("span", { dataset: { progreso: "1" } }))),
+      h("div", { class: "der" }, h("button", { class: "btn-barra fuerte", onClick: terminar }, "Terminar")),
+      h("div", { class: "progreso-cab", "aria-hidden": "true" }, h("span")));
+    pintarProgresoCab();
   } else {
     poner(M.cab,
       h("div", { class: "izq" }, h("button", { class: "btn-barra", onClick: cancelarEdicion }, "Cancelar")),

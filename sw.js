@@ -1,6 +1,6 @@
 // Service worker: la app funciona sin conexión. Cache primero y actualización en segundo plano.
 // Cada publicación sube V; todo fichero nuevo de la app va en FICHEROS (lo comprueba tests/core/sw.test.mjs).
-const V = "gym-v7";
+const V = "gym-v8";
 const FICHEROS = [
   "./",
   "index.html",
@@ -61,7 +61,11 @@ const FICHEROS = [
   "icons/icon-192.png",
   "icons/icon-512.png",
 ];
-self.addEventListener("install", (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(FICHEROS)).then(() => self.skipWaiting())); });
+// La primera instalación se activa sola; una actualización espera a que el usuario pulse «Recargar»
+self.addEventListener("install", (e) => { e.waitUntil(caches.open(V).then((c) => c.addAll(FICHEROS.map((f) => new Request(f, { cache: "reload" })))).then(async () => {
+  if (!self.registration.active) await self.skipWaiting();
+})); });
+self.addEventListener("message", (e) => { if (e.data && e.data.tipo === "activar") self.skipWaiting(); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== V).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", (e) => {
   const r = e.request; if (r.method !== "GET" || new URL(r.url).origin !== location.origin) return;

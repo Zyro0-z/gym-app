@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test core/ && node e2e/migracion-idb.mjs && node e2e/arranque-v1.mjs && node e2e/navegacion.mjs && node e2e/entreno.mjs",
+    "test": "node --test core/ && node e2e/migracion-idb.mjs && node e2e/arranque-v1.mjs && node e2e/navegacion.mjs && node e2e/entreno.mjs && node e2e/sw-datos.mjs",
     "core": "node --test core/",
     "golden": "node golden/generar.mjs"
   },

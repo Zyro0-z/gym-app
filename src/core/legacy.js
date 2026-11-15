@@ -10,6 +10,8 @@ import { fechaISO } from "./fechas.js";
 const LB_A_KG = 0.45359237;
 export const aKg = (w, unidad) => (String(unidad || "kg").toLowerCase().indexOf("lb") === 0 ? w * LB_A_KG : w);
 
+// Claves con las que la versión 1 guardaba cada texto de ajustes en IndexedDB (y en sus copias).
+// Parecen rutas, pero son solo nombres de clave: hay que conservarlos tal cual para poder migrar.
 export const ARCHIVOS = {
   grupos: "Gym/Config/grupos-musculares.md",
   regiones: "Gym/Config/regiones-svg.md",

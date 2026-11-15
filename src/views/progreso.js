@@ -16,6 +16,8 @@ import { ligaVigente } from "./ligas.js";
 import { elegirRutina } from "./hoy.js";
 
 const SEGMENTOS = [{ valor: "resumen", texto: "Resumen" }, { valor: "ejercicios", texto: "Ejercicios" }, { valor: "musculos", texto: "Músculos" }, { valor: "cuerpo", texto: "Cuerpo" }];
+/** Sin preferencia guardada y sin series esta semana, Músculos abre en el primer periodo con series (semana, 30 días o todo) para no enseñar un mapa vacío. */
+const periodoGuardado = () => { try { return localStorage.getItem("gym-periodo-musculos"); } catch (e) { return null; } };
 const leerPref = (k, d) => { try { return localStorage.getItem("gym-" + k) || d; } catch (e) { return d; } };
 const ponerPref = (k, v) => { try { localStorage.setItem("gym-" + k, v); } catch (e) {} };
 
@@ -26,6 +28,7 @@ export const pctTxt = (p) => conSigno(p, Math.abs(p) < 10 ? 1 : 0) + " %";
 
 export function vistaProgreso(_p, app) {
   const { store } = app;
+  const periodoMusculos = (A) => periodoGuardado() || ["sem", "30d"].find((x) => A.balance(x).total) || "all";
   let seg = leerPref("progreso", "resumen"), q = "", periodo = leerPref("periodo-musculos", "sem"), rango = leerPref("rango-cuerpo", "3M");
   const def = {
     titulo: "Progreso",
@@ -41,7 +44,7 @@ export function vistaProgreso(_p, app) {
     }
     if (seg === "resumen") poner(c, resumen(A, app));
     else if (seg === "ejercicios") poner(c, ejercicios(A, app, q, (v) => { q = v; }));
-    else if (seg === "musculos") poner(c, musculos(A, app, periodo, (v) => { periodo = v; ponerPref("periodo-musculos", v); pintarCuerpo(); }));
+    else if (seg === "musculos") poner(c, musculos(A, app, periodoMusculos(A), (v) => { periodo = v; ponerPref("periodo-musculos", v); pintarCuerpo(); }));
     else poner(c, cuerpo(A, app, rango, (v) => { rango = v; ponerPref("rango-cuerpo", v); pintarCuerpo(); }));
   }
   return def;

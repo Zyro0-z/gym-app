@@ -7,7 +7,7 @@ import { prepararSonido } from "./ui/sonido.js";
 import { abrirHoja, cerrarHojaAbierta, hayCapaAbierta, alerta, confirmar, hojaAcciones, toast } from "./ui/capas.js";
 import { h } from "./ui/dom.js";
 import { VISTAS, PESTANAS } from "./views/indice.js";
-import { iniciarEntreno, modalAbierto, minimizarSiAbierto, empezarEntreno } from "./views/entreno.js";
+import { iniciarEntreno, modalAbierto, minimizarSiAbierto, empezarEntreno, guardarEntrenoYa } from "./views/entreno.js";
 
 const store = crearStore();
 const ctx = {
@@ -64,9 +64,34 @@ function marcarAvisos(nav) {
   nav.marcarPestana("ajustes", aviso);
 }
 
+/**
+ * Service worker. Una versión nueva se instala en segundo plano y espera; la app muestra
+ * «Actualización disponible · Recargar» y solo se activa cuando el usuario lo pide, después de
+ * guardar el entrenamiento en curso. Al volver a la app se busca una versión nueva.
+ */
 function registrarSW() {
   if (!("serviceWorker" in navigator) || location.protocol === "file:") return;
-  navigator.serviceWorker.register("sw.js").catch(() => {});
+  const habia = !!navigator.serviceWorker.controller;
+  let recargando = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (habia && !recargando) { recargando = true; location.reload(); } });
+  navigator.serviceWorker.register("sw.js").then((reg) => {
+    const avisar = (sw) => { if (sw && navigator.serviceWorker.controller) avisoActualizacion(sw); };
+    if (reg.waiting) avisar(reg.waiting);
+    reg.addEventListener("updatefound", () => {
+      const sw = reg.installing;
+      if (sw) sw.addEventListener("statechange", () => { if (sw.state === "installed") avisar(sw); });
+    });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+  }).catch(() => {});
+}
+
+function avisoActualizacion(sw) {
+  if (document.querySelector(".aviso-actualizacion")) return;
+  const el = h("div", { class: "aviso-actualizacion", role: "status" },
+    h("span", null, "Actualización disponible"),
+    h("button", { onClick: async () => { el.querySelector("button").disabled = true; try { await guardarEntrenoYa(); } catch (e) {} sw.postMessage({ tipo: "activar" }); } }, "Recargar"));
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("visible"));
 }
 
 arrancar();

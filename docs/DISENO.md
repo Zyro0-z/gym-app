@@ -586,3 +586,12 @@ sesión» en rojo con una confirmación.
 | El entrenamiento se reabre como se dejó | Si se cerró la app con el entrenamiento minimizado, vuelve la barra; si estaba a pantalla completa, vuelve la pantalla completa. Se recuerda en el almacenamiento local, que no guarda datos de entrenamiento. |
 | Sin barra de descanso mientras se escribe | En iPhone el teclado la tapa; con teclado físico o en pruebas, se ocultaba a medias bajo la barra del teclado. |
 | Instalaciones nuevas con regiones del cuerpo por grupo | Así el mapa de Músculos funciona desde el primer día, con el mismo reparto que los datos migrados. |
+
+## 9. Decisiones de la fase 5
+
+| Decisión | Por qué |
+|---|---|
+| Aviso de versión nueva arriba, como píldora, con «Recargar» | No tapa la tab bar, la barra del entrenamiento ni la del descanso. Se oculta durante el entrenamiento a pantalla completa para no distraer. |
+| La versión nueva espera a que el usuario pulse | Recargar solo sin preguntar podría cortar un entrenamiento. Antes de activarla se guarda el entrenamiento en curso. |
+| Progreso del entrenamiento en la cabecera (hechas/total y una línea fina) | Visto en la comparación con openGym: saber cuánto queda sin tener que desplazarse. Es un patrón, no código suyo. |
+| Músculos abre en el primer periodo con series | Con la semana vacía, el mapa salía gris. Si eliges un periodo, se respeta. |

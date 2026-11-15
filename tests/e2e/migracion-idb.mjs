@@ -55,7 +55,7 @@ for (const nombre of motores) {
   // 3) una versión antigua escribe después de migrar → rescate
   await p.evaluate((s) => new Promise((ok) => { const r = indexedDB.open("gymapp"); r.onsuccess = () => { const t = r.result.transaction("kv", "readwrite"); t.objectStore("kv").put([s], "sessions"); t.oncomplete = () => { r.result.close(); ok(); }; }; }),
     { path: "Workouts/2026-11-16 Torso A.md", fm: { type: "workout", template: "Torso A", date: "2026-11-16", start: "18:00", end: "19:00", duration: 60, exercises: [{ name: "Press banca barra", sets: [{ weight: 95, reps: 6, unit: "kg" }] }] } });
-  await p.evaluate(() => location.reload());
+  await p.reload();
   await p.waitForFunction(() => window.listo);
   const e3 = await p.evaluate(async () => JSON.parse(JSON.stringify(await window.R.cargar())));
   ok(e3.informe && e3.informe.tipo === "rescate" && e3.sesiones.length === e1.sesiones.length + 1, "rescata la sesión nueva");
