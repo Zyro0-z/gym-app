@@ -1,0 +1,223 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   GYM DASHBOARD · sistema de diseño (README §25)
+   ÚNICA FUENTE de los estilos del dashboard. El dashboard no lee este archivo: lleva una copia
+   dentro de su bloque (entre las marcas «CSS · gym-dashboard.css») y la aplica en un único
+   <style id="gym-dashboard-css">. Después de editarlo:
+       node Gym/Scripts/css-dashboard.mjs --escribir      (copia el CSS al dashboard)
+       node Gym/Scripts/css-dashboard.mjs --comprobar     (0 si coinciden, 1 si no)
+   Todo va bajo .gym-dashboard (la clase de la nota, `cssclasses: gym-dashboard`): no afecta a
+   ninguna otra nota. Sin estos estilos, el dashboard funciona con sus estilos en línea.
+
+   Cómo funciona:
+   · Dentro de la nota redefine las variables del tema de Obsidian (--background-secondary,
+     --text-muted, --interactive-accent…): los estilos en línea del dashboard que las usan
+     toman este aspecto sin tocar el código.
+   · Da valor a las variables propias --gd-… que el código usa con respaldo
+     (var(--gd-radio, 8px)): sin estos estilos vale el respaldo.
+   · Estiliza las clases gd-… (tarjetas, cabeceras, pestañas, anillos, insignias).
+   Colores de grupo: Gym/Config/colores-grupos.md (los lee el dashboard, no este archivo).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── AJUSTES · cámbialos aquí ─── */
+.gym-dashboard {
+  --gd-acento-oscuro: #C6F25A;   /* color de acento con el tema oscuro */
+  --gd-acento-claro: #4C7A00;    /* color de acento con el tema claro */
+  --gd-radio-tarjetas: 14px;     /* esquinas de tarjetas y secciones */
+}
+
+/* ─── Variables de diseño ─── */
+.gym-dashboard {
+  --gd-radio: var(--gd-radio-tarjetas);
+  --gd-radio-s: 10px;
+  --gd-fs-s: 13px;
+  --gd-fs-m: 16px;
+  --gd-fs-l: 28px;
+  --gd-esp: 12px;
+  /* Ancho completo: sin el ancho de lectura limitado de Obsidian */
+  --file-line-width: 100%;
+  font-size: var(--gd-fs-m);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+.theme-dark .gym-dashboard {
+  --gd-fondo: #0B0C0F;
+  --gd-tarjeta: #16181D;
+  --gd-tarjeta-2: #1D2026;
+  --gd-borde: rgba(255, 255, 255, 0.07);
+  --gd-texto: #ECEEF2;
+  --gd-texto-2: #8D93A1;
+  --gd-texto-3: #5E6472;
+  --gd-pista: rgba(255, 255, 255, 0.08);
+  --gd-acento: var(--gd-acento-oscuro);
+  --gd-sobre-acento: #0B0C0F;
+  --gd-sombra: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.35);
+  --gd-ok: #4FC48E;
+  --gd-aviso: #F2B84B;
+  --gd-mal: #F2727F;
+}
+.theme-light .gym-dashboard {
+  --gd-fondo: #F3F4F6;
+  --gd-tarjeta: #FFFFFF;
+  --gd-tarjeta-2: #F6F7F9;
+  --gd-borde: rgba(15, 20, 30, 0.08);
+  --gd-texto: #14161A;
+  --gd-texto-2: #646A78;
+  --gd-texto-3: #9AA0AC;
+  --gd-pista: rgba(15, 20, 30, 0.08);
+  --gd-acento: var(--gd-acento-claro);
+  --gd-sobre-acento: #FFFFFF;
+  --gd-sombra: 0 1px 2px rgba(15, 20, 30, 0.06), 0 6px 18px rgba(15, 20, 30, 0.06);
+  --gd-ok: #17804F;
+  --gd-aviso: #A36A00;
+  --gd-mal: #C73A50;
+}
+/* Las variables del tema de Obsidian, redefinidas sólo dentro de la nota */
+.theme-dark .gym-dashboard, .theme-light .gym-dashboard {
+  --background-primary: var(--gd-fondo);
+  --background-primary-alt: var(--gd-tarjeta-2);
+  --background-secondary: var(--gd-tarjeta);
+  --background-secondary-alt: var(--gd-tarjeta-2);
+  --background-modifier-border: var(--gd-borde);
+  --background-modifier-hover: var(--gd-tarjeta-2);
+  --text-normal: var(--gd-texto);
+  --text-muted: var(--gd-texto-2);
+  --text-faint: var(--gd-texto-3);
+  --interactive-accent: var(--gd-acento);
+  --interactive-accent-hover: var(--gd-acento);
+  --text-accent: var(--gd-acento);
+  --text-on-accent: var(--gd-sobre-acento);
+  --color-green: var(--gd-ok);
+  --color-orange: var(--gd-aviso);
+  --color-yellow: var(--gd-aviso);
+  --color-red: var(--gd-mal);
+  background-color: var(--gd-fondo);
+  color: var(--gd-texto);
+}
+
+/* ─── Lo que sobra de Obsidian en esta nota ─── */
+.gym-dashboard .inline-title,
+.gym-dashboard .metadata-container,
+.gym-dashboard .frontmatter-container,
+.gym-dashboard .mod-header .frontmatter { display: none; }
+body.is-phone .gym-dashboard { --file-margins: 8px 12px; }
+.gym-dashboard .block-language-dataviewjs { margin: 0; }
+
+/* ─── Tipografía: tres tamaños ─── */
+.gym-dashboard .gd-texto-sec,
+.gym-dashboard .gd-sec-dato,
+.gym-dashboard .gd-kpi-cab,
+.gym-dashboard .gd-tab,
+.gym-dashboard .gd-anillo-estado,
+.gym-dashboard .gd-anillo-nombre { font-size: var(--gd-fs-s) !important; }
+.gym-dashboard .gd-num-m,
+.gym-dashboard .gd-num-l,
+.gym-dashboard .gd-hoy-rutina { font-size: var(--gd-fs-l) !important; font-weight: 750 !important; letter-spacing: -0.02em; line-height: 1.12 !important; }
+.gym-dashboard .gd-num-s,
+.gym-dashboard .gd-sec-tit,
+.gym-dashboard h4, .gym-dashboard h5 { font-size: var(--gd-fs-m) !important; }
+.gym-dashboard h4, .gym-dashboard h5 { font-weight: 700; color: var(--gd-texto); }
+.gym-dashboard .gd-num-s, .gym-dashboard .gd-num-m, .gym-dashboard .gd-num-l,
+.gym-dashboard .gd-lista-der, .gym-dashboard .gd-kpi { font-variant-numeric: tabular-nums; }
+
+/* ─── Tarjetas y secciones ─── */
+.gym-dashboard .gd-tarjeta { border-color: var(--gd-borde); }
+.gym-dashboard .gd-sec { background: var(--gd-tarjeta); border-color: var(--gd-borde); margin: 0 0 10px !important; }
+.gym-dashboard .gd-sec .gd-tarjeta { background: var(--gd-tarjeta-2); box-shadow: none; }
+.gym-dashboard .gd-sec .gd-sec { background: transparent; box-shadow: none; border-width: 1px 0 0 0; border-radius: 0; margin: 6px 0 0 !important; }
+.gym-dashboard .gd-sec-cab {
+  display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px !important;
+  list-style: none; font-weight: 700; -webkit-tap-highlight-color: transparent;
+}
+.gym-dashboard .gd-sec-cab::-webkit-details-marker { display: none; }
+.gym-dashboard .gd-sec-cab::marker { content: ""; }
+.gym-dashboard .gd-sec-cab > .gd-sec-ico { margin: 0 !important; color: var(--gd-acento); }
+.gym-dashboard .gd-sec-tit { flex: 0 0 auto; white-space: nowrap; }
+.gym-dashboard .gd-sec-dato {
+  display: block; flex: 1 1 auto; min-width: 0; margin-left: 6px !important; text-align: right;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Flecha a la derecha, dibujada con el icono chevron-down de Lucide como máscara */
+.gym-dashboard .gd-sec-cab::after {
+  content: ""; flex: 0 0 16px; width: 16px; height: 16px; background: var(--gd-texto-2);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+  transform: rotate(-90deg); transition: transform 0.15s ease;
+}
+.gym-dashboard .gd-sec[open] > .gd-sec-cab::after { transform: none; }
+.gym-dashboard .gd-sec .gd-sec > .gd-sec-cab { min-height: 48px; padding: 0 !important; font-weight: 650; }
+.gym-dashboard .gd-sec-cuerpo { padding: 0 12px 12px !important; }
+.gym-dashboard .gd-sec .gd-sec .gd-sec-cuerpo { padding: 0 0 8px !important; }
+
+/* ─── Etiquetas ─── */
+.gym-dashboard .gd-chip {
+  display: inline-flex !important; align-items: center; gap: 4px; min-height: 28px; padding: 0 10px !important;
+  border-radius: 999px !important; font-size: var(--gd-fs-s) !important; font-weight: 650;
+  background: var(--gd-tarjeta-2) !important; border: 1px solid var(--gd-borde) !important; color: var(--gd-texto-2) !important;
+}
+.gym-dashboard .gd-chip-acento { background: color-mix(in srgb, var(--gd-acento) 16%, transparent) !important;
+  color: var(--gd-acento) !important; border-color: color-mix(in srgb, var(--gd-acento) 38%, transparent) !important; }
+.gym-dashboard .gd-chip-verde { background: color-mix(in srgb, var(--gd-ok) 16%, transparent) !important;
+  color: var(--gd-ok) !important; border-color: color-mix(in srgb, var(--gd-ok) 38%, transparent) !important; }
+.gym-dashboard .gd-chip-naranja { color: var(--gd-aviso) !important; border-color: color-mix(in srgb, var(--gd-aviso) 38%, transparent) !important; }
+.gym-dashboard .gd-chip-sube { border-radius: var(--gd-radio-s) !important; }
+
+/* ─── Hoy toca ─── */
+.gym-dashboard .gd-hoy { position: relative; overflow: hidden; padding: 16px !important; border-left-width: 1px !important;
+  border-left-color: var(--gd-borde) !important; }
+.gym-dashboard .gd-hoy::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--c) 22%, transparent), transparent 62%); }
+.gym-dashboard .gd-hoy::after { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 4px;
+  border-radius: 0 4px 4px 0; background: var(--c); }
+.gym-dashboard .gd-hoy > * { position: relative; }
+.gym-dashboard .gd-hoy-cambios { border-top-color: var(--gd-borde) !important; }
+.gym-dashboard .gd-hoy-cambios .gd-ico { color: var(--gd-acento); }
+
+/* ─── Cifras clave ─── */
+.gym-dashboard .gd-kpis { gap: 10px !important; }
+.gym-dashboard .gd-kpi { padding: 12px !important; min-height: 104px; justify-content: space-between; }
+@media (min-width: 700px) { .gym-dashboard .gd-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; } }
+
+/* ─── Controles: buscador y pestañas ─── */
+.gym-dashboard .gd-select, .gym-dashboard .gd-boton {
+  background: var(--gd-tarjeta-2) !important; color: var(--gd-texto) !important; border: 1px solid var(--gd-borde) !important;
+  box-shadow: none !important; border-radius: var(--gd-radio-s) !important;
+}
+.gym-dashboard .gd-tabs { padding: 4px; background: var(--gd-tarjeta-2); border: 1px solid var(--gd-borde); border-radius: 12px; }
+.gym-dashboard .gd-tab { background: transparent !important; color: var(--gd-texto-2) !important; border: 0 !important;
+  box-shadow: none !important; border-radius: 9px !important; font-weight: 600 !important; min-height: 48px !important; }
+.gym-dashboard .gd-tab[aria-selected="true"] { background: var(--gd-tarjeta) !important; color: var(--gd-texto) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important; }
+.gym-dashboard .gd-tab[aria-selected="true"] .gd-ico { color: var(--gd-acento); }
+.gym-dashboard .gd-tab:active, .gym-dashboard .gd-boton:active, .gym-dashboard .gd-sec-cab:active { transform: scale(0.985); }
+
+/* ─── Progresión ─── */
+.gym-dashboard .gd-prog-sube { border-left-color: var(--gd-acento) !important; }
+.gym-dashboard .gd-prog-sube .gd-num-s .gd-ico { color: var(--gd-acento); }
+.gym-dashboard .gd-proxima { background: var(--gd-tarjeta) !important; }
+
+/* ─── Anillos, barras y minigráficos ─── */
+.gym-dashboard { --gd-pista-anillo: var(--gd-pista); }
+.gym-dashboard .gd-anillos { gap: 16px 6px !important; }
+.gym-dashboard .gd-barra { height: 6px !important; background: var(--gd-pista) !important; }
+
+/* ─── Ligas: insignias con resplandor del color de su liga ─── */
+.gym-dashboard .gd-ins { position: relative; }
+.gym-dashboard .gd-ins::before { content: ""; position: absolute; inset: -22%; border-radius: 50%; z-index: 0; opacity: 0.55;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--liga) 55%, transparent), transparent); pointer-events: none; }
+.gym-dashboard .gd-ins > svg { position: relative; z-index: 1; }
+.gym-dashboard .gd-ins-mini::before, .gym-dashboard .gd-esc .gd-ins::before { display: none; }
+.gym-dashboard .gd-liga-general, .gym-dashboard .gd-liga-tarjeta {
+  border-color: color-mix(in srgb, var(--liga, var(--gd-borde)) 45%, var(--gd-borde)) !important;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--liga, transparent) 12%, var(--gd-tarjeta-2)), var(--gd-tarjeta-2) 55%) !important;
+}
+.gym-dashboard .gd-escalera { background: var(--gd-tarjeta) !important; }
+.gym-dashboard .gd-esc-tuya { outline-color: var(--gd-acento) !important; background: color-mix(in srgb, var(--gd-acento) 18%, transparent); }
+
+/* ─── Callouts dentro del dashboard ─── */
+.gym-dashboard .callout { border-radius: var(--gd-radio-s); }
+
+/* ─── Móvil ─── */
+@media (max-width: 480px) {
+  .gym-dashboard .gd-sec-cab { gap: 8px; padding: 0 12px !important; }
+  .gym-dashboard .gd-sec-cuerpo { padding: 0 10px 10px !important; }
+}
