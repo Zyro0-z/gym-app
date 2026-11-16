@@ -1,0 +1,78 @@
+# Pruebas en cada push y PR; en main, si pasan, publica en GitHub Pages con la versión estampada.
+# Requiere en Settings › Pages: «Source: GitHub Actions».
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      webkit:
+        description: "Ejecutar también las e2e en WebKit"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Núcleo y golden master
+        run: npm test
+      - name: Rendimiento del análisis
+        run: npm run bench
+      - name: E2E en Chromium
+        run: npm run test:e2e
+      - name: Auditoría de accesibilidad
+        run: npm run a11y --if-present
+
+  webkit:
+    # Opcional y manual: WebKit en el contenedor oficial de Playwright
+    if: github.event_name == 'workflow_dispatch' && inputs.webkit
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.65.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: node tests/e2e/todas.mjs webkit
+        env:
+          HOME: /root
+
+  publicar:
+    needs: pruebas
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Copia publicable (solo lo que usa la app)
+        run: |
+          mkdir _site
+          cp -r index.html manifest.webmanifest sw.js .nojekyll src assets icons _site/
+          node tools/estampar-version.mjs _site "$GITHUB_SHA"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

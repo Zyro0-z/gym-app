@@ -41,17 +41,29 @@ nueva no los toca.
 
 ## Pruebas
 
+Solo hacen falta para desarrollar; la app no tiene build ni dependencias.
+
 ```
-cd tests && npm i && npx playwright install chromium
-npm test                                       # todo: núcleo, golden master y e2e en Chromium
-node e2e/capturas.mjs <carpeta> [chromium|webkit]   # todas las pantallas, 390×844 y 430×932, claro y oscuro
-sh webkit.sh e2e/entreno.mjs webkit            # cualquier prueba e2e con WebKit (contenedor docker)
+npm ci && npx playwright install chromium
+npm test              # núcleo (node:test), golden master y lista del service worker
+npm run bench         # análisis con 820 sesiones: falla si la mediana de 5 pasa del umbral
+npm run test:e2e      # todas las e2e en Chromium (tests/e2e/todas.mjs)
+npm run test:webkit   # todas las e2e en WebKit, en el contenedor de Playwright (docker)
+npm run test:todo     # todo lo anterior
+npm run golden        # regenera el golden master con el dashboard antiguo (solo si se decide)
+npm run serve         # sirve la app en http://127.0.0.1:8765
+node tests/e2e/capturas.mjs <carpeta> [chromium|webkit]   # todas las pantallas, 390×844 y 430×932, claro y oscuro
+sh tests/webkit.sh e2e/entreno.mjs webkit                 # una sola prueba e2e con WebKit
 ```
 
 Las e2e cubren la migración en IndexedDB real, el arranque con datos de la versión 1, la navegación,
 un entrenamiento completo con recarga a mitad, editar y borrar sesiones, exportar e importar la copia,
 el uso sin conexión y el aviso de versión nueva. Fallan con cualquier error de consola o con textos
 «NaN», «undefined» o «[object».
+
+`.github/workflows/ci.yml` ejecuta en cada push y PR el núcleo, el bench y las e2e en Chromium. En
+`main`, si pasan, publica en GitHub Pages con la versión del service worker estampada
+(`tools/estampar-version.mjs`). Las e2e en WebKit son un job manual (`workflow_dispatch`).
 
 ## Licencias
 
