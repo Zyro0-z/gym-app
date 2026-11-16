@@ -44,8 +44,14 @@ ok(r.claves.includes("legacy") && r.claves.some((k) => String(k).startsWith("bac
 ok(r.tema === "dark", "respeta el tema elegido en la versión anterior");
 ok(/actualizados/.test(r.toast), "avisa de la actualización");
 await p.locator(".tabbar [data-tab=historial]").click(); await p.waitForTimeout(500);
-const filas = await p.locator(".pestana.activa .lista .celda").count();
-ok(filas === viejo.sessions.length, `Historial enseña todas las sesiones (${filas})`);
+// Historial pagina de 40 en 40 («Ver sesiones anteriores»): primero la tanda, luego todas
+const total = viejo.sessions.length, celdas = () => p.locator(".pestana.activa .lista .celda").count();
+const verMas = p.locator(".pestana.activa button", { hasText: "Ver sesiones anteriores" });
+const primera = await celdas();
+ok(primera === Math.min(40, total), `Historial enseña la primera tanda (${primera})`);
+for (let i = 0; i < 20 && (await verMas.count()); i++) { await verMas.first().click(); await p.waitForTimeout(200); }
+const filas = await celdas();
+ok(filas === total, `Historial enseña todas las sesiones (${filas}/${total})`);
 await p.reload(); await p.waitForFunction(() => window.__gym); await p.waitForTimeout(500);
 ok(await p.evaluate(() => window.__gym.store.estado.sesiones.length) === viejo.sessions.length, "al recargar no migra otra vez ni duplica");
 const texto = await p.evaluate(() => document.body.innerText);
