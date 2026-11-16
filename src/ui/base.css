@@ -26,6 +26,10 @@ svg { display: block; }
 [hidden] { display: none !important; }
 h1, h2, h3, p { margin: 0; font: inherit; }
 
+/* Foco visible con teclado (6.7): siempre, también en los campos que quitan el contorno */
+:focus-visible { outline: 2px solid var(--accent-ink) !important; outline-offset: 2px; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, .celda:focus-visible { outline-offset: -2px; }
+
 .num { font-variant-numeric: tabular-nums; }
 .t-large    { font-size: var(--f-large);    line-height: 1.206; font-weight: 700; letter-spacing: .011em; }
 .t-title1   { font-size: var(--f-title1);   line-height: 1.214; font-weight: 700; letter-spacing: .013em; }
@@ -39,9 +43,9 @@ h1, h2, h3, p { margin: 0; font: inherit; }
 .t-caption1 { font-size: var(--f-caption1); line-height: 1.333; letter-spacing: 0; }
 .t-caption2 { font-size: var(--f-caption2); line-height: 1.182; letter-spacing: .006em; font-weight: 500; }
 .c-2 { color: var(--label-2); }
-.c-3 { color: var(--label-3); }
+.c-3 { color: var(--label-icono); }   /* iconos y marcas (3:1); el texto secundario es .c-2 */
 .c-accent { color: var(--accent-ink); }
-.c-ok { color: var(--ok); } .c-warn { color: var(--warn); } .c-bad { color: var(--bad); }
+.c-ok { color: var(--ok-ink); } .c-warn { color: var(--warn-ink); } .c-bad { color: var(--bad-ink); }
 .visualmente-oculto { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ── estructura ── */
@@ -63,7 +67,8 @@ body.sin-tabbar .pantalla > .scroll { padding-bottom: calc(var(--safe-b) + 32px)
   position: absolute; top: 0; left: 0; right: 0; z-index: 3;
   padding: var(--safe-t) calc(var(--safe-r) + 8px) 0 calc(var(--safe-l) + 8px);
   height: calc(var(--safe-t) + var(--nav-h));
-  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center;
+  /* Los lados nunca se encogen por debajo de su contenido; el título usa lo que quede y se trunca */
+  display: grid; grid-template-columns: minmax(min-content, 1fr) minmax(0, max-content) minmax(min-content, 1fr); align-items: center;
   transition: background-color var(--t-fast) linear, box-shadow var(--t-fast) linear;
 }
 .pantalla.con-fondo > .barra-nav {
@@ -72,8 +77,8 @@ body.sin-tabbar .pantalla > .scroll { padding-bottom: calc(var(--safe-b) + 32px)
   box-shadow: inset 0 -.5px 0 var(--separator);
 }
 .barra-nav .titulo {
-  grid-column: 2; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
-  font-size: var(--f-headline); font-weight: 600; opacity: 1; transition: opacity 150ms linear;
+  grid-column: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
+  font-size: min(var(--f-headline), 20px); font-weight: 600; opacity: 1; transition: opacity var(--dur-1) linear;
 }
 .pantalla.titulo-grande:not(.colapsada) > .barra-nav .titulo { opacity: 0; }
 .barra-nav .izq { grid-column: 1; justify-self: stretch; display: flex; min-width: 0; }
@@ -85,6 +90,8 @@ body.sin-tabbar .pantalla > .scroll { padding-bottom: calc(var(--safe-b) + 32px)
 .btn-atras svg { width: 24px; height: 24px; flex: none; stroke-width: 2.4; margin-right: 1px; }
 .btn-barra { min-height: var(--tap); min-width: var(--tap); padding: 0 8px; color: var(--accent-ink); font-size: var(--f-body); display: flex; align-items: center; justify-content: center; }
 .btn-barra.fuerte { font-weight: 600; }
+/* Como en iOS, las barras y cabeceras no crecen sin límite con el texto grande (sí el contenido) */
+.barra-nav .btn-barra, .hoja-cab .btn-barra, .modal-cab .btn-barra { font-size: min(var(--f-body), 20px); }
 .btn-barra svg { width: 24px; height: 24px; }
 .btn-barra:disabled { color: var(--label-3); }
 
@@ -110,7 +117,7 @@ body.sin-tabbar .tabbar { transform: translateY(110%); }
 .tabbar button svg { width: 28px; height: 26px; }
 .tabbar button .contorno { display: contents; }
 .tabbar button .relleno { display: none; }
-.tabbar button[aria-selected="true"] { color: var(--accent); }
+.tabbar button[aria-selected="true"] { color: var(--accent-ink); }
 .tabbar button[aria-selected="true"] .contorno { display: none; }
 .tabbar button[aria-selected="true"] .relleno { display: contents; }
 .tabbar span { font-size: 10.5px; line-height: 12px; font-weight: 500; letter-spacing: .01em; }
@@ -118,5 +125,5 @@ body.sin-tabbar .tabbar { transform: translateY(110%); }
 .tabbar .punto { position: absolute; top: 5px; left: calc(50% + 9px); width: 9px; height: 9px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 0 1.5px var(--bar-bg); }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+  *, *::before, *::after { transition-duration: var(--dur-1) !important; animation-duration: var(--dur-1) !important; }
 }

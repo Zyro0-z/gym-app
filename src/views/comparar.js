@@ -28,7 +28,8 @@ export function vistaComparar(_p, app) {
       const seg = h("div", { class: "seccion" }, segmentado(PERIODOS.map((p) => ({ valor: p.id, texto: p.texto })), id, (v) => { id = v; this.render(c); }, { etiqueta: "Periodo" }));
       // Sin sesiones en el periodo actual, los «−100 %» no dicen nada: se explica y se muestra lo anterior
       if (!a.sesiones) {
-        poner(c, seg, vacio({ icono: "historial", titulo: "Sin sesiones del " + rango(a), texto: b.sesiones ? "En el periodo anterior (" + rango(b) + ") hubo " + plural(b.sesiones, "sesión", "sesiones") + ". Cuando entrenes en este, verás la comparación." : "Tampoco hay sesiones en el periodo anterior." }));
+        poner(c, seg, vacio({ icono: "historial", titulo: "Sin sesiones del " + rango(a), texto: b.sesiones ? "En el periodo anterior (" + rango(b) + ") hubo " + plural(b.sesiones, "sesión", "sesiones") + ". Cuando entrenes en este, verás la comparación." : "Tampoco hay sesiones en el periodo anterior.",
+          acciones: [{ texto: "Ver historial", alPulsar: () => app.nav.ir("historial", { pestana: "historial" }) }] }));
         return;
       }
       poner(c,

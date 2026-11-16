@@ -24,6 +24,7 @@ export function haceTxt(seg) { return seg < 60 ? "hace " + seg + " s" : "hace " 
 export function empezarDescanso(seg) {
   if (!E.M || E.M.modo !== "entreno" || !(seg > 0)) return;
   E.M.d.descanso = { fin: Date.now() + seg * 1000, total: seg, avisado: false };
+  anunciar("Descanso de " + reloj(seg));
   pintarDescanso();
   sincronizarAviso(E.M.d);
 }
@@ -57,6 +58,9 @@ export function alVolver() {
   refrescarBloqueo();
 }
 
+/** Región polite del modal (solo lectores de pantalla): inicio y últimos 10 s; el final lo dice el aviso. */
+function anunciar(t) { if (E.M && E.M.anuncio) E.M.anuncio.textContent = t; }
+
 export function pintarDescanso() {
   if (!E.M || E.M.modo !== "entreno") return;
   const ds = E.M.d.descanso, el = E.M.descansoEl;
@@ -64,6 +68,7 @@ export function pintarDescanso() {
   if (ds && resto <= 0 && !ds.avisado) finDescanso(E.M.d);
   if (!ds || resto <= 0) { el.hidden = true; E.M.capa.classList.remove("con-descanso"); return; }
   E.M.capa.classList.add("con-descanso");
+  if (resto === 10 && E.M.anunciado10 !== ds.fin) { E.M.anunciado10 = ds.fin; anunciar("Quedan 10 segundos de descanso"); }
   if (el.hidden || !el.firstChild) {
     el.hidden = false;
     poner(el,

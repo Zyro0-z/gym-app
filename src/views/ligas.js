@@ -4,7 +4,7 @@ import { h, poner } from "../ui/dom.js";
 import { icono } from "../ui/iconos.js";
 import { seccion, lista, celda, vacio, barrita } from "../ui/controles.js";
 import { graficaLinea } from "../ui/graficas.js";
-import { insignia, nombresLigas, COLOR_LIGA } from "../ui/insignias.js";
+import { insignia, nombresLigas } from "../ui/insignias.js";
 import { colorGrupo } from "../ui/tema.js";
 import { fmt } from "../core/formato.js";
 import { deNum } from "../core/fechas.js";
@@ -30,7 +30,7 @@ function cabecera(L, p, texto, v) {
   return h("div", { class: ["tarjeta liga-cab", v && v.viejo && "liga-vieja"] },
     insignia(n, 96),
     h("div", { class: "t-title2", style: { marginTop: "8px" } }, n.txt),
-    h("div", { style: { width: "100%", maxWidth: "260px", margin: "10px auto 6px" } }, barrita(pr.frac, COLOR_LIGA[n.insignia - 1])),
+    h("div", { style: { width: "100%", maxWidth: "260px", margin: "10px auto 6px" } }, barrita(pr.frac)),
     h("div", { class: "t-footnote c-2" }, pr.siguiente ? capital(texto) : "Has llegado a la liga más alta"),
     notaVieja(v, L));
 }

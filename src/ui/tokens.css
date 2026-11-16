@@ -10,28 +10,36 @@
   --fill: rgba(120, 120, 128, .2);
   --fill-2: rgba(120, 120, 128, .12);
   --label: #000000;
-  --label-2: rgba(60, 60, 67, .6);
+  /* label-2 algo más oscuro que el de iOS (.6 → .77) para llegar a 4,5:1 sobre #F2F2F7 (Fase 6.7) */
+  --label-2: rgba(60, 60, 67, .77);
   --label-3: rgba(60, 60, 67, .3);
+  /* label-3 solo para lo inactivo y los placeholders; iconos que informan usan --label-icono (3:1) */
+  --label-icono: rgba(60, 60, 67, .57);
   --separator: rgba(60, 60, 67, .29);
   --bar-bg: rgba(249, 249, 249, .94);
   --sheet-bg: #F2F2F7;
   --veil: rgba(0, 0, 0, .4);
   --shadow-sheet: 0 -2px 24px rgba(0, 0, 0, .12);
   --shadow-pill: 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04);
-  --ok: #34C759;
-  --warn: #FF9500;
+  /* Estados: --ok/--warn/--bad para gráficos e iconos (3:1); *-ink para texto (4,5:1) */
+  --ok: #2A9F47;
+  --warn: #C97600;
   --bad: #FF3B30;
+  --ok-ink: #1E7133;
+  --warn-ink: #915500;
+  --bad-ink: #BD2C24;
   --yellow: #FFCC00;
   --on-accent: #FFFFFF;
-  --tab-off: #8E8E93;
+  --tab-off: #6E6E73;   /* 4,5:1 sobre la barra (iOS usa #8E8E93) */
   --seg-pill: #FFFFFF;
   --chevron: #C4C4C6;
   --hud: rgba(44, 44, 46, .96);
   --alert-bg: rgba(242, 242, 242, .92);
 
-  /* acento: azul por defecto */
-  --accent: #007AFF;
-  --accent-ink: #0062CC;
+  /* acento: azul por defecto. --accent: rellenos con texto blanco (4,5:1) y gráficos (3:1);
+     --accent-ink: texto sobre el fondo (4,5:1). Algo más oscuros que los de iOS (Fase 6.7). */
+  --accent: #0071ED;
+  --accent-ink: #0060C9;
 
   /* paleta de grupos (solo como punto, barra fina o relleno del diagrama) */
   --g-rosa: #FF2D55; --g-azul: #007AFF; --g-verde: #34C759; --g-naranja: #FF9500;
@@ -66,6 +74,10 @@
 
   /* movimiento */
   --spring: cubic-bezier(.32, .72, 0, 1);
+  /* Duraciones (Fase 6.6): con movimiento reducido valen 0 y no hay desplazamientos */
+  --dur-1: 150ms;
+  --dur-2: 250ms;
+  --dur-3: 380ms;
   --t-push: 350ms;
   --t-fast: 250ms;
 }
@@ -83,8 +95,9 @@
   --fill: rgba(120, 120, 128, .36);
   --fill-2: rgba(120, 120, 128, .24);
   --label: #FFFFFF;
-  --label-2: rgba(235, 235, 245, .6);
+  --label-2: rgba(235, 235, 245, .62);
   --label-3: rgba(235, 235, 245, .3);
+  --label-icono: rgba(235, 235, 245, .4);
   --separator: rgba(84, 84, 88, .6);
   --bar-bg: rgba(22, 22, 22, .94);
   --sheet-bg: #1C1C1E;
@@ -99,9 +112,12 @@
   --ok: #30D158;
   --warn: #FF9F0A;
   --bad: #FF453A;
+  --ok-ink: #30D158;
+  --warn-ink: #FF9F0A;
+  --bad-ink: #FF7F77;
   --yellow: #FFD60A;
-  --accent: #0A84FF;
-  --accent-ink: #0A84FF;
+  --accent: #0974E0;
+  --accent-ink: #56AAFF;
   --g-rosa: #FF375F; --g-azul: #0A84FF; --g-verde: #30D158; --g-naranja: #FF9F0A;
   --g-morado: #BF5AF2; --g-indigo: #5E5CE6; --g-amarillo: #FFD60A; --g-cian: #64D2FF;
 }
@@ -109,17 +125,21 @@
 :root[data-theme="dark"] .hoja { --cell: #2C2C2E; --cell-2: #3A3A3C; --cell-pressed: #48484A; }
 
 /* ── acentos (Ajustes › Apariencia) ── */
-:root[data-accent="indigo"]  { --accent: #5856D6; --accent-ink: #4644C4; }
-:root[data-accent="morado"]  { --accent: #AF52DE; --accent-ink: #8E3BB8; }
-:root[data-accent="rosa"]    { --accent: #FF2D55; --accent-ink: #D70F3C; }
-:root[data-accent="rojo"]    { --accent: #FF3B30; --accent-ink: #D70015; }
-:root[data-accent="naranja"] { --accent: #FF9500; --accent-ink: #C25E00; }
-:root[data-accent="verde"]   { --accent: #34C759; --accent-ink: #248A3D; }
-:root[data-accent="grafito"] { --accent: #8E8E93; --accent-ink: #636366; }
-:root[data-theme="dark"][data-accent="indigo"]  { --accent: #5E5CE6; --accent-ink: #5E5CE6; }
-:root[data-theme="dark"][data-accent="morado"]  { --accent: #BF5AF2; --accent-ink: #BF5AF2; }
-:root[data-theme="dark"][data-accent="rosa"]    { --accent: #FF375F; --accent-ink: #FF375F; }
-:root[data-theme="dark"][data-accent="rojo"]    { --accent: #FF453A; --accent-ink: #FF453A; }
-:root[data-theme="dark"][data-accent="naranja"] { --accent: #FF9F0A; --accent-ink: #FF9F0A; }
-:root[data-theme="dark"][data-accent="verde"]   { --accent: #30D158; --accent-ink: #30D158; }
-:root[data-theme="dark"][data-accent="grafito"] { --accent: #98989D; --accent-ink: #98989D; }
+:root[data-accent="indigo"]   { --accent: #5856D6; --accent-ink: #5553D0; }
+:root[data-accent="morado"]   { --accent: #A64ED3; --accent-ink: #8C42B2; }
+:root[data-accent="rosa"]     { --accent: #E0284B; --accent-ink: #BF2240; }
+:root[data-accent="rojo"]     { --accent: #DE332A; --accent-ink: #BD2C24; }
+:root[data-accent="naranja"]  { --accent: #AD6500; --accent-ink: #915500; }
+:root[data-accent="verde"]    { --accent: #23873D; --accent-ink: #1E7133; }
+:root[data-accent="grafito"]  { --accent: #76767A; --accent-ink: #636367; }
+:root[data-theme="dark"][data-accent="indigo"]   { --accent: #5E5CE6; --accent-ink: #9E9DF0; }
+:root[data-theme="dark"][data-accent="morado"]   { --accent: #A64ED3; --accent-ink: #D188F6; }
+:root[data-theme="dark"][data-accent="rosa"]     { --accent: #DE3053; --accent-ink: #FF7B95; }
+:root[data-theme="dark"][data-accent="rojo"]     { --accent: #D93B31; --accent-ink: #FF7F77; }
+:root[data-theme="dark"][data-accent="naranja"]  { --accent: #A66706; --accent-ink: #FF9F0A; }
+:root[data-theme="dark"][data-accent="verde"]    { --accent: #1F8839; --accent-ink: #30D158; }
+:root[data-theme="dark"][data-accent="grafito"]  { --accent: #757579; --accent-ink: #A5A5AA; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; --t-push: 0ms; --t-fast: 0ms; --spring: linear; }
+}

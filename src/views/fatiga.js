@@ -7,6 +7,7 @@ import { masDias, ddmm, numDia, deNum } from "../core/fechas.js";
 import { informeFatiga, SEMANAS_MIN } from "../core/fatiga.js";
 import { propuestaDescarga } from "../core/descarga.js";
 import { fechaCorta } from "../ui/textos.js";
+import { elegirRutina } from "./hoy.js";
 
 const f1 = (x) => fmt(x, Number.isInteger(Math.round(x * 10) / 10) ? 0 : 1);
 const pctTxt = (x) => (x > 0 ? "+" : x < 0 ? "−" : "") + fmt(Math.abs(x), 1) + " %";
@@ -43,7 +44,8 @@ export function vistaFatiga(_p, app) {
       const A = store.analisis(), aj = store.estado.ajustes;
       const I = informeFatiga(A);
       if (!I.suficiente) {
-        poner(c, vacio({ icono: "progreso", titulo: "Aún es pronto", texto: "El informe mira las 8 últimas semanas completas y necesita sesiones en al menos " + SEMANAS_MIN + ". " + (I.semanasConDatos ? "Hay " + plural(I.semanasConDatos, "semana", "semanas") + " con sesiones." : "No hay sesiones en ese tiempo.") }), regla(app, aj));
+        poner(c, vacio({ icono: "progreso", titulo: "Aún es pronto", texto: "El informe mira las 8 últimas semanas completas y necesita sesiones en al menos " + SEMANAS_MIN + ". " + (I.semanasConDatos ? "Hay " + plural(I.semanasConDatos, "semana", "semanas") + " con sesiones." : "No hay sesiones en ese tiempo."),
+          acciones: [{ texto: "Empezar entrenamiento", alPulsar: () => elegirRutina(app) }] }), regla(app, aj));
         return;
       }
       const P = propuestaDescarga(A, aj.descarga);

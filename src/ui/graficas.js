@@ -27,8 +27,30 @@ const fmtEje = (v) => {
   return (Math.round(v * 10) / 10).toLocaleString("es-ES");
 };
 
-function contenedor(alto, dibujar, etiqueta) {
-  const el = h("div", { class: "grafica", style: { height: alto + "px" }, role: "img", "aria-label": etiqueta || "Gráfica" });
+/**
+ * Resumen textual de una serie (lectores de pantalla): extremos, último valor y tendencia, que
+ * compara la media de la segunda mitad con la de la primera (±3 % se considera estable).
+ * valores: números o null; nombres(i): texto del dato i.
+ */
+export function describirSerie(valores, formato = fmtEje, nombres = null) {
+  const idx = valores.map((v, i) => (typeof v === "number" && isFinite(v) ? i : -1)).filter((i) => i >= 0);
+  if (!idx.length) return "Sin datos.";
+  const v = idx.map((i) => valores[i]), nom = (i) => (nombres ? nombres(i) : "");
+  const iMin = idx[v.indexOf(Math.min(...v))], iMax = idx[v.indexOf(Math.max(...v))], ult = idx[idx.length - 1];
+  const con = (i) => formato(valores[i]) + (nom(i) ? " (" + nom(i) + ")" : "");
+  if (v.length === 1) return "Un dato: " + con(ult) + ".";
+  let t = "Mínimo " + con(iMin) + "; máximo " + con(iMax) + "; último " + con(ult) + ".";
+  if (v.length >= 4) {
+    const m = Math.floor(v.length / 2), med = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+    const a = med(v.slice(0, m)), b = med(v.slice(v.length - m));
+    const pct = a ? ((b - a) / Math.abs(a)) * 100 : null;
+    t += pct == null ? "" : Math.abs(pct) < 3 ? " Tendencia estable." : pct > 0 ? " Tendencia al alza." : " Tendencia a la baja.";
+  }
+  return t;
+}
+
+function contenedor(alto, dibujar, etiqueta, resumen = "") {
+  const el = h("div", { class: "grafica", style: { height: alto + "px" }, role: "img", "aria-label": (etiqueta || "Gráfica") + (resumen ? ". " + resumen : "") });
   let ancho = 0;
   const ro = new ResizeObserver((ents) => {
     const w = Math.round(ents[0].contentRect.width);
@@ -113,7 +135,7 @@ export function graficaBarras({ datos, alto = 180, formato = fmtEje, detalle = n
     });
     el.appendChild(svg);
     if (seleccionar && datos.length) seleccionable(el, svg, xs, ys, alto, (i) => ({ valor: formato(total(datos[i])), detalle: detalle ? detalle(datos[i], i) : datos[i].etiqueta }), ancho);
-  }, etiqueta);
+  }, etiqueta, describirSerie(datos.map((d) => (d.partes ? d.partes.reduce((a, p) => a + (p.valor || 0), 0) : d.valor)), formato, (i) => datos[i].etiqueta || ""));
 }
 
 /** Rectángulo con las esquinas de arriba redondeadas. */
@@ -163,7 +185,7 @@ export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null
     el.appendChild(svg);
     seleccionable(el, svg, puntos.map((p) => x(p.x)), puntos.map((p) => y(p.y)), alto,
       (i) => ({ valor: formato(puntos[i].y), detalle: puntos[i].detalle || "" }), ancho);
-  }, etiqueta);
+  }, etiqueta, describirSerie(puntos.map((p) => p.y), formato, (i) => puntos[i].detalle || (ejeX ? ejeX(puntos[i].x) : "")));
 }
 
 /** Línea mínima sin ejes. */

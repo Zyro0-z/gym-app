@@ -51,7 +51,7 @@ async function arrancar() {
   store.pedirPersistencia();
   registrarSW();
   // Solo bajo Playwright, para las pruebas
-  if (navigator.webdriver) window.__gym = { store, nav, entreno: { empezar: empezarEntreno, descartar: async () => { minimizarSiAbierto(); await store.guardarBorrador(null); } } };
+  if (navigator.webdriver) window.__gym = { store, nav, toast, confirmar: ctx.confirmar, entreno: { empezar: empezarEntreno, descartar: async () => { minimizarSiAbierto(); await store.guardarBorrador(null); } } };
 }
 
 /** Preferencia de tema de la versión anterior, para conservarla al migrar. */

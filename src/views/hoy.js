@@ -2,7 +2,7 @@
 // series y racha, la última sesión, el peso y el acceso a otra rutina.
 import { h, poner } from "../ui/dom.js";
 import { icono } from "../ui/iconos.js";
-import { seccion, lista, celda, anillo, vacio, chip, boton } from "../ui/controles.js";
+import { seccion, lista, celda, anillo, vacio, chip, boton, avisoCompacto } from "../ui/controles.js";
 import { fechaLarga, capital, fechaRelativa, kg, fechaCorta, reloj } from "../ui/textos.js";
 import { masDias, lunesDe, diaSemana } from "../core/fechas.js";
 import { plural } from "../core/formato.js";
@@ -12,7 +12,8 @@ import { empezarEntreno, abrirEntreno, mostrarResumen } from "./entreno.js";
 import { abrirPesaje } from "./pesaje.js";
 import { importarCopia, exportarCopia } from "./datos.js";
 import { nuevaRutina } from "./editores.js";
-import { tarjetaDescarga } from "./fatiga.js";
+import { programarDescarga, posponerDescarga } from "./fatiga.js";
+import { mostrarInstalar, marcarVisto } from "../ui/instalar.js";
 import { propuestaDescarga } from "../core/descarga.js";
 
 export function vistaHoy(_p, app) {
@@ -23,7 +24,7 @@ export function vistaHoy(_p, app) {
     sobre: () => capital(fechaLarga(store.hoy())),
     bajoTitulo: () => {
       const A = store.analisis(), b = A.C.bloquesActivos(A.hoy).find((x) => x.esDeload);
-      return b ? chip("Deload hasta el " + fechaCorta(b.fin, A.hoy), "accent") : null;
+      return b ? chip("Descarga hasta el " + fechaCorta(b.fin, A.hoy), "accent") : null;
     },
     alOcultar: () => clearInterval(reloj1),
     destruir: () => clearInterval(reloj1),
@@ -37,7 +38,7 @@ export function vistaHoy(_p, app) {
         return;
       }
       const A = store.analisis();
-      poner(c, tarjetaHoy(A, est, app), avisoCopia(app), avisoDescarga(A, app), tiraSemana(A, est), cifras(A), lineas(A, est, app));
+      poner(c, tarjetaHoy(A, est, app), avisoInstalar(def, c), avisoCopia(app), avisoDescarga(A, app), semana(A, est), lineas(A, est, app));
       if (est.borrador) {
         const t = c.querySelector("[data-reloj-hoy]");
         reloj1 = setInterval(() => { if (t && store.estado.borrador) t.textContent = reloj((Date.now() - store.estado.borrador.inicio) / 1000); }, 1000);
@@ -82,7 +83,7 @@ function tarjetaHoy(A, est, app) {
   }
   const t = A.hoyToca;
   const sig = siguienteRutina(A);
-  let encabezado = "Hoy toca", titulo, linea = "", extra = null, accion;
+  let encabezado = "Hoy toca", titulo, linea = "", extra = null, accion, repetir = null;
   if (t && !t.descanso && t.estado === "hecho") {
     encabezado = "Hoy";
     titulo = t.esperado;
@@ -98,6 +99,7 @@ function tarjetaHoy(A, est, app) {
     if (t.subidas.length) extra = chip("Sube carga en " + plural(t.subidas.length, "ejercicio", "ejercicios"), "ok", { icono: "flecha-arriba" });
     if (t.estado === "otra") extra = chip("Hoy ya entrenaste otra rutina", null);
     accion = boton("Empezar", () => (t.rutina ? empezarEntreno(t.esperado) : elegirRutina(app)), { icono: "play" });
+    repetir = ultimaDe(est, t.esperado);
   } else if (t && t.descanso) {
     encabezado = "Hoy";
     titulo = "Descanso";
@@ -109,42 +111,46 @@ function tarjetaHoy(A, est, app) {
     titulo = "Sin plan";
     linea = sig ? "Próxima: " + sig.rutina + ", " + fechaRelativa(sig.dia, A.hoy) : "Asigna rutinas a los días en Ajustes › Horario.";
     accion = boton("Empezar entrenamiento", () => elegirRutina(app), { icono: "play" });
+    repetir = ultimaDe(est, null);
   }
-  return h("div", { class: "seccion" }, h("div", { class: "tarjeta" },
+  const otra = repetir ? h("button", { class: "btn texto", onClick: () => empezarEntreno(repetir.rutina, { desde: repetir }),
+    "aria-label": "Repetir la última sesión" + (repetir.rutina ? " de " + repetir.rutina : "") + ", del " + fechaCorta(repetir.fecha, A.hoy) },
+    icono("repetir"), h("span", null, "Repetir última · " + fechaCorta(repetir.fecha, A.hoy))) : null;
+  return h("div", { class: "seccion" }, h("div", { class: "tarjeta hoy-principal", role: "region", "aria-label": encabezado + ": " + titulo },
     h("div", { class: "etiqueta" }, encabezado),
-    h("div", { class: "t-title1", style: { margin: "2px 0 4px" } }, titulo),
+    h("h2", { class: "t-title1", style: { margin: "2px 0 4px" } }, titulo),
     linea ? h("div", { class: "t-subhead c-2" }, linea) : null,
     extra ? h("div", { style: { marginTop: "8px" } }, extra) : null,
-    accion ? h("div", { style: { marginTop: "14px" } }, accion) : null));
+    accion ? h("div", { style: { marginTop: "14px" } }, accion, otra) : null));
 }
 
-function tiraSemana(A, est) {
+/** Última sesión de la rutina `nombre` (o la última de todas si es null). */
+function ultimaDe(est, nombre) {
+  const l = sesionesOrdenadas(est).filter((s) => (nombre ? s.rutina === nombre : true) && s.ejercicios && s.ejercicios.length);
+  return l[0] || null;
+}
+
+/** «Esta semana»: días, series frente al objetivo y racha, en una sola tarjeta de énfasis secundario. */
+function semana(A, est) {
   const lunes = lunesDe(A.hoy), hechos = new Set(est.sesiones.map((s) => s.fecha));
   const letras = ["L", "M", "X", "J", "V", "S", "D"];
-  return h("div", { class: "seccion" }, h("div", { class: "tira-semana", role: "list", "aria-label": "Esta semana" }, letras.map((l, i) => {
+  const tira = h("div", { class: "tira-semana", role: "list", "aria-label": "Días de esta semana" }, letras.map((l, i) => {
     const d = masDias(lunes, i), r = A.C.horario.get(i + 1), desc = !r || canon(r) === "descanso";
     const estado = hechos.has(d) ? "hecho" : d >= A.hoy && !desc ? "previsto" : "nada";
     return h("div", { class: ["dia-sem", d === A.hoy && "hoy", estado], role: "listitem", "aria-label": l + ": " + (estado === "hecho" ? "entrenado" : estado === "previsto" ? r : "descanso") },
       h("span", { class: "letra" }, l), h("span", { class: "marca" }));
-  })));
-}
-
-function cifras(A) {
+  }));
   const so = A.seriesObjetivo;
   const hechas = so ? so.lista.reduce((a, g) => a + g.hechas, 0) : A.resumen.act.ser;
   const objetivo = so ? so.lista.reduce((a, g) => a + g.min, 0) : 0;
-  const r = A.racha;
-  return h("div", { class: "seccion" }, h("div", { class: "fila-tarjetas" },
-    h("div", { class: "tarjeta" },
-      h("div", { class: "fila", style: { gap: "10px" } },
-        anillo({ frac: objetivo ? hechas / objetivo : 0, tam: 44, grosor: 6, ok: objetivo > 0 && hechas >= objetivo, etiqueta: hechas + " de " + objetivo + " series" }),
-        h("div", { class: "cifra t-title2" }, String(hechas), objetivo ? h("span", { class: "ud" }, "/" + objetivo) : null)),
-      h("div", { class: "etiqueta", style: { marginTop: "8px" } }, "Series esta semana")),
-    h("div", { class: "tarjeta" },
-      h("div", { class: "fila", style: { gap: "10px" } },
-        h("span", { class: r.viva ? "c-accent" : "c-3", style: { display: "flex" } }, icono("llama", { tam: 28 })),
-        h("div", { class: "cifra t-title2" }, String(r.viva ? r.racha : 0), h("span", { class: "ud" }, (r.viva ? r.racha : 0) === 1 ? " semana" : " semanas"))),
-      h("div", { class: "etiqueta", style: { marginTop: "8px" } }, r.viva || !r.racha ? "Racha" : "Racha · la anterior, " + r.racha))));
+  const r = A.racha, n = r.viva ? r.racha : 0;
+  const series = h("div", { class: "fila", style: { gap: "10px" } },
+    anillo({ frac: objetivo ? hechas / objetivo : 0, tam: 30, grosor: 4, ok: objetivo > 0 && hechas >= objetivo, etiqueta: hechas + " de " + objetivo + " series" }),
+    h("div", { class: "semana-dato" }, h("span", { class: "num t-headline" }, objetivo ? hechas + " de " + objetivo : String(hechas)), h("span", { class: "c-2" }, " series")));
+  const racha = h("div", { class: "fila", style: { gap: "8px" } },
+    h("span", { class: r.viva ? "c-accent" : "c-3", style: { display: "flex" }, "aria-hidden": "true" }, icono("llama", { tam: 22 })),
+    h("div", { class: "semana-dato" }, h("span", { class: "num t-headline" }, String(n)), h("span", { class: "c-2" }, (n === 1 ? " semana" : " semanas") + " de racha" + (!r.viva && r.racha ? " (la anterior, " + r.racha + ")" : ""))));
+  return seccion({ cab: "Esta semana" }, h("div", { class: "tarjeta" }, tira, h("div", { class: "semana-datos" }, series, racha)));
 }
 
 function lineas(A, est, app) {
@@ -159,10 +165,22 @@ function lineas(A, est, app) {
   return seccion({ cab: s ? "Última sesión" : null }, lista(celdas, { iconos: false }));
 }
 
+/** En Safari sin instalar: cómo añadirla a la pantalla de inicio (una vez, hasta «Entendido»). */
+function avisoInstalar(def, c) {
+  if (!mostrarInstalar()) return null;
+  return h("div", { class: "seccion" }, avisoCompacto({ icono: "compartir", tono: "accent", titulo: "Añade la app a la pantalla de inicio", etiqueta: "Instalar la app",
+    texto: "En Safari, pulsa Compartir y elige «Añadir a pantalla de inicio». Abierta desde su icono funciona sin conexión, el sistema no borra sus datos y puede avisarte al terminar el descanso.",
+    acciones: [{ texto: "Entendido", alPulsar: () => { marcarVisto(); def.render(c); } }] }));
+}
+
 /** Propuesta de descarga (regla en core/descarga.js), con el primer motivo y el enlace al detalle. */
 function avisoDescarga(A, app) {
   const P = propuestaDescarga(A, app.store.estado.ajustes.descarga);
-  return P.proponer ? h("div", { class: "seccion" }, tarjetaDescarga(app, P, { detalle: false })) : null;
+  if (!P.proponer) return null;
+  return h("div", { class: "seccion" }, avisoCompacto({ icono: "info", tono: "accent", titulo: "Te vendría bien una semana de descarga", etiqueta: "Propuesta de descarga",
+    texto: P.motivos[0] + " Propuesta: la semana del " + fechaCorta(P.inicio, A.hoy) + ".",
+    acciones: [{ texto: "Programar", alPulsar: () => programarDescarga(app, P.inicio) }, { texto: "Ahora no", alPulsar: () => posponerDescarga(app) },
+      { texto: "Ver por qué", alPulsar: () => app.nav.ir("fatiga", { pestana: "progreso" }) }] }));
 }
 
 /** Tarjeta de copia pendiente: la última copia EXPORTADA es vieja o hay muchas sesiones nuevas. */
@@ -172,11 +190,6 @@ function avisoCopia(app) {
   const texto = ec.nunca ? "Aún no has guardado ninguna copia fuera de este iPhone."
     : ec.nuevas > 5 ? plural(ec.nuevas, "sesión nueva", "sesiones nuevas") + " desde tu última copia en Archivos."
     : "Tu última copia en Archivos es de hace " + plural(ec.dias, "día", "días") + ".";
-  return h("div", { class: "seccion" }, h("div", { class: "tarjeta tarjeta-aviso", role: "region", "aria-label": "Copia de seguridad pendiente" },
-    h("div", { class: "fila", style: { gap: "10px", alignItems: "flex-start" } },
-      h("span", { class: "c-warn", style: { display: "flex", paddingTop: "2px" } }, icono("aviso", { tam: 22 })),
-      h("div", null, h("div", { class: "t-headline" }, "Guarda una copia"), h("div", { class: "t-subhead c-2" }, texto))),
-    h("div", { class: "fila", style: { gap: "10px", marginTop: "12px", flexWrap: "wrap" } },
-      boton("Guardar copia", () => exportarCopia(app), { peq: true }),
-      boton("Posponer 3 días", () => app.store.posponerAvisoCopia(3), { peq: true, estilo: "texto" }))));
+  return h("div", { class: "seccion" }, avisoCompacto({ titulo: "Guarda una copia", texto, etiqueta: "Copia de seguridad pendiente",
+    acciones: [{ texto: "Guardar copia", alPulsar: () => exportarCopia(app) }, { texto: "Posponer 3 días", alPulsar: () => app.store.posponerAvisoCopia(3) }] }));
 }

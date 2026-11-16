@@ -32,6 +32,7 @@ const FICHEROS = [
   "src/core/comparar.js",
   "src/core/csv.js",
   "src/core/medidas.js",
+  "src/ui/instalar.js",
   "src/core/progresion.js",
   "src/core/rehidratar.js",
   "src/core/semanal.js",

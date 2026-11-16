@@ -50,7 +50,7 @@ export function pintarCuerpo() {
   d.ejercicios.forEach((e, i) => bloques.push(bloqueEjercicio(e, i)));
   bloques.push(h("div", { class: "seccion pila", style: { gap: "10px" } },
     h("button", { class: "btn gris", onClick: anadirEjercicio }, icono("mas"), h("span", null, "Añadir ejercicio")),
-    E.M.modo === "entreno" ? h("button", { class: "btn texto", style: { color: "var(--bad)" }, onClick: descartar }, "Descartar entrenamiento") : null));
+    E.M.modo === "entreno" ? h("button", { class: "btn texto", style: { color: "var(--bad-ink)" }, onClick: descartar }, "Descartar entrenamiento") : null));
   poner(cont, bloques);
   cont.scrollTop = scroll;
 }

@@ -10,7 +10,8 @@
     "test:todo": "npm test && npm run bench && npm run test:e2e && npm run test:webkit",
     "golden": "node tests/golden/generar.mjs",
     "serve": "node tests/serve.mjs 8765",
-    "bench": "node tests/bench/analisis.bench.mjs"
+    "bench": "node tests/bench/analisis.bench.mjs",
+    "a11y": "node tools/auditoria-a11y.mjs chromium"
   },
   "devDependencies": {
     "playwright": "1.65.1"

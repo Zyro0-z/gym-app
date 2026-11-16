@@ -2,6 +2,7 @@
 import { h, poner, animar, reducirMovimiento } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
 import { barraTeclado } from "../../ui/teclado.js";
+import { atraparFoco } from "../../ui/capas.js";
 import { reloj, fechaCorta, capital } from "../../ui/textos.js";
 import { copiar, aTexto, vacia, leerMin, marcarMin, nombreDe } from "./estado.js";
 import { pintarCuerpo } from "./ejercicios.js";
@@ -66,15 +67,27 @@ export function borradorDeRutina(nombre) {
   };
 }
 
+/** Borrador que repite una sesión guardada: mismos ejercicios, series, cargas y RPE, sin marcar. */
+export function borradorDeSesion(s) {
+  return {
+    rutina: s.rutina || null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null,
+    ejercicios: s.ejercicios.map((e) => Object.assign({ ejercicioId: e.ejercicioId, nombre: e.nombre || nombreDe(e.ejercicioId), objetivo: e.series.length },
+      e.tipo ? { tipo: e.tipo } : {}, e.grupoId ? { grupoId: e.grupoId } : {}, {
+        series: e.series.filter((x) => x.hecha !== false).map((x) => Object.assign({ peso: aTexto(x.peso), reps: aTexto(x.reps), tipo: x.tipo || "normal", hecha: false },
+          x.segundos ? { segundos: x.segundos } : {}, typeof x.rpe === "number" ? { rpe: x.rpe } : {})),
+      })).map((e) => (e.series.length ? e : Object.assign(e, { series: [vacia()] }))),
+  };
+}
+
 /** Empieza un entrenamiento (con la rutina `nombre` o libre). Si ya hay uno, pregunta. */
-export async function empezarEntreno(nombre) {
+export async function empezarEntreno(nombre, { desde = null } = {}) {
   if (E.app.store.estado.borrador) {
     const r = await E.app.hojaAcciones({ mensaje: "Ya hay un entrenamiento en curso.", opciones: [
       { texto: "Continuar el actual", valor: "seguir" }, { texto: "Descartarlo y empezar otro", valor: "nuevo", peligro: true }] });
     if (r === "seguir") return abrirEntreno();
     if (r !== "nuevo") return;
   }
-  await E.app.store.guardarBorrador(borradorDeRutina(nombre));
+  await E.app.store.guardarBorrador(desde ? borradorDeSesion(desde) : borradorDeRutina(nombre));
   abrirEntreno();
 }
 
@@ -108,14 +121,18 @@ export function mostrarModal(sinAnimar) {
   E.M.capa = capa;
   E.M.cab = h("header", { class: "modal-cab" });
   E.M.cuerpo = h("div", { class: "modal-cuerpo" });
-  E.M.descansoEl = h("div", { class: "barra-descanso", hidden: true });
-  capa.append(E.M.cab, E.M.cuerpo, E.M.descansoEl);
+  // role=timer: el lector no lee cada segundo; los avisos van a la región polite (descanso.js)
+  E.M.descansoEl = h("div", { class: "barra-descanso", hidden: true, role: "timer", "aria-label": "Tiempo de descanso" });
+  E.M.anuncio = h("div", { class: "solo-lectores", "aria-live": "polite", dataset: { anuncioDescanso: "1" } });
+  capa.append(E.M.cab, E.M.cuerpo, E.M.descansoEl, E.M.anuncio);
   document.body.appendChild(capa);
   document.body.classList.add("sin-tabbar", "con-modal");
   E.M.quitarTeclado = barraTeclado(capa);
   pintarCab(); pintarCuerpo(); pintarDescanso();
   E.M.tick = setInterval(tick, 1000);
   if (E.M.modo === "entreno") { pedirWake(); activarBloqueo(); }
+  // Teclado: el foco no sale del modal; Escape minimiza (entreno) o pulsa Cancelar (edición)
+  E.M.soltarFoco = atraparFoco(capa, () => { const b = E.M && (E.M.cab.querySelector("[aria-label=Minimizar]") || E.M.cab.querySelector(".btn-barra")); if (b) b.click(); });
   if (!sinAnimar && !reducirMovimiento()) animar(capa, [{ transform: "translateY(100%)" }, { transform: "translateY(0)" }], { duration: 380, easing: "cubic-bezier(.32,.72,0,1)", fill: "none" });
 }
 
@@ -125,6 +142,7 @@ export function cerrarModal(inmediato) {
   if (m.modo === "entreno") marcarMin(!!E.app.store.estado.borrador);
   clearInterval(m.tick);
   if (m.quitarTeclado) m.quitarTeclado();
+  if (m.soltarFoco) m.soltarFoco();
   if (document.activeElement && m.capa.contains(document.activeElement)) document.activeElement.blur();
   soltarWake();
   document.body.classList.remove("sin-tabbar", "con-modal");

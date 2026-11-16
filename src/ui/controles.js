@@ -248,3 +248,15 @@ export function esqueleto(forma = "lista") {
   const partes = forma === "tarjetas" ? [tarjeta(150), tarjeta(64), tarjeta(96), filas(3)] : [tarjeta(120), filas(6)];
   return h("div", { class: "esqueleto", role: "status", "aria-live": "polite", "aria-busy": "true" }, h("span", { class: "solo-lectores" }, "Calculando…"), partes);
 }
+
+/**
+ * Aviso compacto (Hoy): icono, título, texto y acciones de texto. Un solo nivel de énfasis, para
+ * que no compita con el bloque principal. acciones: [{ texto, alPulsar }].
+ */
+export function avisoCompacto({ icono: ic = "aviso", tono = "warn", titulo, texto, acciones = [], etiqueta = titulo }) {
+  return h("div", { class: "tarjeta aviso-compacto", role: "region", "aria-label": etiqueta },
+    h("div", { class: "fila", style: { gap: "10px", alignItems: "flex-start" } },
+      h("span", { class: "c-" + tono + " aviso-icono", "aria-hidden": "true" }, icono(ic, { tam: 20 })),
+      h("div", { class: "aviso-cuerpo" }, h("div", { class: "aviso-titulo" }, titulo), texto ? h("div", { class: "aviso-texto" }, texto) : null,
+        acciones.length ? h("div", { class: "aviso-acciones" }, acciones.map((a) => h("button", { class: "btn texto peq tap", onClick: a.alPulsar }, a.texto))) : null)));
+}

@@ -8,6 +8,38 @@ let hojaAbierta = null, capasModales = 0;
 
 export const hayCapaAbierta = () => !!hojaAbierta || capasModales > 0;
 
+/* ── Foco en las capas: Tab da la vuelta dentro de la de arriba, Escape la cancela y, al cerrarla,
+   el foco vuelve a donde estaba. Pila: solo manda la última abierta. ── */
+const ENFOCABLES = "button:not([disabled]), [href], input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
+const trampas = [];
+let nId = 0;
+export const idUnico = (p = "c") => p + "-" + ++nId;
+document.addEventListener("keydown", (e) => {
+  const t = trampas[trampas.length - 1];
+  if (!t) return;
+  if (e.key === "Escape") { e.preventDefault(); t.alEscape(); return; }
+  if (e.key !== "Tab") return;
+  const l = [...t.el.querySelectorAll(ENFOCABLES)].filter((x) => x.getClientRects().length && getComputedStyle(x).visibility !== "hidden");
+  if (!l.length) { e.preventDefault(); t.el.focus({ preventScroll: true }); return; }
+  const i = l.indexOf(document.activeElement);
+  if (e.shiftKey && i <= 0) { e.preventDefault(); l[l.length - 1].focus(); }
+  else if (!e.shiftKey && (i === l.length - 1 || i < 0)) { e.preventDefault(); l[0].focus(); }
+}, true);
+
+/** Atrapa el foco en `el` hasta llamar a la función devuelta. inicial: elemento a enfocar. */
+export function atraparFoco(el, alEscape, inicial = null) {
+  const previo = document.activeElement;
+  const t = { el, alEscape };
+  trampas.push(t);
+  if (!el.hasAttribute("tabindex")) el.tabIndex = -1;
+  requestAnimationFrame(() => { if (!el.contains(document.activeElement)) (inicial || el).focus({ preventScroll: true }); });
+  return () => {
+    const i = trampas.indexOf(t);
+    if (i >= 0) trampas.splice(i, 1);
+    if (previo && previo.isConnected && typeof previo.focus === "function" && (!document.activeElement || document.activeElement === document.body || el.contains(document.activeElement))) previo.focus({ preventScroll: true });
+  };
+}
+
 /**
  * Abre una hoja.
  *   titulo, cancelar ("Cancelar" | null), accion { texto, alPulsar, deshabilitada() }
@@ -21,13 +53,14 @@ export function abrirHoja(op) {
   const velo = h("div", { class: "velo" });
   const cuerpo = h("div", { class: "hoja-cuerpo" });
   const izq = h("div", { class: "izq" }), der = h("div", { class: "der" });
-  const tit = h("div", { class: "titulo" });
+  const tit = h("h2", { class: "titulo", id: idUnico("hoja") });
   const cab = h("div", { class: "hoja-cab" }, izq, tit, der);
   const grabber = h("div", { class: "grabber", "aria-hidden": "true" });
-  const el = h("div", { class: "hoja", role: "dialog", "aria-modal": "true" }, grabber, cab, cuerpo);
+  const el = h("div", { class: "hoja", role: "dialog", "aria-modal": "true", "aria-labelledby": tit.id }, grabber, cab, cuerpo);
   document.body.append(velo, el);
   const hoja = { el, cuerpo, cerrar, repintar, intentarCerrar, cerrada: false, altura: alturas[0] };
   hojaAbierta = hoja;
+  const soltarFoco = atraparFoco(el, () => intentarCerrar());
 
   const offset = (a) => (a === "media" ? Math.max(0, el.offsetHeight - Math.round(window.innerHeight * 0.52)) : 0);
   let y = 0;
@@ -61,6 +94,7 @@ export function abrirHoja(op) {
     if (hoja.cerrada) return;
     hoja.cerrada = true;
     if (hojaAbierta === hoja) hojaAbierta = null;
+    soltarFoco();
     velo.classList.remove("visible");
     const fin = () => { el.remove(); velo.remove(); if (op.alCerrar) op.alCerrar(); };
     if (inmediato) return fin();
@@ -114,15 +148,16 @@ export function abrirHoja(op) {
 /** Cierra la hoja abierta (si hay). Devuelve true si había una. */
 export function cerrarHojaAbierta() { if (!hojaAbierta) return false; hojaAbierta.cerrar(); return true; }
 
-function capaModal(contenido, clase) {
+function capaModal(contenido, clase, { rol = "alertdialog", etiqueta = null, titulo = null, descripcion = null, alEscape, inicial = null }) {
   capasModales++;
-  const capa = h("div", { class: clase, role: "alertdialog", "aria-modal": "true" }, contenido);
+  const capa = h("div", { class: clase, role: rol, "aria-modal": "true", "aria-label": etiqueta, "aria-labelledby": titulo, "aria-describedby": descripcion }, contenido);
   document.body.append(capa);
+  const soltar = atraparFoco(capa, alEscape, inicial);
   const r = reducirMovimiento();
   animar(capa, [{ opacity: 0 }, { opacity: 1 }], { duration: r ? 1 : 200 });
   return {
     capa,
-    quitar: () => animar(capa, [{ opacity: 1 }, { opacity: 0 }], { duration: r ? 1 : 180 }).then(() => { capa.remove(); capasModales--; }),
+    quitar: () => { soltar(); return animar(capa, [{ opacity: 1 }, { opacity: 0 }], { duration: r ? 1 : 180 }).then(() => { capa.remove(); capasModales--; }); },
   };
 }
 
@@ -136,11 +171,13 @@ export function alerta({ titulo, mensaje = "", botones = [{ texto: "Aceptar", va
     const fila = h("div", { class: ["botones", botones.length > 2 && "vertical"] }, botones.map((b) =>
       h("button", { class: [b.estilo === "peligro" && "peligro", (b.estilo === "fuerte" || b.estilo === "cancelar" && botones.length === 1) && "fuerte"],
         onClick: () => { m.quitar(); res(b.valor); } }, b.texto)));
-    const caja = h("div", { class: "alerta" }, h("div", { class: "cuerpo" }, h("h2", null, titulo), mensaje ? h("p", null, mensaje) : null), fila);
-    m = capaModal(caja, "alerta-capa");
-    animar(caja, [{ transform: "scale(1.15)" }, { transform: "scale(1)" }], { duration: reducirMovimiento() ? 1 : 250, easing: CURVA });
+    const idT = idUnico("alerta"), idM = mensaje ? idUnico("alerta") : null;
+    const caja = h("div", { class: "alerta" }, h("div", { class: "cuerpo" }, h("h2", { id: idT }, titulo), mensaje ? h("p", { id: idM }, mensaje) : null), fila);
+    // Escape = el botón de cancelar (o el único que haya)
+    const cancelar = botones.find((b) => b.estilo === "cancelar") || (botones.length === 1 ? botones[0] : null);
     const pref = fila.querySelector(".fuerte") || fila.lastChild;
-    if (pref) pref.focus({ preventScroll: true });
+    m = capaModal(caja, "alerta-capa", { titulo: idT, descripcion: idM, inicial: pref, alEscape: () => { if (cancelar) { m.quitar(); res(cancelar.valor); } } });
+    animar(caja, [{ transform: "scale(1.15)" }, { transform: "scale(1)" }], { duration: reducirMovimiento() ? 1 : 250, easing: CURVA });
   });
 }
 
@@ -157,7 +194,7 @@ export function hojaAcciones({ mensaje = null, opciones }) {
       opciones.map((o) => h("button", { class: o.peligro && "peligro", onClick: (e) => { e.stopPropagation(); fin(o.valor); } }, o.texto)));
     const g2 = h("div", { class: "acciones-grupo" }, h("button", { class: "fuerte", onClick: (e) => { e.stopPropagation(); fin(null); } }, "Cancelar"));
     const cont = h("div", null, g1, g2);
-    m = capaModal(cont, "acciones-capa");
+    m = capaModal(cont, "acciones-capa", { rol: "dialog", etiqueta: mensaje || "Opciones", alEscape: () => fin(null), inicial: g1.querySelector("button") });
     m.capa.addEventListener("click", (e) => { if (e.target === m.capa) fin(null); });
     animar(cont, [{ transform: "translateY(100%)" }, { transform: "translateY(0)" }], { duration: reducirMovimiento() ? 1 : 350, easing: CURVA });
   });

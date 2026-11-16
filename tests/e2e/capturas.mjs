@@ -5,14 +5,15 @@ import { chromium, webkit } from "playwright";
 import { mkdirSync, existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { servir } from "../serve.mjs";
+import { fixture } from "../golden/fixture.mjs";
 
 const dir = process.argv[2] || "shots", motor = process.argv[3] || "chromium", nav = { chromium, webkit }[motor];
 const solo = process.argv[4] && process.argv[4] !== "-" ? process.argv[4].split(",") : null;
 const tamanos = process.argv[5] ? [[390, 844]] : [[390, 844], [430, 932]];
 mkdirSync(dir, { recursive: true });
 const SEED = fileURLToPath(new URL("../../seed.json", import.meta.url));
-const SINTETICO = fileURLToPath(new URL("../datos/sintetico.json", import.meta.url));
-const datos = existsSync(SEED) ? readFileSync(SEED, "utf8") : existsSync(SINTETICO) ? readFileSync(SINTETICO, "utf8") : null;
+// Sin seed.json (CI, clones nuevos) usa los datos sintéticos del golden master
+const datos = existsSync(SEED) ? readFileSync(SEED, "utf8") : JSON.stringify(fixture());
 const srv = await servir(8767);
 const b = await nav.launch();
 let fallos = 0;

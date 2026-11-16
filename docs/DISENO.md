@@ -89,14 +89,16 @@ sigue a `prefers-color-scheme`.
 | `--cell-2` | `#F2F2F7` | `#2C2C2E` | elevación 2 (controles dentro de una celda, campos) |
 | `--fill` | `rgba(120,120,128,.2)` | `rgba(120,120,128,.36)` | fondo de segmentados y steppers |
 | `--label` | `#000000` | `#FFFFFF` | texto principal |
-| `--label-2` | `rgba(60,60,67,.6)` | `rgba(235,235,245,.6)` | texto secundario |
+| `--label-2` | `rgba(60,60,67,.77)` | `rgba(235,235,245,.62)` | texto secundario (4,5:1, más oscuro que el de iOS) |
+| `--label-icono` | `rgba(60,60,67,.57)` | `rgba(235,235,245,.4)` | iconos y marcas que informan (3:1) |
 | `--label-3` | `rgba(60,60,67,.3)` | `rgba(235,235,245,.3)` | texto terciario, rejilla de gráficas |
 | `--separator` | `rgba(60,60,67,.29)` | `rgba(84,84,88,.6)` | separadores de 0,5 px |
 | `--accent` | según acento | según acento | interactivo, cifra clave, barra activa |
-| `--accent-ink` | variante más oscura en claro | igual que el acento | texto sobre fondo claro con contraste AA |
-| `--ok` | `#34C759` | `#30D158` | progresa, en rango |
-| `--warn` | `#FF9500` | `#FF9F0A` | estancado, por encima |
-| `--bad` | `#FF3B30` | `#FF453A` | retrocede, no llega, borrar |
+| `--accent-ink` | variante más oscura | variante más clara | texto y enlaces sobre el fondo (4,5:1) |
+| `--ok` | `#2A9F47` | `#30D158` | progresa, en rango (gráficos e iconos, 3:1) |
+| `--warn` | `#C97600` | `#FF9F0A` | estancado, por encima (gráficos e iconos) |
+| `--bad` | `#FF3B30` | `#FF453A` | retrocede, no llega, borrar (relleno) |
+| `--ok-ink` / `--warn-ink` / `--bad-ink` | `#1E7133` / `#915500` / `#BD2C24` | `#30D158` / `#FF9F0A` / `#FF7F77` | texto de estado (4,5:1) |
 | `--yellow` | `#FFCC00` | `#FFD60A` | solo como valor de la paleta de acentos/grupos |
 
 Elevación en oscuro por tono: fondo `#000` → celda `#1C1C1E` → control `#2C2C2E`. No se usan sombras
@@ -105,16 +107,20 @@ sombra.
 
 **Acentos** (Ajustes › Apariencia). Se aplican con `data-accent` en la raíz.
 
-| Acento | Claro | Oscuro |
+Cada acento tiene dos valores por tema: `--accent` (rellenos con texto blanco a 4,5:1 y gráficos a
+3:1) e `--accent-ink` (texto sobre el fondo a 4,5:1). Son algo más oscuros (claro) o más claros
+(oscuro, solo el ink) que los del sistema; los valores de iOS no llegan a AA sobre `#F2F2F7`.
+
+| Acento | Claro (relleno / texto) | Oscuro (relleno / texto) |
 |---|---|---|
-| Azul (por defecto) | `#007AFF` | `#0A84FF` |
-| Índigo | `#5856D6` | `#5E5CE6` |
-| Morado | `#AF52DE` | `#BF5AF2` |
-| Rosa | `#FF2D55` | `#FF375F` |
-| Rojo | `#FF3B30` | `#FF453A` |
-| Naranja | `#FF9500` | `#FF9F0A` |
-| Verde | `#34C759` | `#30D158` |
-| Grafito | `#8E8E93` | `#98989D` |
+| Azul (por defecto) | `#0071ED` / `#0060C9` | `#0974E0` / `#56AAFF` |
+| Índigo | `#5856D6` / `#5553D0` | `#5E5CE6` / `#9E9DF0` |
+| Morado | `#A64ED3` / `#8C42B2` | `#A64ED3` / `#D188F6` |
+| Rosa | `#E0284B` / `#BF2240` | `#DE3053` / `#FF7B95` |
+| Rojo | `#DE332A` / `#BD2C24` | `#D93B31` / `#FF7F77` |
+| Naranja | `#AD6500` / `#915500` | `#A66706` / `#FF9F0A` |
+| Verde | `#23873D` / `#1E7133` | `#1F8839` / `#30D158` |
+| Grafito | `#76767A` / `#636367` | `#757579` / `#A5A5AA` |
 
 Si el acento elegido coincide con un color de estado (rojo, naranja o verde), los estados siguen
 siendo legibles porque nunca dependen solo del color: siempre llevan un icono o un texto.
@@ -191,8 +197,11 @@ lápiz, reloj, minimizar, play.
 - Gesto de volver desde el borde izquierdo (24 pt): arrastra la pantalla y suelta con inercia. Usa la
   History API (`history.back()`), así que también funciona el gesto de atrás del sistema.
 - El título grande se colapsa al título de la barra con el scroll.
-- Con `prefers-reduced-motion`, las transiciones se sustituyen por un fundido de 150 ms y no hay
-  animación de cifras.
+- Las duraciones salen de tokens (`--dur-1/2/3` = 150/250/380 ms, `--t-push`, `--t-fast`).
+- Con `prefers-reduced-motion` todos esos tokens valen 0, la curva pasa a lineal, las animaciones
+  duran 1 ms y una sola vez, y ningún control se desplaza ni escala al pulsarlo. Los esqueletos
+  dejan de latir.
+- El foco con teclado se ve siempre: contorno de 2 px en `--accent-ink`.
 
 ### 3.7 Háptica
 
@@ -595,3 +604,19 @@ sesión» en rojo con una confirmación.
 | La versión nueva espera a que el usuario pulse | Recargar solo sin preguntar podría cortar un entrenamiento. Antes de activarla se guarda el entrenamiento en curso. |
 | Progreso del entrenamiento en la cabecera (hechas/total y una línea fina) | Visto en la comparación con openGym: saber cuánto queda sin tener que desplazarse. Es un patrón, no código suyo. |
 | Músculos abre en el primer periodo con series | Con la semana vacía, el mapa salía gris. Si eliges un periodo, se respeta. |
+
+## 10. Decisiones de la fase 6
+
+| Decisión | Por qué |
+|---|---|
+| Hoy: un solo bloque principal (rutina, «Empezar», «Repetir última · fecha») y el resto en tarjetas compactas | Una pregunta por pantalla: lo primero que se ve es qué toca y cómo empezar. Avisos (copia, instalar, descarga) usan el mismo `avisoCompacto`, de un solo nivel de énfasis. |
+| «Repetir última» copia pesos, reps, tipo y RPE de las series hechas de la última sesión de esa rutina, sin marcarlas | Ahorra escribir; marcar sigue siendo un gesto consciente. |
+| Progreso › Resumen: una gráfica principal (volumen semanal) con 8 semanas / 6 meses / 1 año; Ligas pasa a «Más análisis» | Menos tarjetas y más aire sin quitar contenido. Sin preferencia guardada abre el primer periodo con datos. |
+| Mapa corporal monocromo: acento en 4 niveles de opacidad, leyenda con rangos, valor al tocar y etiqueta textual de más a menos | El color de grupo en el mapa no se distinguía en oscuro ni para daltónicos; la intensidad sí. |
+| Colores más oscuros (claro) / tintas más claras (oscuro) que los de iOS | La auditoría (`npm run a11y`) mide el contraste con colores resueltos; los del sistema no llegan a 4,5:1 en texto ni a 3:1 en gráficos. |
+| Texto grande: el contenido crece sin límite; barras, cabeceras de hoja, segmentados y la cabecera de la tabla de series se limitan a ~20 px | Igual que iOS: las barras no escalan con los tamaños de accesibilidad y así nada se solapa. Los valores de celda pasan a otra línea en vez de cortarse. |
+| «Anterior» en la tabla de series se trunca con «…» con texto muy grande | Es un atajo (copiar la serie anterior); su nombre accesible completo sigue disponible. Queda como aviso, no como fallo. |
+| Hojas, alertas y el entrenamiento atrapan el foco; Escape cierra o minimiza y el foco vuelve al botón de origen | Uso con teclado externo y VoiceOver. |
+| Temporizador de descanso con `role=timer` y un anuncio `polite` al empezar y a 10 s del final | Leer cada segundo sería ruido. |
+| Tarjeta «Añadir a pantalla de inicio» solo en Safari de iPhone sin instalar, una vez | Sin atajos en el manifiesto (iOS no los muestra). |
+
