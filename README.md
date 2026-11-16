@@ -98,6 +98,7 @@ npm run bench         # análisis con 820 sesiones: falla si la mediana de 5 pas
 npm run test:e2e      # todas las e2e en Chromium (tests/e2e/todas.mjs)
 npm run test:webkit   # todas las e2e en WebKit, en el contenedor de Playwright (docker)
 npm run test:todo     # todo lo anterior
+npm run a11y          # auditoría de accesibilidad (Chromium); con webkit: sh tests/webkit.sh ../tools/auditoria-a11y.mjs webkit
 npm run golden        # regenera el golden master con el dashboard antiguo (solo si se decide)
 npm run serve         # sirve la app en http://127.0.0.1:8765
 node tests/e2e/capturas.mjs <carpeta> [chromium|webkit]   # todas las pantallas, 390×844 y 430×932, claro y oscuro
@@ -109,9 +110,30 @@ un entrenamiento completo con recarga a mitad, editar y borrar sesiones, exporta
 el uso sin conexión y el aviso de versión nueva. Fallan con cualquier error de consola o con textos
 «NaN», «undefined» o «[object».
 
-`.github/workflows/ci.yml` ejecuta en cada push y PR el núcleo, el bench y las e2e en Chromium. En
+`.github/workflows/ci.yml` ejecuta en cada push y PR el núcleo, el bench, las e2e y la auditoría de accesibilidad en Chromium. En
 `main`, si pasan, publica en GitHub Pages con la versión del service worker estampada
 (`tools/estampar-version.mjs`). Las e2e en WebKit son un job manual (`workflow_dispatch`).
+
+## Accesibilidad
+
+`tools/auditoria-a11y.mjs` recorre todas las pantallas, hojas, alertas y el entrenamiento, en claro y
+oscuro, con texto normal y con texto grande (28 px de base, como los tamaños de accesibilidad de iOS).
+Mide con los colores ya resueltos:
+
+- contraste de 4,5:1 en texto y 3:1 en controles y gráficos;
+- objetivos táctiles de 44 × 44;
+- que todo control tenga nombre accesible;
+- orden de foco lógico y foco visible;
+- `role` y `aria-live` en el temporizador y los avisos;
+- cambios de diseño (CLS) al cargar;
+- con texto grande, que nada se salga, se corte o se solape.
+
+Sale con error si encuentra algo; los textos truncados con «…» son solo un aviso. Opciones:
+`--solo normal|grande` y `--fotos <carpeta>`. El informe queda en `tests/salida/a11y-<motor>.json`.
+
+Las gráficas llevan en su etiqueta un resumen textual (último valor, mínimo, máximo, tendencia) y el
+mapa corporal, la lista de grupos de más a menos. Con `prefers-reduced-motion` no hay transiciones ni
+animaciones. El tamaño del texto sigue al del sistema (`-apple-system-body`).
 
 ## Licencias
 

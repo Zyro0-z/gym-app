@@ -109,7 +109,7 @@ export function comoSeCalcula(app) {
       poner(c,
         seccion({ cab: "e1RM" }, h("div", { class: "tarjeta" }, p("Es el peso que podrías levantar una vez, estimado con la fórmula de Epley: peso × (1 + reps / 30). Solo cuentan las series con peso que no son de calentamiento."))),
         seccion({ cab: "Ajustado por RPE" }, h("div", { class: "tarjeta" }, p("Si anotas el RPE, las repeticiones que te quedaban en reserva (10 − RPE) se suman a las hechas antes de aplicar Epley: 100 kg × 5 a RPE 8 cuenta como 100 kg × 7. Es una referencia aparte; no cambia el e1RM, las tendencias ni las ligas."))),
-        seccion({ cab: "Semáforo" }, h("div", { class: "tarjeta" }, p("Compara tu mejor e1RM reciente con el anterior. Estancado: muchos días sin récord. Retrocede: el e1RM baja. Los días de descarga (deload) no cuentan."))),
+        seccion({ cab: "Semáforo" }, h("div", { class: "tarjeta" }, p("Compara tu mejor e1RM reciente con el anterior. Estancado: muchos días sin récord. Retrocede: el e1RM baja. Los días de descarga no cuentan."))),
         seccion({ cab: "Próxima vez" }, h("div", { class: "tarjeta" }, p("Doble progresión: cuando todas las series llegan al máximo del rango de repeticiones, sube el peso con el incremento del ejercicio y vuelve al mínimo del rango."))),
         seccion({ cab: "Ligas" }, h("div", { class: "tarjeta" }, p("Tu e1RM se compara con tablas de estándares según tu peso corporal. La liga de un grupo es la media de sus ejercicios, ponderada por las series. Para bajar de división hay un margen, así que un mal día no te hace descender."))));
     },

@@ -96,7 +96,11 @@ src/
     espejo.js         réplica en localStorage del borrador
   ui/
     tokens.css, base.css, componentes.css
-    dom.js, iconos.js, navegacion.js, capas.js, controles.js, graficas.js, calor.js, cuerpo.js
+    dom.js, iconos.js, navegacion.js, controles.js, calor.js
+    capas.js          hojas, alertas y modales; foco atrapado, Escape y foco devuelto
+    graficas.js       barras y líneas SVG con resumen textual (describirSerie) en la etiqueta
+    cuerpo.js         mapa corporal monocromo: niveles, leyenda, valor al tocar, etiqueta textual
+    instalar.js       tarjeta «Añadir a pantalla de inicio» (solo Safari de iPhone sin instalar, una vez)
     insignias.js      presentación; insignias/graficos.js (primitivas), registro.js (las 15 ligas),
                       montaje.js (composición y caché)
     tema.js, textos.js, teclado.js, haptica.js, sonido.js, version.js
@@ -120,7 +124,10 @@ tests/
   bench/              rendimiento del análisis con 820 sesiones
   e2e/*.mjs           Playwright (todas.mjs las lanza todas con un motor)
   webkit.sh           ejecuta una prueba con WebKit en un contenedor Ubuntu (docker)
-tools/                estampar-version.mjs (CI), make-seed.mjs
+tools/                estampar-version.mjs (CI), make-seed.mjs, fixture-v2.mjs
+  auditoria-a11y.mjs  auditoría de accesibilidad con Playwright (npm run a11y; en CI)
+  a11y-pagina.mjs     comprobaciones que se ejecutan dentro de la página (contraste, objetivos,
+                      nombres, foco, texto grande)
 docs/                 DISENO.md, ARQUITECTURA.md, ESQUEMA.md
 ```
 

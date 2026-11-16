@@ -9,7 +9,7 @@ import { colorGrupo } from "../ui/tema.js";
 import { fmt, plural, conSigno } from "../core/formato.js";
 import { canon, sinTildes } from "../core/nombres.js";
 import { deNum, masDias, claveSemana, menosMeses } from "../core/fechas.js";
-import { ultimasSemanas } from "../core/semanal.js";
+import { ultimasSemanasRapido } from "../core/semanal.js";
 import { ESTADOS } from "../core/estancamiento.js";
 import { compararPeriodo, estadoObjetivoSemana, fraccionSemana } from "../core/presentacion.js";
 import { kgTotal, kg, minutos, fechaCorta, capital } from "../ui/textos.js";
@@ -57,12 +57,19 @@ export function vistaProgreso(_p, app) {
 const PERIODOS_VOL = [{ valor: "8", texto: "8 semanas" }, { valor: "26", texto: "6 meses" }, { valor: "52", texto: "1 año" }];
 
 /** Resumen: una gráfica principal (volumen semanal con periodo) y debajo el detalle, en listas. */
+// Semanas de 6 meses y 1 año, una vez por análisis (cambiar de periodo no recalcula)
+const cacheSemanas = new WeakMap();
+function semanasDe(A, k) {
+  let c = cacheSemanas.get(A); if (!c) cacheSemanas.set(A, (c = {}));
+  return c[k] || (c[k] = ultimasSemanasRapido(A.C, A.sesiones, k));
+}
+
 function resumen(A, app, semVol, cambiarSem) {
   const r = A.resumen, grupos = app.store.estado.ajustes.grupos;
   const fr = fraccionSemana(A.hoy), cmp = compararPeriodo(r.act.vol, r.prev.vol, fr);
   const delta = cmp.tipo === "pct" ? chip(cmp.texto, cmp.mejora ? "ok" : "warn", { icono: cmp.mejora ? "sube" : "baja" }) : chip(cmp.texto, null);
   // Sin preferencia guardada, el primer periodo con volumen (para no abrir con una gráfica vacía)
-  const deN = (k) => (k === 8 ? A.semanas.slice(-8) : ultimasSemanas(A.C, A.sesiones, k));
+  const deN = (k) => (k === 8 ? A.semanas.slice(-8) : semanasDe(A, k));
   let n = PERIODOS_VOL.some((p) => p.valor === semVol) ? +semVol : null, semanas;
   if (n) semanas = deN(n);
   else for (const k of [8, 26, 52]) { n = k; semanas = deN(k); if (semanas.some((x) => x.vol > 0)) break; }

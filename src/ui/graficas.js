@@ -20,11 +20,13 @@ export function marcas(min, max, n = 4) {
   return out;
 }
 
+// Un solo formateador: toLocaleString crea uno por llamada y en WebKit eso bloquea el hilo
+const NUM = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 3 });
 const fmtEje = (v) => {
   const a = Math.abs(v);
-  if (a >= 10000) return (Math.round(v / 100) / 10).toLocaleString("es-ES") + " mil";
-  if (a >= 1000) return Math.round(v).toLocaleString("es-ES");
-  return (Math.round(v * 10) / 10).toLocaleString("es-ES");
+  if (a >= 10000) return NUM.format(Math.round(v / 100) / 10) + " mil";
+  if (a >= 1000) return NUM.format(Math.round(v));
+  return NUM.format(Math.round(v * 10) / 10);
 };
 
 /**

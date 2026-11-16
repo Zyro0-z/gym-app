@@ -43,9 +43,10 @@
 
 /* interruptor (switch de iOS) */
 .interruptor { position: relative; width: 51px; height: 31px; flex: none; }
-.interruptor input { position: absolute; inset: -7px -2px; opacity: 0; margin: 0; z-index: 1; cursor: pointer; }   /* zona táctil 55×45 */
+.interruptor input { position: absolute; top: -7px; left: -2px; width: 55px; height: 45px; -webkit-appearance: none; appearance: none; opacity: 0; margin: 0; z-index: 1; cursor: pointer; }   /* zona táctil 55×45 (WebKit ignora inset en un checkbox nativo) */
 .interruptor:has(input:focus-visible) { outline: 2px solid var(--accent-ink); outline-offset: 2px; border-radius: 18px; }   /* el input va oculto */
-.interruptor .pista { position: absolute; inset: 0; border-radius: 16px; background: var(--fill); transition: background-color var(--dur-2) var(--spring); }
+.interruptor .pista { position: absolute; inset: 0; border-radius: 16px; background: var(--label-icono);   /* apagado con 3:1 sobre la celda (el --fill de iOS se queda en 1,3:1) */
+  transition: background-color var(--dur-2) var(--spring); }
 .interruptor .pomo { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.15), 0 3px 1px rgba(0,0,0,.06); transition: transform var(--dur-2) var(--spring); }
 .interruptor input:checked ~ .pista { background: var(--ok); }
 .interruptor input:checked ~ .pomo { transform: translateX(20px); }

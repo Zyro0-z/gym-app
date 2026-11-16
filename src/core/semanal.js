@@ -21,6 +21,22 @@ export function ultimasSemanas(C, SESIONES, n = SEMANAS) {
   return out;
 }
 
+/** Igual que ultimasSemanas, pero agrupa las sesiones en una sola pasada (para 26 o 52 semanas). */
+export function ultimasSemanasRapido(C, SESIONES, n = SEMANAS) {
+  const por = new Map();
+  for (const s of SESIONES) {
+    if (!s.dia) continue;
+    const k = claveSemana(s.dia), g = por.get(k) || { vol: 0, ser: 0, n: 0 };
+    g.vol += s.volumen; g.ser += s.series; g.n++; por.set(k, g);
+  }
+  const out = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const ref = masDias(C.hoy, -7 * i), k = claveSemana(ref), g = por.get(k) || { vol: 0, ser: 0, n: 0 };
+    out.push({ clave: k, etiqueta: ddmm(lunesDe(ref)), vol: g.vol, ser: g.ser, n: g.n });
+  }
+  return out;
+}
+
 export function resumenSemana(C, SESIONES) {
   const act = deSemana(SESIONES, C.hoy), prev = deSemana(SESIONES, masDias(C.hoy, -7));
   const fiables = SESIONES.filter((s) => s.dur.fiable);

@@ -615,6 +615,7 @@ sesión» en rojo con una confirmación.
 | Mapa corporal monocromo: acento en 4 niveles de opacidad, leyenda con rangos, valor al tocar y etiqueta textual de más a menos | El color de grupo en el mapa no se distinguía en oscuro ni para daltónicos; la intensidad sí. |
 | Colores más oscuros (claro) / tintas más claras (oscuro) que los de iOS | La auditoría (`npm run a11y`) mide el contraste con colores resueltos; los del sistema no llegan a 4,5:1 en texto ni a 3:1 en gráficos. |
 | Texto grande: el contenido crece sin límite; barras, cabeceras de hoja, segmentados y la cabecera de la tabla de series se limitan a ~20 px | Igual que iOS: las barras no escalan con los tamaños de accesibilidad y así nada se solapa. Los valores de celda pasan a otra línea en vez de cortarse. |
+| Interruptor apagado en `--label-icono` (no el gris de iOS) | El gris del sistema se queda en 1,3:1 sobre la celda; un control necesita 3:1 para que se vea su estado. |
 | «Anterior» en la tabla de series se trunca con «…» con texto muy grande | Es un atajo (copiar la serie anterior); su nombre accesible completo sigue disponible. Queda como aviso, no como fallo. |
 | Hojas, alertas y el entrenamiento atrapan el foco; Escape cierra o minimiza y el foco vuelve al botón de origen | Uso con teclado externo y VoiceOver. |
 | Temporizador de descanso con `role=timer` y un anuncio `polite` al empezar y a 10 s del final | Leer cada segundo sería ruido. |

@@ -85,6 +85,12 @@ Cuentan para series, volumen y récords las de tipo `normal` y `fallo` (igual qu
 
 `motivo` de una copia interna: `sesiones` (cada N sesiones nuevas), `importar`, `restaurar`, `migrar`.
 
+**`localStorage`** guarda solo preferencias de la interfaz de este dispositivo; no forman parte de los
+datos ni de la copia, y perderlas no pierde nada: `gym-apariencia` (tema y acento, leída antes del primer
+pintado), `gym-espejo` (réplica del
+borrador), `gym-progreso` (segmento abierto), `gym-periodo-volumen`, `gym-periodo-musculos`,
+`gym-rango-cuerpo` (periodos elegidos) y `gym-instalar-visto` (la tarjeta de instalación ya se vio).
+
 ## Medidas corporales (`kv.medidas`, esquema 4)
 
 ```js
