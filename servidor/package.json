@@ -1,0 +1,15 @@
+{
+  "name": "gym-avisos",
+  "private": true,
+  "type": "module",
+  "description": "Servidor opcional de avisos de fin de descanso (Cloudflare Workers). No se publica con la app.",
+  "scripts": {
+    "test": "node --test test/",
+    "claves": "node tools/claves.mjs",
+    "dev": "wrangler dev",
+    "desplegar": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

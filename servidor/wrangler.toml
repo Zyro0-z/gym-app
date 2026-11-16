@@ -1,0 +1,16 @@
+# Servidor opcional de avisos (ver servidor/README.md). Plan gratuito de Workers: Durable Objects
+# con almacenamiento SQLite (por eso «new_sqlite_classes»).
+name = "gym-avisos"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+ORIGEN = "https://zyro0-z.github.io"
+
+[[durable_objects.bindings]]
+name = "AVISOS"
+class_name = "Avisos"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Avisos"]

@@ -39,6 +39,21 @@ contenido. Todo fichero nuevo va en `FICHEROS` (un test sigue los imports desde 
 y sin servidor no hay sincronización entre dispositivos. La app no sincroniza: el camino soportado es
 guardar la copia a mano y, si hace falta, importarla en otro dispositivo.
 
+## Con la pantalla bloqueada
+
+Un iPhone bloqueado congela el JavaScript de la app: ningún temporizador corre. Por eso:
+
+- **El descanso guarda la hora de fin**, no un contador. Al volver a la app se recalcula y, si
+  terminó mientras no mirabas, dice «Descanso terminado hace 40 s».
+- **Pantalla encendida** (Ajustes › Entrenamiento, activado por defecto): pide al sistema que no
+  bloquee la pantalla mientras entrenas, y lo vuelve a pedir al volver a la app.
+- **Controles en la pantalla bloqueada** (experimental, desactivado): un audio en silencio hace que
+  iOS muestre el reproductor del sistema con el descanso y botones (saltar, reiniciar, ±15 s). Pausa
+  la música que estés escuchando y iOS puede retirarlo si pasa mucho rato en segundo plano.
+- **Aviso al terminar el descanso** (opcional): una notificación aunque la pantalla esté bloqueada.
+  Necesita desplegar el servidor de `servidor/` (Cloudflare Workers, plan gratuito; pasos en
+  `servidor/README.md`) y tener la app instalada en la pantalla de inicio (iOS 16.4+).
+
 ## Actualizar sin perder datos
 
 Los datos viven en IndexedDB, en el iPhone, separados de los ficheros de la app: publicar una versión

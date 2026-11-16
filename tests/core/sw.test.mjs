@@ -74,3 +74,26 @@ test("estampar la versión: cambia si cambia el contenido o la lista", async () 
   writeFileSync(join(tmp, "sw.js"), readFileSync(join(RAIZ, "sw.js"), "utf8").replace('"icons/icon-512.png",', ""));
   assert.notEqual(huella(tmp), h2, "un cambio en la lista cambia la huella");
 });
+
+test("push: muestra el aviso (siempre, como exige iOS) y al tocarlo enfoca la app", async () => {
+  const vm = await import("node:vm");
+  const oyentes = {}, mostradas = [], enfocadas = [], abiertas = [];
+  const cliente = { url: "https://zyro0-z.github.io/gym-app/#/hoy", focus: async () => enfocadas.push(1) };
+  const self = {
+    addEventListener: (t, f) => { oyentes[t] = f; },
+    registration: { showNotification: async (t, o) => mostradas.push({ t, o }) },
+    clients: { matchAll: async () => [cliente], openWindow: async (u) => abiertas.push(u), claim: async () => {} },
+    skipWaiting() {},
+  };
+  vm.runInNewContext(readFileSync(new URL("../../sw.js", import.meta.url), "utf8"), { self, caches: {}, fetch, location: new URL("https://zyro0-z.github.io/gym-app/sw.js"), URL, Response, console });
+  const evento = (data) => { let p = null; return { e: { data, waitUntil: (x) => { p = x; }, notification: { close() {} } }, fin: () => p }; };
+  let ev = evento({ json: () => ({ titulo: "Descanso terminado", cuerpo: "Press banca · serie 2 de 3", etiqueta: "descanso" }) });
+  oyentes.push(ev.e); await ev.fin();
+  assert.equal(mostradas[0].t, "Descanso terminado");
+  assert.equal(mostradas[0].o.body, "Press banca · serie 2 de 3");
+  assert.equal(mostradas[0].o.tag, "descanso");
+  ev = evento(null); oyentes.push(ev.e); await ev.fin();
+  assert.equal(mostradas[1].t, "Descanso terminado", "sin datos también se muestra algo");
+  ev = evento(); oyentes.notificationclick(ev.e); await ev.fin();
+  assert.equal(enfocadas.length, 1); assert.equal(abiertas.length, 0);
+});

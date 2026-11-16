@@ -21,7 +21,7 @@ function toque() {
   if (!activa) return;
   try {
     if (soportaSwitch()) interruptor().click();
-    else if (navigator.vibrate) navigator.vibrate(8);
+    else if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(8);
   } catch (e) { /* sin háptica */ }
 }
 
@@ -32,6 +32,6 @@ export const impacto = () => { toque(); };
 /** Éxito: terminar entrenamiento, nuevo récord, fin del descanso. */
 export function exito() {
   if (!activa) return;
-  if (!soportaSwitch() && navigator.vibrate) { try { navigator.vibrate([12, 60, 18]); } catch (e) {} return; }
+  if (!soportaSwitch() && navigator.vibrate) { if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return; try { navigator.vibrate([12, 60, 18]); } catch (e) {} return; }
   toque(); setTimeout(toque, 110);
 }

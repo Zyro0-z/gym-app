@@ -5,7 +5,7 @@ import { barraTeclado } from "../../ui/teclado.js";
 import { reloj, fechaCorta, capital } from "../../ui/textos.js";
 import { copiar, aTexto, vacia, leerMin, marcarMin, nombreDe } from "./estado.js";
 import { pintarCuerpo } from "./ejercicios.js";
-import { finDescanso, pintarDescanso, elegirDescanso } from "./descanso.js";
+import { finDescanso, pintarDescanso, elegirDescanso, alVolver, activarBloqueo, refrescarBloqueo } from "./descanso.js";
 import { terminar, cancelarEdicion, guardarEdicion } from "./revision.js";
 import { E } from "./estado.js";
 
@@ -15,10 +15,13 @@ export function iniciarEntreno(a) {
     h("span", { class: "textos" }, h("span", { class: "t1" }), h("span", { class: "t2 num" })), h("span", { class: "flecha" }, icono("chevron-arriba")));
   document.body.appendChild(E.barraMin);
   E.app.store.suscribir((t) => { if (t === "borrador" || t === "todo") pintarBarraMin(); });
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") guardarYa();
-    else if (E.M && E.M.modo === "entreno") pedirWake();
-  });
+  // Al volver (pantalla desbloqueada, app en primer plano o restaurada de la caché del navegador)
+  // se recalcula todo con la hora real y se vuelve a pedir que la pantalla no se apague
+  const volver = () => { if (E.M && E.M.modo === "entreno") pedirWake(); alVolver(); };
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") guardarYa(); else volver(); });
+  window.addEventListener("pageshow", volver);
+  // Los controles de la pantalla bloqueada necesitan un toque para poder sonar (política de iOS)
+  document.addEventListener("pointerdown", () => activarBloqueo(), { capture: true, passive: true });
   pintarBarraMin();
   // Al volver a abrir la app se respeta cómo se dejó: a pantalla completa o minimizado
   if (E.app.store.estado.borrador && !leerMin()) abrirEntreno({ sinAnimar: true });
@@ -38,6 +41,7 @@ export function pintarBarraMin() {
   const b = E.app.store.estado.borrador;
   const ver = !!b && !(E.M && E.M.modo === "entreno");
   E.barraMin.hidden = !ver;
+  refrescarBloqueo();
   document.body.classList.toggle("con-barra-entreno", ver);
   clearInterval(E.tickMin);
   if (!ver) return;
@@ -47,6 +51,7 @@ export function pintarBarraMin() {
     const resto = d.descanso ? Math.ceil((d.descanso.fin - Date.now()) / 1000) : 0;
     E.barraMin.querySelector(".t2").textContent = reloj((Date.now() - d.inicio) / 1000) + (resto > 0 ? " · Descanso " + reloj(resto) : "");
     if (d.descanso && resto <= 0 && !d.descanso.avisado) finDescanso(d);
+    refrescarBloqueo();
   };
   pintar();
   E.tickMin = setInterval(pintar, 1000);
@@ -110,7 +115,7 @@ export function mostrarModal(sinAnimar) {
   E.M.quitarTeclado = barraTeclado(capa);
   pintarCab(); pintarCuerpo(); pintarDescanso();
   E.M.tick = setInterval(tick, 1000);
-  if (E.M.modo === "entreno") pedirWake();
+  if (E.M.modo === "entreno") { pedirWake(); activarBloqueo(); }
   if (!sinAnimar && !reducirMovimiento()) animar(capa, [{ transform: "translateY(100%)" }, { transform: "translateY(0)" }], { duration: 380, easing: "cubic-bezier(.32,.72,0,1)", fill: "none" });
 }
 
@@ -177,4 +182,5 @@ export function tick() {
   const r = E.M.cab.querySelector("[data-reloj]");
   if (r && E.M.modo === "entreno") r.textContent = reloj((Date.now() - E.M.d.inicio) / 1000);
   pintarDescanso();
+  refrescarBloqueo();
 }

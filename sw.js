@@ -64,6 +64,8 @@ const FICHEROS = [
   "src/ui/textos.js",
   "src/ui/tokens.css",
   "src/ui/version.js",
+  "src/ui/bloqueo.js",
+  "src/ui/avisos.js",
   "src/views/ajustes.js",
   "src/views/comun.js",
   "src/views/datos.js",
@@ -116,6 +118,22 @@ self.addEventListener("message", (e) => {
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== V).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+});
+// Avisos de fin de descanso (servidor opcional): se muestran siempre (iOS lo exige para Web Push)
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = {}; }
+  e.waitUntil(self.registration.showNotification(d.titulo || "Descanso terminado", {
+    body: d.cuerpo || "", tag: d.etiqueta || "descanso", renotify: true, icon: "icons/icon-192.png", badge: "icons/icon-192.png" }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  e.waitUntil((async () => {
+    const cs = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const c = cs.find((x) => new URL(x.url).origin === location.origin);
+    if (c) return c.focus();
+    return self.clients.openWindow("./");
+  })());
 });
 const sinConexion = () => new Response("Sin conexión", { status: 503, statusText: "Sin conexion", headers: { "content-type": "text/plain; charset=utf-8" } });
 self.addEventListener("fetch", (e) => {
