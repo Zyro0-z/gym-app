@@ -50,7 +50,7 @@ export function filaSerie(e, i, s, j, ant, paso) {
       if (!(r > 0) || !Number.isFinite(p) || p < 0) { (r > 0 ? kgIn : repsIn).focus(); fila.classList.add("error"); setTimeout(() => fila.classList.remove("error"), 600); return; }
       s.hecha = true; impacto();
       // En una superserie el descanso empieza al acabar la ronda (el último ejercicio del grupo)
-      if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && finDeRonda(E.M.d.ejercicios, i)) empezarDescanso(E.app.store.estado.ajustes.entreno.descanso || 90);
+      if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && finDeRonda(E.M.d.ejercicios, i)) empezarDescanso(E.app.store.estado.ajustes.entreno.descanso ?? 90);   // 0 = «No»: sin descanso automático
     } else s.hecha = false;
     fila.classList.toggle("hecha", s.hecha);
     check.setAttribute("aria-pressed", String(s.hecha));

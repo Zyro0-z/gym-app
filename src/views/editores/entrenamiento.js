@@ -22,7 +22,7 @@ export function vistaEntrenamiento(_p, app) {
       poner(c,
         seccion({ cab: "Descanso", pie: "Se pone en marcha al marcar una serie. Los atajos aparecen al tocar el cronómetro." }, lista([
           celda({ titulo: "Por defecto", control: stepper({ valor: e.descanso, min: 0, max: 600, paso: 15, formato: (v) => (v ? minSeg(v) : "No"), etiqueta: "descanso", alCambiar: (v) => g((x) => { x.descanso = v; }) }) }),
-          ...presets.map((p) => celda({ titulo: "Atajo", valor: minSeg(p), alBorrar: presets.length > 1 ? () => g((x) => { x.presets = presets.filter((y) => y !== p); }) : null })),
+          ...presets.map((p) => celda({ titulo: "Atajo", valor: minSeg(p), alBorrar: () => g((x) => { x.presets = presets.filter((y) => y !== p); }) })),
           presets.length < 6 ? celda({ titulo: "Añadir atajo", estilo: "accion", izquierda: h("span", { class: "c-accent", style: { display: "flex" } }, icono("mas", { tam: 22 })), alPulsar: async () => {
             const v = await app.hojaAcciones({ mensaje: "Nuevo atajo", opciones: [45, 75, 150, 240, 300].filter((x) => !presets.includes(x)).map((x) => ({ texto: minSeg(x), valor: x })) });
             if (v) g((x) => { x.presets = [...presets, v]; });

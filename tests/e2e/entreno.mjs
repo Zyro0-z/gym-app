@@ -54,9 +54,14 @@ await p.getByLabel("Peso de la serie 1").first().fill("60,5");
 await p.getByLabel("Repeticiones de la serie 1").first().fill("8");
 await p.locator(".modal-completo .serie .check").first().click(); await espera();
 assert.equal(await p.locator(".barra-descanso:not([hidden])").count(), 1, "el descanso empieza al marcar");
+// Descanso por defecto «No» (0): marcar una serie no arranca ningún descanso
+await p.getByRole("button", { name: "Saltar" }).click(); await espera(300);
+await p.evaluate(() => window.__gym.store.guardarAjustes((a) => { a.entreno.descanso = 0; }, { analitico: false })); await espera(300);
 await p.getByLabel("Peso de la serie 2").first().fill("60.5");
 await p.getByLabel("Repeticiones de la serie 2").first().fill("7");
 await p.locator(".modal-completo .serie .check").nth(1).click(); await espera(1200);
+assert.equal(await p.locator(".barra-descanso:not([hidden])").count(), 0, "con descanso «No» no se pone en marcha");
+await p.evaluate(() => window.__gym.store.guardarAjustes((a) => { a.entreno.descanso = 90; }, { analitico: false })); await espera(300);
 e = await estado();
 assert.ok(e.borrador, "el borrador se guarda");
 assert.equal(e.borrador.ejercicios[0].series.filter((s) => s.hecha).length, 2);
