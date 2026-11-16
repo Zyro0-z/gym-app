@@ -1,5 +1,6 @@
 // Historial: «¿qué hice?». Mapa de calor del mes y la lista de sesiones por meses.
 import { esRpe, rpeTxt } from "../core/rpe.js";
+import { resumenRecuperacion } from "./entreno/recuperacion.js";
 import { h, poner } from "../ui/dom.js";
 import { seccion, lista, celda, vacio } from "../ui/controles.js";
 import { mapaCalor } from "../ui/calor.js";
@@ -94,8 +95,9 @@ export function vistaSesion([id], app) {
           return celda({ titulo: etq, valor: h("span", null, (x.peso > 0 ? kg(x.peso) + " × " + x.reps : x.reps ? x.reps + " reps" : "—") + (esRpe(x.rpe) ? " @" + rpeTxt(x.rpe) : ""), delta(x, p && p.e.series[i])) });
         })));
       });
+      const rec = resumenRecuperacion(s.recuperacion);
       const nota = s.nota ? seccion({ cab: "Nota" }, h("div", { class: "celda-area" }, h("div", { class: "ej-nota", style: { margin: 0, padding: "12px 14px", fontSize: "var(--f-body)" } }, s.nota))) : null;
-      poner(c, cab, nota, ejs, seccion({}, lista([celda({ titulo: "Borrar sesión", estilo: "destructiva", alPulsar: async () => {
+      poner(c, cab, rec ? h("p", { class: "seccion t-subhead c-2", style: { marginTop: "-8px" } }, capital(rec)) : null, nota, ejs, seccion({}, lista([celda({ titulo: "Borrar sesión", estilo: "destructiva", alPulsar: async () => {
         const ok = await app.confirmar("¿Borrar la sesión?", "Se borrará la sesión del " + fechaCorta(s.fecha, hoy) + ". No se puede deshacer.", "Borrar", true);
         if (!ok) return;
         await store.borrarSesion(s.id);

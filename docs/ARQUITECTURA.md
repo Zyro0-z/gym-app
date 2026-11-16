@@ -80,7 +80,12 @@ src/
     analisis.js       orquesta todo lo anterior → un objeto `Analisis` (no se toca: golden master)
     rehidratar.js     aPlano / rehidratar para el paso por el Worker
     presentacion.js   comparaciones periodo a periodo sin cifras engañosas
-    (Fase 3 y 5: rpe.js, sugerencia.js, discos.js, recuperacion.js, descarga.js, comparar.js, csv.js)
+    rpe.js, sugerencia.js, discos.js   RPE/RIR y e1RM ajustado, carga sugerida, calculadora de discos
+    fatiga.js         informe semana a semana (e1RM, RPE, sueño, estrés, energía), ≥ 4 semanas
+    descarga.js       propuesta de semana de descarga (regla en README › Fatiga y descarga)
+    comparar.js       dos periodos del mismo largo; % solo con base distinta de cero
+    csv.js            CSV con BOM, «;» y coma decimal (series, pesajes, medidas)
+    medidas.js        medidas corporales: validación, una por fecha, series para la gráfica
   migracion/          formato de la versión 1: claves.js, lineas.js, config*.js, conversion.js, index.js
   worker/analisis.js  analizar en un Worker de módulo
   data/

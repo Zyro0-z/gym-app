@@ -5,19 +5,25 @@ import { seccion, lista, celda, stepper } from "../ui/controles.js";
 import { exito } from "../ui/haptica.js";
 import { fmt, plural } from "../core/formato.js";
 import { fechaCorta, capital } from "../ui/textos.js";
+import { csvSeries, csvPesajes } from "../core/csv.js";
 
 /** Exporta la copia (hoja de compartir del sistema o descarga). true si se hizo. */
-export async function exportarCopia(app) {
-  const { store } = app;
-  const txt = store.textoCopia(), nombre = "gym-copia-" + store.hoy() + ".json";
-  const f = new File([txt], nombre, { type: "application/json" });
+/** Guarda un archivo: hoja Compartir (en iPhone, «Guardar en Archivos») o descarga. false si se cancela o falla. */
+export async function guardarArchivo(app, texto, nombre, tipo) {
+  const f = new File([texto], nombre, { type: tipo });
   try {
     if (navigator.canShare && navigator.canShare({ files: [f] })) await navigator.share({ files: [f], title: nombre });
     else { const u = URL.createObjectURL(f); const a = h("a", { href: u, download: nombre }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 10000); }
+    return true;
   } catch (e) {
     if (e.name !== "AbortError") await app.alerta({ titulo: "No se pudo exportar", mensaje: e.message });
     return false;
   }
+}
+
+export async function exportarCopia(app) {
+  const { store } = app;
+  if (!(await guardarArchivo(app, store.textoCopia(), "gym-copia-" + store.hoy() + ".json", "application/json"))) return false;
   await store.marcarCopia();
   exito(); app.toast("Copia exportada");
   return true;
@@ -87,6 +93,10 @@ export function vistaDatos(_p, app) {
             celda({ titulo: "Copia interna cada", control: stepper({ valor: cada, min: 1, max: 30, formato: (v) => plural(v, "sesión", "sesiones"), etiqueta: "sesiones entre copias internas",
               alCambiar: (v) => store.guardarAjustes((a) => { a.copiasInternas = { cada: v }; }, { analitico: false }) }) }),
           ])),
+        seccion({ cab: "Hojas de cálculo", pie: "CSV para Excel o Numbers: una fila por serie (con e1RM y RPE), punto y coma como separador y coma decimal. Las medidas se exportan desde su pantalla." }, lista([
+          celda({ titulo: "Exportar series (CSV)", estilo: "accion", alPulsar: async () => { if (await guardarArchivo(app, csvSeries(store.estado.sesiones, store.estado.catalogo, store.estado.ajustes), "gym-series-" + store.hoy() + ".csv", "text/csv")) app.toast("CSV exportado"); } }),
+          celda({ titulo: "Exportar pesajes (CSV)", estilo: "accion", alPulsar: async () => { if (await guardarArchivo(app, csvPesajes(store.estado.pesajes, store.estado.ajustes), "gym-pesajes-" + store.hoy() + ".csv", "text/csv")) app.toast("CSV exportado"); } }),
+        ])),
         seccion({ cab: "Almacenamiento", pie: almacen && almacen.persistente === false ? "El sistema podría borrar los datos si falta espacio. Añadir la app a la pantalla de inicio y abrirla desde ahí lo evita." : null }, lista([
           celda({ titulo: "Almacenamiento persistente", valor: !almacen ? "…" : almacen.persistente ? "Concedido" : almacen.persistente === false ? "No concedido" : "Desconocido" }),
           celda({ titulo: "Espacio usado", valor: mb }),

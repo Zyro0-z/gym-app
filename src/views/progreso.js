@@ -94,6 +94,10 @@ function resumen(A, app) {
   const L = A.liga;
   const vg = L && L.ok ? ligaVigente(L.general) : null;
   if (vg) out.push(seccion({}, lista([celda({ izquierda: insignia(vg.p.nivel, 32), titulo: "Liga", sub: vg.viejo ? "Última conocida" : null, valor: vg.p.nivel.txt, chevron: true, alPulsar: () => app.nav.ir("ligas") })])));
+  out.push(seccion({ cab: "Más análisis" }, lista([
+    celda({ titulo: "Fatiga y descarga", sub: "Semana a semana: e1RM, RPE y recuperación", chevron: true, alPulsar: () => app.nav.ir("fatiga") }),
+    celda({ titulo: "Comparar periodos", sub: "4 semanas, mes o 3 meses frente al anterior", chevron: true, alPulsar: () => app.nav.ir("comparar") }),
+  ])));
   return out;
 }
 
@@ -166,7 +170,9 @@ const FASES = { bulk: "volumen", cut: "definición", mantener: "mantenimiento" }
 function cuerpo(A, app, rango, cambiar) {
   const { store } = app;
   const pes = store.estado.pesajes.slice().sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
-  if (!pes.length) return vacio({ icono: "bascula", titulo: "Apunta tu peso", texto: "Con dos pesajes verás la tendencia. Las ligas también lo necesitan.", acciones: [{ texto: "Añadir pesaje", alPulsar: () => abrirPesaje(app) }] });
+  const nMed = (store.estado.medidas || []).length;
+  const medidas = seccion({}, lista([celda({ titulo: "Medidas corporales", valor: nMed ? String(nMed) : "Ninguna", chevron: true, alPulsar: () => app.nav.ir("medidas") })]));
+  if (!pes.length) return [vacio({ icono: "bascula", titulo: "Apunta tu peso", texto: "Con dos pesajes verás la tendencia. Las ligas también lo necesitan.", acciones: [{ texto: "Añadir pesaje", alPulsar: () => abrirPesaje(app) }] }), medidas];
   const rp = A.resumenPeso, ult = rp && rp.ultimo;
   const desde = rango === "Todo" ? "0000" : menosMeses(A.hoy, { "1M": 1, "3M": 3, "6M": 6 }[rango]);
   const pts = A.peso.puntos.filter((p) => p.fecha >= desde);
@@ -187,6 +193,7 @@ function cuerpo(A, app, rango, cambiar) {
       h("div", { style: { margin: "12px 0 4px" } }, segmentado(RANGOS, rango, cambiar, { etiqueta: "Rango" })),
       puntos.length ? graficaLinea({ puntos, secundaria: medias, formato: (v) => kg(v), ejeX: (n) => fechaCorta(deNum(n)), area: false, etiqueta: "Peso corporal" })
         : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Sin pesajes en este periodo."))),
+    medidas,
     rp && rp.cambio ? h("p", { class: "seccion t-subhead" }, (rp.cambio.dif >= 0 ? "Has ganado " : "Has perdido ") + fmt(Math.abs(rp.cambio.dif), 1) + " kg desde el " + fechaCorta(rp.inicio, A.hoy) + ".") : null,
     seccion({ cab: "Pesajes", accion: { texto: "Añadir", alPulsar: () => abrirPesaje(app) } }, lista(pes.slice(0, 60).map((p) => celda({ titulo: capital(fechaCorta(p.fecha, A.hoy)), valor: kg(p.kg), chevron: true,
       alPulsar: () => abrirPesaje(app, p),

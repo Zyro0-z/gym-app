@@ -359,6 +359,10 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .ej.ss-fin::before { bottom: 0; }
 .ss-etiqueta { font-size: var(--f-caption1); font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--accent-ink); min-height: 22px; }
 
+/* Propuesta de descarga */
+.lista-motivos { margin: 6px 0 4px; padding-left: 20px; color: var(--label); }
+.lista-motivos li + li { margin-top: 2px; }
+
 /* Calculadora de discos */
 .celda-area { margin: 0 var(--gutter); }
 .discos-vista { display: flex; align-items: center; gap: 3px; min-height: 96px; padding: 8px var(--gutter); overflow-x: auto; }

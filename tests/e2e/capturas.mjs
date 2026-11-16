@@ -64,6 +64,7 @@ for (const [w, hh] of tamanos) for (const tema of ["light", "dark"]) {
   await tab("progreso"); await tab("progreso");
   await ir("ligas"); await foto("05-ligas", 3);
   if (ids.liga) { await ir("liga/grupo/" + encodeURIComponent(ids.liga)); await foto("05-liga", 2); }
+  for (const [n, r] of [["05-fatiga", "fatiga"], ["05-comparar", "comparar"], ["05-medidas", "medidas"]]) { await tab("progreso"); await tab("progreso"); await ir(r); await foto(n, 2); }
   await tab("historial"); await foto("06-historial", 2);
   if (ids.ses) { await ir("sesion/" + encodeURIComponent(ids.ses)); await foto("07-sesion", 2); }
   await tab("ajustes"); await tab("ajustes"); await foto("08-ajustes", 2);
@@ -78,6 +79,8 @@ for (const [w, hh] of tamanos) for (const tema of ["light", "dark"]) {
   await tab("hoy");
   await p.evaluate(async (rut) => { const g = window.__gym; const r = g.store.estado.rutinas.find((x) => x.id === rut); await g.entreno.empezar(r ? r.nombre : null); }, ids.rut);
   await p.waitForTimeout(700); await foto("24-entreno", 2);
+  const rec = p.locator(".modal-completo .celda", { hasText: "Cómo llegas hoy" });
+  if (await rec.count()) { await rec.click(); await p.waitForTimeout(600); await foto("24-recuperacion"); await p.locator(".hoja .btn-barra", { hasText: "Cancelar" }).click(); await p.waitForTimeout(500); }
   const check = p.locator(".modal-completo .serie .check").first();
   if (await check.count()) { await check.click(); await p.waitForTimeout(400); await foto("25-entreno-descanso"); }
   const kgIn = p.locator(".modal-completo .serie input").first();

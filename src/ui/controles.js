@@ -103,8 +103,11 @@ export function segmentado(opciones, valor, alCambiar, { etiqueta = "" } = {}) {
     onClick: () => { if (o.valor === actual) return; actual = o.valor; seleccion(); marcar(true); alCambiar(o.valor); } }, o.texto));
   el.append(...botones);
   function marcar(anim) {
-    const i = Math.max(0, opciones.findIndex((o) => o.valor === actual));
+    // Sin valor (null) no se marca ninguna: no se da por elegida la primera
+    const i = opciones.findIndex((o) => o.valor === actual);
     botones.forEach((b, j) => b.setAttribute("aria-checked", String(i === j)));
+    pildora.style.visibility = i < 0 ? "hidden" : "";
+    if (i < 0) return;
     pildora.style.width = `calc((100% - 4px) / ${opciones.length})`;
     if (!anim) pildora.style.transition = "none";
     pildora.style.transform = `translateX(${i * 100}%)`;
@@ -122,6 +125,8 @@ export function stepper({ valor, min = -Infinity, max = Infinity, paso = 1, form
   const mas = h("button", { "aria-label": "Más " + etiqueta }, icono("mas"));
   const pintar = () => { txt.textContent = sinValor ? "" : formato(v); menos.disabled = v - paso < min - 1e-9; mas.disabled = v + paso > max + 1e-9; };
   const cambiar = (d) => {
+    // Sin valor: el primer toque muestra el valor inicial en vez de sumar o restar
+    if (sinValor) { sinValor = false; el.classList.remove("sin-valor"); seleccion(); pintar(); alCambiar(v); return true; }
     const n = Math.round((v + d) * 1000) / 1000;
     if (n < min - 1e-9 || n > max + 1e-9) return false;
     v = n; seleccion(); pintar(); alCambiar(v); return true;

@@ -12,6 +12,8 @@ import { empezarEntreno, abrirEntreno, mostrarResumen } from "./entreno.js";
 import { abrirPesaje } from "./pesaje.js";
 import { importarCopia, exportarCopia } from "./datos.js";
 import { nuevaRutina } from "./editores.js";
+import { tarjetaDescarga } from "./fatiga.js";
+import { propuestaDescarga } from "../core/descarga.js";
 
 export function vistaHoy(_p, app) {
   const { store } = app;
@@ -35,7 +37,7 @@ export function vistaHoy(_p, app) {
         return;
       }
       const A = store.analisis();
-      poner(c, tarjetaHoy(A, est, app), avisoCopia(app), tiraSemana(A, est), cifras(A), lineas(A, est, app));
+      poner(c, tarjetaHoy(A, est, app), avisoCopia(app), avisoDescarga(A, app), tiraSemana(A, est), cifras(A), lineas(A, est, app));
       if (est.borrador) {
         const t = c.querySelector("[data-reloj-hoy]");
         reloj1 = setInterval(() => { if (t && store.estado.borrador) t.textContent = reloj((Date.now() - store.estado.borrador.inicio) / 1000); }, 1000);
@@ -155,6 +157,12 @@ function lineas(A, est, app) {
     control: h("button", { class: "btn-redondo", "aria-label": "Añadir pesaje", onClick: (e) => { e.stopPropagation(); abrirPesaje(app); } }, icono("mas")) }));
   if (!est.borrador) celdas.push(celda({ icono: "lista", colorIcono: "var(--g-naranja)", titulo: "Otra rutina", chevron: true, alPulsar: () => elegirRutina(app) }));
   return seccion({ cab: s ? "Última sesión" : null }, lista(celdas, { iconos: false }));
+}
+
+/** Propuesta de descarga (regla en core/descarga.js), con el primer motivo y el enlace al detalle. */
+function avisoDescarga(A, app) {
+  const P = propuestaDescarga(A, app.store.estado.ajustes.descarga);
+  return P.proponer ? h("div", { class: "seccion" }, tarjetaDescarga(app, P, { detalle: false })) : null;
 }
 
 /** Tarjeta de copia pendiente: la última copia EXPORTADA es vieja o hay muchas sesiones nuevas. */

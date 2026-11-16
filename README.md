@@ -54,6 +54,25 @@ Un iPhone bloqueado congela el JavaScript de la app: ningún temporizador corre.
   Necesita desplegar el servidor de `servidor/` (Cloudflare Workers, plan gratuito; pasos en
   `servidor/README.md`) y tener la app instalada en la pantalla de inicio (iOS 16.4+).
 
+## Fatiga y descarga
+
+Al entrenar puedes anotar, si quieres, cómo llegas (horas de sueño, estrés y energía de 1 a 5) y el
+RPE de cada serie. Con eso y el e1RM, Progreso › Fatiga y descarga muestra las últimas 8 semanas
+completas (hacen falta sesiones en al menos 4).
+
+La propuesta de descarga (`src/core/descarga.js`) aparece en Hoy y en esa pantalla cuando:
+
+1. han pasado al menos **6 semanas** desde la última descarga (o desde la primera sesión), y
+2. al comparar las **2 últimas semanas completas** con las **2 anteriores** (sin contar días de
+   descarga) aparece alguna señal:
+   - el mejor e1RM baja un **3 %** o más en al menos **2** ejercicios hechos en los dos tramos;
+   - el RPE medio sube **1** punto o más (con RPE anotado en los dos tramos);
+   - la media de sueño queda por debajo de **7 h** (con al menos 2 anotaciones).
+
+Los números en negrita se cambian en la propia pantalla. «Programar descarga» crea un bloque de
+descarga de lunes a domingo (esta semana si hoy es lunes; si no, la siguiente); «Ahora no» la calla
+7 días y «Descartar», 14. Durante una descarga no se propone otra.
+
 ## Actualizar sin perder datos
 
 Los datos viven en IndexedDB, en el iPhone, separados de los ficheros de la app: publicar una versión

@@ -10,6 +10,7 @@ import { vacia, nombreDe, aTexto } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
 import { filaSerie } from "./serie.js";
 import { descartar, notaSesion } from "./revision.js";
+import { celdaRecuperacion } from "./recuperacion.js";
 import { E } from "./estado.js";
 import { sugerenciaDe, aplicarSugerencia, repetirUltima, posicionSuperserie, unirConSiguiente, separarDeSuperserie, limpiarGrupos, calculadoraDiscos } from "./herramientas.js";
 
@@ -45,6 +46,7 @@ export function pintarCuerpo() {
   const scroll = cont.scrollTop;
   const bloques = [];
   if (E.M.modo === "edicion") bloques.push(detallesEdicion());
+  bloques.push(celdaRecuperacion(d, pintarCuerpo));
   d.ejercicios.forEach((e, i) => bloques.push(bloqueEjercicio(e, i)));
   bloques.push(h("div", { class: "seccion pila", style: { gap: "10px" } },
     h("button", { class: "btn gris", onClick: anadirEjercicio }, icono("mas"), h("span", null, "Añadir ejercicio")),

@@ -9,11 +9,14 @@ import { vistaDatos } from "./datos.js";
 import { vistaGuia } from "./guia.js";
 import { vistaEjercicio, vistaGrupo } from "./ejercicio.js";
 import { vistaLigas, vistaLiga } from "./ligas.js";
+import { vistaFatiga } from "./fatiga.js";
+import { vistaComparar } from "./comparar.js";
+import { vistaMedidas } from "./medidas.js";
 import { vistaRutinas, vistaRutina, vistaHorario, vistaEjercicios, vistaEjercicioCat, vistaGrupos, vistaObjetivos, vistaCuerpo,
   vistaBloques, vistaBloque, vistaEntrenamiento, vistaCalidad, vistaAvanzado } from "./editores.js";
 
 // Vistas que necesitan el análisis: sin él (el Worker aún calcula) se ve un esqueleto
-for (const v of [vistaHoy, vistaProgreso, vistaHistorial, vistaSesion, vistaEjercicio, vistaGrupo, vistaLigas, vistaLiga, vistaCalidad]) v.analisis = true;
+for (const v of [vistaHoy, vistaProgreso, vistaHistorial, vistaSesion, vistaEjercicio, vistaGrupo, vistaLigas, vistaLiga, vistaCalidad, vistaFatiga, vistaComparar]) v.analisis = true;
 vistaHoy.esqueleto = vistaProgreso.esqueleto = "tarjetas";
 
 export const PESTANAS = [
@@ -34,5 +37,6 @@ export const VISTAS = {
   rutinas: vistaRutinas, rutina: vistaRutina, horario: vistaHorario, ejercicios: vistaEjercicios, ejercicioCat: vistaEjercicioCat,
   grupos: vistaGrupos, objetivos: vistaObjetivos, cuerpo: vistaCuerpo, bloques: vistaBloques, bloque: vistaBloque,
   entrenamiento: vistaEntrenamiento, calidad: vistaCalidad, avanzado: vistaAvanzado,
+  fatiga: vistaFatiga, comparar: vistaComparar, medidas: vistaMedidas,
   noEncontrada: vistaNoEncontrada,
 };
