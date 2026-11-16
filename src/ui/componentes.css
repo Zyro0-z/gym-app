@@ -425,3 +425,23 @@ body.con-barra-entreno .toast { bottom: calc(var(--tab-h) + var(--safe-b) + 76px
 body.con-modal .aviso-actualizacion { display: none; }
 .progreso-cab { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; }
 .progreso-cab span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 300ms var(--spring); }
+
+/* ── Carga: esqueletos y aviso discreto de «calculando» (Fase 1.4 / 6.4) ── */
+.solo-lectores { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.esq { display: block; border-radius: 6px; background: var(--fill-2); }
+.esq-linea { height: 12px; margin: 8px 0; }
+.esq-tarjeta { display: flex; flex-direction: column; justify-content: center; }
+.esq-celda { min-height: 44px; }
+.esq-bajo .esq-linea { height: 30px; border-radius: 9px; width: 100%; }
+.esqueleto .esq { background: linear-gradient(90deg, var(--fill-2) 0%, var(--fill) 50%, var(--fill-2) 100%) 0 0 / 200% 100%; animation: brillo 1.4s ease-in-out infinite; }
+@keyframes brillo { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+/* Recalculando con datos anteriores en pantalla: una línea fina bajo la barra, sin mover nada */
+.calculando .pestana.activa .pantalla:not([hidden]) > .barra-nav::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); opacity: .5;
+  transform-origin: left; animation: calculando 1.2s ease-in-out infinite;
+}
+@keyframes calculando { 0% { transform: scaleX(.05); } 60% { transform: scaleX(.8); } 100% { transform: scaleX(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto .esq { animation: none; background: var(--fill-2); }
+  .calculando .pestana.activa .pantalla:not([hidden]) > .barra-nav::after { animation: none; transform: none; opacity: .35; }
+}

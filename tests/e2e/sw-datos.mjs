@@ -32,7 +32,7 @@ assert.equal((await estado()).sesiones.length, 3);
 
 paso("exportar la copia");
 await p.evaluate(() => window.__gym.nav.ir("datos", { pestana: "ajustes" })); await espera(700);
-const [descarga] = await Promise.all([p.waitForEvent("download"), p.getByText("Exportar copia").click()]);
+const [descarga] = await Promise.all([p.waitForEvent("download"), p.getByRole("button", { name: "Guardar copia en Archivos" }).click()]);
 const copia = readFileSync(await descarga.path(), "utf8");
 const json = JSON.parse(copia);
 assert.equal(json.sesiones.length, 3, "la copia tiene las tres sesiones");

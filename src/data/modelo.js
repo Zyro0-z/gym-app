@@ -1,6 +1,7 @@
 // Modelo de datos de la versión 2 y conversiones puras (sin IndexedDB): se prueban en node.
 import { desdeLegacy, convertirSesiones } from "../core/legacy.js";
 import { canon } from "../core/nombres.js";
+import { validarCopia, textoProblemas } from "./esquema.js";
 
 export const ESQUEMA = 3;          // versión de los datos (1-2: formato antiguo; 3: modelo estructurado)
 export const VERSION_COPIA = 2;    // versión del fichero de copia de seguridad
@@ -24,6 +25,8 @@ export function ajustesBase() {
     bloques: [], umbrales: [],
     objetivos: { seriesSemana: [], incrementos: [{ tipo: "máquina", kg: 2.5 }, { tipo: "polea", kg: 2.5 }, { tipo: "mancuerna", kg: 2 }, { tipo: "barra", kg: 2.5 }] },
     cuerpo: { sexo: null, fases: [] },
+    copiasInternas: { cada: 5 },               // una copia interna cada N sesiones nuevas
+    avisoCopia: { pospuestoHasta: null },
     grupos: GRUPOS_BASE.map((nombre) => ({ nombre, color: null, regiones: REGIONES_BASE[nombre].slice() })),
     ligas: { activa: false, escala: [], puntos: 5, margen: 1, semCarga: 8, semSeries: 4, correccionPolea: 1 },
     estandares: {},
@@ -37,7 +40,7 @@ export function completarAjustes(a) {
   const b = ajustesBase();
   if (!a) return b;
   const out = Object.assign({}, b, a);
-  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "ligas"]) out[k] = Object.assign({}, b[k], a[k] || {});
+  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "ligas", "copiasInternas", "avisoCopia"]) out[k] = Object.assign({}, b[k], a[k] || {});
   out.horario = Object.assign({}, b.horario, a.horario || {});
   if (!Array.isArray(out.grupos) || !out.grupos.length) out.grupos = b.grupos;
   return out;
@@ -111,10 +114,10 @@ export function leerCopia(texto, { ahora = new Date().toISOString() } = {}) {
   try { o = JSON.parse(texto); } catch (e) { throw new Error("El archivo no es una copia válida (no es JSON)."); }
   if (!o || typeof o !== "object") throw new Error("El archivo no es una copia válida.");
   if (o.version > VERSION_COPIA || o.esquema > ESQUEMA) throw new Error("La copia es de una versión más nueva de la app. Actualiza la app antes de importarla.");
-  if (o.version === VERSION_COPIA && Array.isArray(o.sesiones)) {
-    for (const k of ["catalogo", "rutinas", "pesajes"]) if (!Array.isArray(o[k])) throw new Error("A la copia le falta «" + k + "».");
-    for (const s of o.sesiones) if (!s || !s.id || !Array.isArray(s.ejercicios)) throw new Error("La copia tiene una sesión dañada.");
-    return { sesiones: o.sesiones, catalogo: o.catalogo, rutinas: o.rutinas, pesajes: o.pesajes, ajustes: completarAjustes(o.ajustes), borrador: null, origen: "v2" };
+  if (o.version >= 2 && Array.isArray(o.sesiones)) {
+    const problemas = validarCopia(o, { version: VERSION_COPIA, esquema: ESQUEMA });
+    if (problemas.length) throw new Error(textoProblemas(problemas));
+    return { sesiones: o.sesiones, catalogo: o.catalogo, rutinas: o.rutinas, pesajes: o.pesajes, ajustes: completarAjustes(o.ajustes), borrador: null, origen: "v" + o.version };
   }
   if (Array.isArray(o.sessions)) {
     if (o.schema > 2) throw new Error("La copia es de una versión más nueva de la app.");
@@ -125,12 +128,30 @@ export function leerCopia(texto, { ahora = new Date().toISOString() } = {}) {
 }
 
 export const DIAS_AVISO = 7, SESIONES_AVISO = 5;
-/** ¿Toca recordar la copia? Más de 7 días o más de 5 sesiones nuevas desde la última. */
-export function estadoCopia(copia, nSesiones, ahora = Date.now()) {
-  if (!copia || !copia.at) return { nunca: true, avisar: nSesiones > 0, dias: null, nuevas: nSesiones, fecha: null };
+/**
+ * ¿Toca recordar la copia? Más de 7 días o más de 5 sesiones nuevas desde la última copia
+ * EXPORTADA (las internas no cuentan: viven en el mismo iPhone). `pospuestoHasta` (ISO) la calla.
+ */
+export function estadoCopia(copia, nSesiones, ahora = Date.now(), pospuestoHasta = null) {
+  const pospuesto = !!pospuestoHasta && Date.parse(pospuestoHasta) > ahora;
+  if (!copia || !copia.at) return { nunca: true, avisar: nSesiones > 0, dias: null, nuevas: nSesiones, fecha: null, pospuesto, tarjeta: nSesiones > 0 && !pospuesto };
   const dias = Math.floor((ahora - Date.parse(copia.at)) / 864e5);
   const nuevas = Math.max(0, nSesiones - (copia.sesiones || 0));
-  return { nunca: false, dias, nuevas, fecha: copia.at.slice(0, 10), avisar: dias > DIAS_AVISO || nuevas > SESIONES_AVISO };
+  const avisar = dias > DIAS_AVISO || nuevas > SESIONES_AVISO;
+  return { nunca: false, dias, nuevas, fecha: copia.at.slice(0, 10), avisar, pospuesto, tarjeta: avisar && !pospuesto };
+}
+
+// ─────────── copias internas (en IndexedDB) ───────────
+
+export const N_RESPALDOS = 3;
+export const CLAVES_RESPALDO = Array.from({ length: N_RESPALDOS }, (_, i) => "respaldo-auto-" + (i + 1));
+/** Foto completa de los datos para una copia interna. Pura. */
+export function instantanea(estado, motivo, ahora = new Date().toISOString()) {
+  const datos = { sesiones: estado.sesiones || [], catalogo: estado.catalogo || [], rutinas: estado.rutinas || [], pesajes: estado.pesajes || [], ajustes: estado.ajustes || null };
+  if (estado.medidas) datos.medidas = estado.medidas;
+  const r = { fecha: ahora, motivo, esquema: ESQUEMA, sesiones: datos.sesiones.length, bytes: 0, datos };
+  r.bytes = JSON.stringify(datos).length;
+  return r;
 }
 
 /** Id de una sesión nueva: ordena por fecha y hora de inicio. */

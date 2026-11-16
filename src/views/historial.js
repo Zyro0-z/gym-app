@@ -10,9 +10,13 @@ import { editarSesion } from "./entreno.js";
 import { elegirRutina } from "./hoy.js";
 import { fmt } from "../core/formato.js";
 
+// La lista se pinta por tandas: con cientos de sesiones, pintarlas todas de golpe bloquea la
+// interfaz. Se ven las más recientes y «Ver sesiones anteriores» añade la siguiente tanda.
+const TANDA = 40;
+
 export function vistaHistorial(_p, app) {
   const { store } = app;
-  let mes = null;
+  let mes = null, cuantas = TANDA;
   return {
     titulo: "Historial",
     render(c) {
@@ -34,12 +38,15 @@ export function vistaHistorial(_p, app) {
         puedeAntes: mes > primero, puedeDespues: mes < ultimo,
       }), h("div", { class: "etiqueta", style: { marginTop: "12px" } }, plural(enMes, "sesión", "sesiones") + " en " + mesAnio(mes)));
       const grupos = new Map();
-      for (const s of ses) { const k = claveMes(s.fecha); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(s); }
+      for (const s of ses.slice(0, cuantas)) { const k = claveMes(s.fecha); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(s); }
+      const quedan = ses.length - cuantas;
       poner(c, h("div", { class: "seccion" }, calor),
         [...grupos].map(([k, lst]) => seccion({ cab: capital(mesAnio(k)) }, lista(lst.map((s) => celda({
           titulo: s.rutina || "Entrenamiento libre", sub: lineaSesion(s), valor: DIAS_CORTOS[diaSemana(s.fecha) - 1] + " " + +s.fecha.slice(8), chevron: true,
           alPulsar: () => app.nav.ir("sesion/" + encodeURIComponent(s.id)),
-        }))))));
+        }))))),
+        quedan > 0 ? h("div", { class: "seccion" }, h("button", { class: "btn gris", onClick: () => { cuantas += TANDA; this.render(c); } },
+          h("span", null, "Ver sesiones anteriores (" + quedan + ")"))) : null);
     },
   };
 }

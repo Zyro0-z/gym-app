@@ -1,6 +1,8 @@
 // Editores de Ajustes: rutinas, horario, catálogo de ejercicios, grupos, objetivos, peso corporal,
 // bloques, entrenamiento, calidad de los datos y avanzado. Los cambios se guardan al momento,
 // como en Ajustes de iOS; solo las altas y los nombres usan una hoja con «Guardar».
+import { versionInstalada } from "../ui/version.js";
+import { VERSION } from "./ajustes.js";
 import { h, poner } from "../ui/dom.js";
 import { icono } from "../ui/iconos.js";
 import { seccion, lista, celda, vacio, interruptor, segmentado, stepper, reordenable, pedirTexto, chip } from "../ui/controles.js";
@@ -585,8 +587,10 @@ vistaCalidad.pestana = "ajustes";
 
 export function vistaAvanzado(_p, app) {
   const { store } = app;
+  let version;
   return {
     titulo: "Avanzado",
+    alMostrar() { if (version === undefined) versionInstalada().then((v) => { version = v; app.nav.repintarActual(); }); },
     render(c) {
       const L = store.estado.ajustes.ligas, est = store.estado.ajustes.estandares || {};
       const escala = L.escala || [];
@@ -605,7 +609,11 @@ export function vistaAvanzado(_p, app) {
         Object.keys(est).length ? seccion({ cab: "Tablas de estándares", pie: "Solo lectura. Asigna una tabla a cada ejercicio desde su ficha." }, lista(Object.keys(est).sort().map((k) => {
           const n = store.estado.catalogo.filter((x) => x.estandar && x.estandar.slug === k).length;
           return celda({ titulo: k, sub: plural(est[k].length, "fila", "filas"), valor: n ? plural(n, "ejercicio", "ejercicios") : null });
-        }))) : null);
+        }))) : null,
+        seccion({ cab: "Versión", pie: "La versión instalada cambia con cada publicación. Si no coincide con la publicada, cierra la app del todo y vuelve a abrirla." }, lista([
+          celda({ titulo: "App", valor: VERSION }),
+          celda({ titulo: "Instalada", valor: version === undefined ? "…" : version || "Sin service worker" }),
+        ])));
     },
   };
 }

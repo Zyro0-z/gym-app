@@ -10,6 +10,7 @@ import { fmt, plural, conSigno } from "../core/formato.js";
 import { canon, sinTildes } from "../core/nombres.js";
 import { deNum, masDias, claveSemana, menosMeses } from "../core/fechas.js";
 import { ESTADOS } from "../core/estancamiento.js";
+import { compararPeriodo, estadoObjetivoSemana, fraccionSemana } from "../core/presentacion.js";
 import { kgTotal, kg, minutos, fechaCorta, capital } from "../ui/textos.js";
 import { abrirPesaje } from "./pesaje.js";
 import { ligaVigente } from "./ligas.js";
@@ -54,7 +55,8 @@ export function vistaProgreso(_p, app) {
 
 function resumen(A, app) {
   const r = A.resumen, grupos = app.store.estado.ajustes.grupos;
-  const delta = r.deltaPct === null || r.deltaPct === undefined ? null : chip(pctTxt(r.deltaPct) + " vs anterior", r.deltaPct >= 0 ? "ok" : "warn", { icono: r.deltaPct >= 0 ? "sube" : "baja" });
+  const fr = fraccionSemana(A.hoy), cmp = compararPeriodo(r.act.vol, r.prev.vol, fr);
+  const delta = cmp.tipo === "pct" ? chip(cmp.texto, cmp.mejora ? "ok" : "warn", { icono: cmp.mejora ? "sube" : "baja" }) : chip(cmp.texto, null);
   const semanas = A.semanas.slice(-8);
   const media = semanas.reduce((a, s) => a + s.vol, 0) / (semanas.length || 1);
   const out = [];
@@ -69,7 +71,7 @@ function resumen(A, app) {
       lista(so.lista.map((o) => {
         const est = o.cierre.estado;
         const marca = est === "enRango" || est === "llegara" ? chip(est === "llegara" ? "Llegarás" : "En rango", "ok", { icono: "check" })
-          : est === "noLlega" ? chip("Faltan " + o.cierre.faltan, "warn") : est === "encima" ? chip("Por encima", "warn") : est === "deload" ? chip("Deload", "accent") : null;
+          : est === "noLlega" ? (estadoObjetivoSemana(o.cierre, fr).tipo === "deficit" ? chip("Faltan " + o.cierre.faltan, "warn") : chip("En curso", null)) : est === "encima" ? chip("Por encima", "warn") : est === "deload" ? chip("Deload", "accent") : null;
         return celda({ punto: colorGrupo(grupos, o.grupo), titulo: o.grupo, sub: h("span", { class: "barra-objetivo" }, barraObjetivo(o, tope), h("span", { class: "num" }, o.hechas + (o.previstas ? " + " + o.previstas : "") + " de " + o.min + "–" + o.max)),
           valor: marca, alPulsar: () => app.nav.ir("grupo/" + encodeURIComponent(o.grupo)) });
       }))));

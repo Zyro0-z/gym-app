@@ -230,3 +230,15 @@ export function pedirTexto(app, { titulo, valor = "", placeholder = "", accion =
     });
   });
 }
+
+/**
+ * Esqueleto de carga: bloques grises con un brillo suave (sin animación con movimiento reducido).
+ * `forma`: "tarjetas" (Hoy, Progreso) o "lista" (pantallas de detalle e historial).
+ */
+export function esqueleto(forma = "lista") {
+  const linea = (w) => h("span", { class: "esq esq-linea", style: { width: w } });
+  const tarjeta = (alto) => h("div", { class: "seccion" }, h("div", { class: "tarjeta esq-tarjeta", style: { minHeight: alto + "px" } }, linea("40%"), linea("70%"), linea("55%")));
+  const filas = (n) => h("div", { class: "seccion" }, h("div", { class: "lista" }, Array.from({ length: n }, () => h("div", { class: "celda esq-celda" }, linea("60%")))));
+  const partes = forma === "tarjetas" ? [tarjeta(150), tarjeta(64), tarjeta(96), filas(3)] : [tarjeta(120), filas(6)];
+  return h("div", { class: "esqueleto", role: "status", "aria-live": "polite", "aria-busy": "true" }, h("span", { class: "solo-lectores" }, "Calculando…"), partes);
+}

@@ -10,9 +10,12 @@
 //   derecha/izquierda  () => nodos para la barra
 //   render(cuerpo, pantalla)  pinta el contenido; se vuelve a llamar al cambiar los datos
 //   alMostrar(), alOcultar(), destruir()  opcionales
+// Si la fábrica de la vista lleva `analisis = true`, mientras no haya ningún análisis calculado se
+// pinta un esqueleto (el Worker aún no ha respondido) y se repinta cuando llega.
 import { h, poner, animar, reducirMovimiento } from "./dom.js";
 import { icono } from "./iconos.js";
 import { seleccion } from "./haptica.js";
+import { esqueleto } from "./controles.js";
 
 const DUR = 350, BORDE = 24;
 const CURVA = "cubic-bezier(.32,.72,0,1)";
@@ -38,11 +41,11 @@ export function crearNavegacion({ app: raiz, tabbar, pestanas, vistas, ctx }) {
   const top = () => pila()[pila().length - 1];
 
   // ── pantallas ──
-  function crearPantalla(ruta, anterior) {
+  function crearPantalla(ruta, anterior, { diferir = false } = {}) {
     const [nombre, ...resto] = ruta.split("/");
     const fabrica = vistas[nombre] || vistas.noEncontrada;
     const params = resto.map((x) => decodeURIComponent(x));
-    const p = { ruta, nombre, params, sucia: false };
+    const p = { ruta, nombre, params, sucia: false, analisis: !!fabrica.analisis, esqueleto: fabrica.esqueleto || "lista" };
     p.def = fabrica(params, ctx, p);
     const d = p.def;
     const grande = d.grande !== undefined ? d.grande : !anterior;
@@ -57,7 +60,10 @@ export function crearNavegacion({ app: raiz, tabbar, pestanas, vistas, ctx }) {
     p.el = h("section", { class: ["pantalla", grande && "titulo-grande", d.plana && "plana"], dataset: { ruta } }, p.scroll, p.barra, p.sombra);
     p.anterior = anterior;
     p.scroll.addEventListener("scroll", () => actualizarBarra(p), { passive: true });
-    pintar(p);
+    // Primera vez que se abre una pestaña: esqueleto ahora y contenido en la tarea siguiente, para
+    // no juntar en un solo bloqueo el pintado y la primera maquetación de toda la pestaña
+    if (diferir) { pintarEsqueleto(p); p.diferida = true; setTimeout(() => { p.diferida = false; if (p.sucia && p.el.isConnected) pintar(p); }, 0); }
+    else pintar(p);
     return p;
   }
 
@@ -65,6 +71,7 @@ export function crearNavegacion({ app: raiz, tabbar, pestanas, vistas, ctx }) {
 
   function pintar(p) {
     const d = p.def;
+    if (p.analisis && ctx.store && !ctx.store.analisis()) { pintarEsqueleto(p); return; }
     const titulo = texto(d.titulo) || "";
     p.tituloEl.textContent = titulo;
     poner(p.izq, d.izquierda ? d.izquierda() : p.anterior ? botonAtras(p.anterior) : null);
@@ -79,10 +86,24 @@ export function crearNavegacion({ app: raiz, tabbar, pestanas, vistas, ctx }) {
     actualizarBarra(p);
   }
 
+  /** Esqueleto con la altura aproximada del contenido, para que no salte al llegar los datos. */
+  function pintarEsqueleto(p) {
+    const d = p.def;
+    let titulo = "";
+    try { titulo = typeof d.titulo === "string" ? d.titulo : texto(d.tituloEsqueleto) || ""; } catch (e) {}
+    p.tituloEl.textContent = titulo;
+    poner(p.izq, p.anterior ? botonAtras(p.anterior) : null);
+    poner(p.der, null);
+    if (p.grandeEl) poner(p.grandeEl, h("h1", null, titulo), d.bajoTitulo ? h("div", { class: "bajo esq-bajo" }, h("span", { class: "esq esq-linea" })) : null);
+    poner(p.cuerpo, esqueleto(p.esqueleto));
+    p.sucia = true;
+  }
+
+  // Volver: solo el chevrón (nunca un título truncado); el nombre completo va en aria-label
   function botonAtras(anterior) {
-    const t = texto(anterior.def.tituloAtras || anterior.def.titulo) || "Atrás";
-    const corto = t.length > 14 ? "Atrás" : t;
-    return h("button", { class: "btn-atras", "aria-label": "Atrás", onClick: () => atras() }, icono("atras"), h("span", null, corto));
+    let t = "";
+    try { t = texto(anterior.def.tituloAtras || anterior.def.titulo) || ""; } catch (e) {}
+    return h("button", { class: "btn-atras", "aria-label": t ? "Volver a " + t : "Atrás", title: t ? "Volver a " + t : "Atrás", onClick: () => atras() }, icono("atras"));
   }
 
   function actualizarBarra(p) {
@@ -178,12 +199,12 @@ export function crearNavegacion({ app: raiz, tabbar, pestanas, vistas, ctx }) {
     }
     actual = id;
     const T = P.get(id);
-    if (!T.pila.length) { const p = crearPantalla(T.raizRuta, null); T.el.appendChild(p.el); T.pila.push(p); }
+    if (!T.pila.length) { const p = crearPantalla(T.raizRuta, null, { diferir: !!prev }); T.el.appendChild(p.el); T.pila.push(p); }
     T.el.classList.add("activa"); T.boton.setAttribute("aria-selected", "true");
     history.replaceState({ gym: 0, tab: id }, "", "#/" + T.pila[0].ruta);
     for (let i = 1; i < T.pila.length; i++) history.pushState({ gym: i, tab: id }, "", "#/" + T.pila[i].ruta);
     const t = T.pila[T.pila.length - 1];
-    if (t.sucia) pintar(t); else actualizarBarra(t);
+    if (t.sucia && !t.diferida) pintar(t); else actualizarBarra(t);
     if (t.def.alMostrar) t.def.alMostrar();
   }
 

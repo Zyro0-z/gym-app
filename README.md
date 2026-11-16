@@ -18,24 +18,38 @@ Instalar: en Safari, Compartir → Añadir a pantalla de inicio.
 | `docs/` | `DISENO.md` (decisiones de diseño) y `ARQUITECTURA.md` (módulos, modelo y migración). |
 | `tests/` | Pruebas de núcleo (`node:test`), golden master y extremo a extremo (Playwright). |
 
-`sw.js` cachea todos los ficheros: cada fichero nuevo va en `FICHEROS` y cada publicación sube `V`.
+`sw.js` precachea todos los ficheros de `FICHEROS` en una caché por versión y sirve siempre desde ella,
+sin mezclar versiones. `V` vale `"dev"` en el repo: CI la estampa con el commit y una huella del
+contenido. Todo fichero nuevo va en `FICHEROS` (un test sigue los imports desde `index.html` y lo comprueba).
 
 ## Datos
 
 - Las migraciones son atómicas y conservan siempre una copia íntegra de los datos anteriores.
-- Ajustes › Datos exporta e importa la copia de seguridad (JSON). Importar guarda antes los datos actuales.
+- **Copia en Archivos** (Ajustes › Datos › «Guardar copia en Archivos»): abre la hoja de Compartir con
+  `gym-copia-AAAA-MM-DD.json`; desde ahí, «Guardar en Archivos». Si la última copia exportada tiene
+  más de 7 días o hay más de 5 sesiones nuevas, Hoy lo recuerda (se puede posponer 3 días).
+- **Copias internas**: la app guarda sola una copia en IndexedDB cada 5 sesiones nuevas (configurable)
+  y siempre antes de importar o restaurar; conserva las 3 últimas y la de la última importación. Se
+  pueden restaurar desde Ajustes › Datos. Viven en el mismo iPhone, así que no sustituyen a la copia
+  en Archivos.
+- **Importar** valida el archivo entero (tipos, rangos, fechas, ids repetidos) antes de tocar nada.
 - `seed.json` es personal y no se publica (`.gitignore`).
+
+**Límites de la plataforma.** En iPhone, una web no puede escribir sola en iCloud Drive ni en Archivos,
+y sin servidor no hay sincronización entre dispositivos. La app no sincroniza: el camino soportado es
+guardar la copia a mano y, si hace falta, importarla en otro dispositivo.
 
 ## Actualizar sin perder datos
 
 Los datos viven en IndexedDB, en el iPhone, separados de los ficheros de la app: publicar una versión
 nueva no los toca.
 
-1. Antes de publicar, exporta una copia desde Ajustes › Datos por si acaso.
-2. Sube `V` en `sw.js` y publica.
+1. Antes de publicar, guarda una copia en Archivos por si acaso.
+2. Publica (push a `main`): CI pasa las pruebas, estampa la versión y despliega en Pages.
 3. Al abrir la app aparece «Actualización disponible · Recargar». Al pulsar Recargar se guarda el
-   entrenamiento en curso y se carga la versión nueva. Si no pulsas, se aplica sola la próxima vez
-   que cierres la app del todo.
+   entrenamiento en curso y se carga la versión nueva completa. Si no pulsas, se aplica sola la
+   próxima vez que cierres la app del todo. Una versión instalada sin este aviso (la 1.x) necesita
+   cerrar la app por completo y volver a abrirla.
 4. Si la versión nueva cambia el modelo de datos, la migración es atómica y deja una copia íntegra
    de los datos anteriores.
 

@@ -521,11 +521,12 @@ async function guardarEdicion() {
 
 function mejorRM(series) { let m = 0; for (const s of series) if (s.peso > 0 && s.reps > 0) m = Math.max(m, epley(s.peso, s.reps)); return m; }
 
-export function mostrarResumen(ses) {
+export async function mostrarResumen(ses) {
   const { store } = app;
   let prs = [];
   try {
-    const A = store.analisis();
+    // Los récords salen del análisis CON esta sesión: se espera al Worker (como mucho 2 s)
+    const A = await Promise.race([store.analisisFresco(), new Promise((ok) => setTimeout(() => ok(store.analisis()), 2000))]);
     prs = A.nuevosPR.filter((p) => (p.rm && p.e.rmMax && p.e.rmMax.ses && p.e.rmMax.ses.id === ses.id) || (p.peso && p.e.pesoMax && p.e.pesoMax.ses && p.e.pesoMax.ses.id === ses.id));
   } catch (e) { prs = []; }
   const anteriorDe = (id) => {

@@ -163,7 +163,14 @@ export function grupoSemana(C, TODAS) {
 /** Volumen de cada grupo en cada una de las semanas dadas. */
 export function volumenPorGrupo(TODAS, semanas) {
   const grupos = Array.from(new Set(TODAS.map((x) => x.grupo))).sort();
-  return grupos.map((g) => ({ grupo: g, semanas: semanas.map((s) => TODAS.filter((x) => x.grupo === g && x.dia && claveSemana(x.dia) === s.clave).reduce((a, x) => a + x.st.volumen, 0)) }));
+  // Una pasada: suma por grupo y semana en el mismo orden que antes (el resultado es idéntico)
+  const suma = new Map();
+  for (const x of TODAS) {
+    if (!x.dia) continue;
+    const k = x.grupo + "\u0000" + claveSemana(x.dia);
+    suma.set(k, (suma.has(k) ? suma.get(k) : 0) + x.st.volumen);
+  }
+  return grupos.map((g) => ({ grupo: g, semanas: semanas.map((s) => { const v = suma.get(g + "\u0000" + s.clave); return v === undefined ? 0 : v; }) }));
 }
 
 export const PERIODOS = {

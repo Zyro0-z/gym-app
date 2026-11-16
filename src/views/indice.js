@@ -12,6 +12,10 @@ import { vistaLigas, vistaLiga } from "./ligas.js";
 import { vistaRutinas, vistaRutina, vistaHorario, vistaEjercicios, vistaEjercicioCat, vistaGrupos, vistaObjetivos, vistaCuerpo,
   vistaBloques, vistaBloque, vistaEntrenamiento, vistaCalidad, vistaAvanzado } from "./editores.js";
 
+// Vistas que necesitan el análisis: sin él (el Worker aún calcula) se ve un esqueleto
+for (const v of [vistaHoy, vistaProgreso, vistaHistorial, vistaSesion, vistaEjercicio, vistaGrupo, vistaLigas, vistaLiga, vistaCalidad]) v.analisis = true;
+vistaHoy.esqueleto = vistaProgreso.esqueleto = "tarjetas";
+
 export const PESTANAS = [
   { id: "hoy", titulo: "Hoy", icono: "hoy" },
   { id: "progreso", titulo: "Progreso", icono: "progreso" },

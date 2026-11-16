@@ -1,6 +1,6 @@
 // Repositorios: cargar y guardar el modelo. Toda escritura de varias partes es atómica.
 import { abrir, tx, leerKV, todasSesiones, escribirKV, ponerSesion, quitarSesion, plano } from "./db.js";
-import { ESQUEMA, CLAVES_ANTIGUAS, planMigracion, rescatarSesiones, completarAjustes, convertirBorrador } from "./modelo.js";
+import { ESQUEMA, CLAVES_ANTIGUAS, CLAVES_RESPALDO, planMigracion, rescatarSesiones, completarAjustes, convertirBorrador, instantanea } from "./modelo.js";
 import { guardarEspejo, leerEspejo } from "./espejo.js";
 
 /**
@@ -71,11 +71,63 @@ export async function guardarBorrador(b) {
   await escribirKV("borrador", v);
 }
 
-/** Reemplaza todos los datos por los de una copia, guardando antes los actuales en «respaldo-importacion». */
-export async function reemplazarTodo(m, actual) {
+/**
+ * Copias internas: rota respaldo-auto-1 → 2 → 3 y escribe la nueva en la 1, dentro de la
+ * transacción `s` que se le pase (así la copia y el cambio que la motiva van juntos).
+ */
+export function rotarRespaldos(kv, inst) {
+  // Las peticiones se encadenan en callbacks (sin await) para que la transacción siga viva:
+  // la 2 pasa a la 3, la 1 a la 2 y la nueva entra en la 1
+  const sig = (i) => {
+    if (i < 0) { kv.put(plano(inst), CLAVES_RESPALDO[0]); return; }
+    const q = kv.get(CLAVES_RESPALDO[i]);
+    q.onsuccess = () => { if (q.result !== undefined) kv.put(q.result, CLAVES_RESPALDO[i + 1]); sig(i - 1); };
+  };
+  sig(CLAVES_RESPALDO.length - 2);
+}
+
+/** Copia interna ahora (tras N sesiones nuevas, antes de importar, restaurar o migrar). */
+export const respaldoAuto = (estado, motivo) => tx("kv", "readwrite", (s) => { rotarRespaldos(s.kv, instantanea(estado, motivo)); s.kv.put(0, "respaldo-contador"); });
+
+/** Cuenta una sesión nueva; devuelve cuántas van desde la última copia interna. */
+export async function contarSesionNueva() {
+  const n = ((await leerKV("respaldo-contador")) || 0) + 1;
+  await escribirKV("respaldo-contador", n);
+  return n;
+}
+
+/** Copias internas disponibles (sin los datos), de la más reciente a la más antigua. */
+export async function listarRespaldos() {
+  const out = [];
+  for (const k of [...CLAVES_RESPALDO, "respaldo-importacion"]) {
+    const r = await leerKV(k);
+    if (!r) continue;
+    const datos = r.datos || r;      // respaldo-importacion de la versión 2 guarda los datos sueltos
+    out.push({ clave: k, fecha: r.fecha || null, motivo: r.motivo || (k === "respaldo-importacion" ? "importar" : null),
+      sesiones: Array.isArray(datos.sesiones) ? datos.sesiones.length : 0, bytes: r.bytes || JSON.stringify(datos).length });
+  }
+  return out;
+}
+
+/** Datos de una copia interna, con la forma de una copia exportada (para validarla antes de usarla). */
+export async function leerRespaldo(clave) {
+  const r = await leerKV(clave);
+  if (!r) return null;
+  const d = r.datos || r;
+  const out = { app: "gym", version: 2, esquema: r.esquema || 3, exportado: r.fecha, sesiones: d.sesiones, catalogo: d.catalogo, rutinas: d.rutinas, pesajes: d.pesajes, ajustes: d.ajustes };
+  if (d.medidas) out.medidas = d.medidas;
+  return out;
+}
+
+/**
+ * Reemplaza todos los datos por los de una copia. Antes, en la misma transacción, guarda los
+ * actuales en «respaldo-importacion» y en la rotación de copias internas.
+ */
+export async function reemplazarTodo(m, actual, motivo = "importar") {
   await tx(["kv", "sesiones"], "readwrite", (s) => {
     s.kv.put(plano({ fecha: new Date().toISOString(), sesiones: actual.sesiones, catalogo: actual.catalogo, rutinas: actual.rutinas,
       pesajes: actual.pesajes, ajustes: actual.ajustes }), "respaldo-importacion");
+    rotarRespaldos(s.kv, instantanea(actual, motivo));
     s.sesiones.clear();
     for (const ses of m.sesiones) s.sesiones.put(plano(ses));
     s.kv.put(plano(m.catalogo), "catalogo");

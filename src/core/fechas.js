@@ -4,8 +4,12 @@
 
 const DIA_MS = 864e5;
 
+// Memo de las dos conversiones más usadas: el análisis las llama decenas de miles de veces con
+// unos pocos cientos de fechas distintas. Son funciones puras, así que el resultado no cambia.
+const memo = (fn, max = 20000) => { const m = new Map(); return (x) => { let v = m.get(x); if (v === undefined) { if (m.size > max) m.clear(); v = fn(x); m.set(x, v); } return v; }; };
+
 /** Número de día absoluto de una fecha ISO. */
-export const numDia = (iso) => Math.round(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / DIA_MS);
+export const numDia = memo((iso) => Math.round(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / DIA_MS));
 
 /** Fecha ISO de un número de día absoluto. */
 export const deNum = (n) => new Date(n * DIA_MS).toISOString().slice(0, 10);
@@ -17,7 +21,7 @@ export const masDias = (iso, n) => deNum(numDia(iso) + n);
 export const diaSemana = (iso) => ((new Date(numDia(iso) * DIA_MS).getUTCDay() + 6) % 7) + 1;
 
 /** Lunes de la semana ISO de la fecha (la clave de la semana). */
-export const lunesDe = (iso) => masDias(iso, 1 - diaSemana(iso));
+export const lunesDe = memo((iso) => masDias(iso, 1 - diaSemana(iso)));
 export const claveSemana = lunesDe;
 
 /** «AAAA-MM» */

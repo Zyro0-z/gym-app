@@ -5,7 +5,7 @@ import { icono } from "../ui/iconos.js";
 import { plural } from "../core/formato.js";
 import { temaEfectivo } from "../ui/tema.js";
 
-export const VERSION = "2.0";
+export const VERSION = "3.0";
 
 export function vistaAjustes(_p, app) {
   const { store } = app;

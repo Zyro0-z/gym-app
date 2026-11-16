@@ -10,7 +10,7 @@ import { canon } from "../core/nombres.js";
 import { lineaSesion, sesionesOrdenadas } from "./comun.js";
 import { empezarEntreno, abrirEntreno, mostrarResumen } from "./entreno.js";
 import { abrirPesaje } from "./pesaje.js";
-import { importarCopia } from "./datos.js";
+import { importarCopia, exportarCopia } from "./datos.js";
 import { nuevaRutina } from "./editores.js";
 
 export function vistaHoy(_p, app) {
@@ -35,7 +35,7 @@ export function vistaHoy(_p, app) {
         return;
       }
       const A = store.analisis();
-      poner(c, tarjetaHoy(A, est, app), tiraSemana(A, est), cifras(A), lineas(A, est, app));
+      poner(c, tarjetaHoy(A, est, app), avisoCopia(app), tiraSemana(A, est), cifras(A), lineas(A, est, app));
       if (est.borrador) {
         const t = c.querySelector("[data-reloj-hoy]");
         reloj1 = setInterval(() => { if (t && store.estado.borrador) t.textContent = reloj((Date.now() - store.estado.borrador.inicio) / 1000); }, 1000);
@@ -155,4 +155,20 @@ function lineas(A, est, app) {
     control: h("button", { class: "btn-redondo", "aria-label": "Añadir pesaje", onClick: (e) => { e.stopPropagation(); abrirPesaje(app); } }, icono("mas")) }));
   if (!est.borrador) celdas.push(celda({ icono: "lista", colorIcono: "var(--g-naranja)", titulo: "Otra rutina", chevron: true, alPulsar: () => elegirRutina(app) }));
   return seccion({ cab: s ? "Última sesión" : null }, lista(celdas, { iconos: false }));
+}
+
+/** Tarjeta de copia pendiente: la última copia EXPORTADA es vieja o hay muchas sesiones nuevas. */
+function avisoCopia(app) {
+  const ec = app.store.estadoCopia();
+  if (!ec.tarjeta) return null;
+  const texto = ec.nunca ? "Aún no has guardado ninguna copia fuera de este iPhone."
+    : ec.nuevas > 5 ? plural(ec.nuevas, "sesión nueva", "sesiones nuevas") + " desde tu última copia en Archivos."
+    : "Tu última copia en Archivos es de hace " + plural(ec.dias, "día", "días") + ".";
+  return h("div", { class: "seccion" }, h("div", { class: "tarjeta tarjeta-aviso", role: "region", "aria-label": "Copia de seguridad pendiente" },
+    h("div", { class: "fila", style: { gap: "10px", alignItems: "flex-start" } },
+      h("span", { class: "c-warn", style: { display: "flex", paddingTop: "2px" } }, icono("aviso", { tam: 22 })),
+      h("div", null, h("div", { class: "t-headline" }, "Guarda una copia"), h("div", { class: "t-subhead c-2" }, texto))),
+    h("div", { class: "fila", style: { gap: "10px", marginTop: "12px", flexWrap: "wrap" } },
+      boton("Guardar copia", () => exportarCopia(app), { peq: true }),
+      boton("Posponer 3 días", () => app.store.posponerAvisoCopia(3), { peq: true, estilo: "texto" }))));
 }
