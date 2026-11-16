@@ -1,16 +1,9 @@
 // Ajustes › Entrenamiento: descanso, pasos de peso, sonido y pantalla.
-import { versionInstalada } from "../../ui/version.js";
-import { VERSION } from "../ajustes.js";
 import { h, poner } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
-import { seccion, lista, celda, vacio, interruptor, segmentado, stepper, reordenable, pedirTexto, chip } from "../../ui/controles.js";
-import { colorGrupo, temaEfectivo } from "../../ui/tema.js";
-import { fmt, plural } from "../../core/formato.js";
-import { canon, sinTildes } from "../../core/nombres.js";
-import { fechaCorta, capital, kg } from "../../ui/textos.js";
-import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
-import { abrirPesaje } from "../pesaje.js";
+import { pedirTexto, seccion, lista, celda, interruptor, stepper } from "../../ui/controles.js";
 import { minSeg, kgTxt } from "./comun.js";
+import { leerNumero } from "../../core/formato.js";
 
 /* ---------- Entrenamiento ---------- */
 
@@ -35,6 +28,16 @@ export function vistaEntrenamiento(_p, app) {
           celda({ titulo: "Paso del peso", control: stepper({ valor: e.pasoPeso, min: 0.25, max: 10, paso: 0.25, formato: kgTxt, etiqueta: "paso del peso", alCambiar: (v) => g((x) => { x.pasoPeso = v; }) }) }),
           celda({ titulo: "Sonido al acabar el descanso", control: interruptor(e.sonido !== false, (v) => g((x) => { x.sonido = v; }), "Sonido") }),
           celda({ titulo: "Mantener la pantalla encendida", control: interruptor(e.pantallaEncendida !== false, (v) => g((x) => { x.pantallaEncendida = v; }), "Pantalla encendida") }),
+        ])),
+        seccion({ cab: "Calculadora de discos", pie: "Desde el menú de cada ejercicio. Los discos son los que tienes de cada tamaño (se usan por parejas)." }, lista([
+          celda({ titulo: "Barra", control: stepper({ valor: e.barra ?? 20, min: 0, max: 40, paso: 0.5, formato: kgTxt, etiqueta: "peso de la barra", alCambiar: (v) => g((x) => { x.barra = v; }) }) }),
+          celda({ titulo: "Discos", valor: (e.discos || []).map((d) => String(d).replace(".", ",")).join(" · ") || "Ninguno", chevron: true, alPulsar: async () => {
+            const t = await pedirTexto(app, { titulo: "Discos (kg)", valor: (e.discos || []).map((d) => String(d).replace(".", ",")).join("; "), placeholder: "25; 20; 15; 10; 5; 2,5; 1,25" });
+            if (t == null) return;
+            const l = [...new Set(t.split(/[;\s]+/).map(leerNumero).filter((v) => Number.isFinite(v) && v > 0 && v <= 50))].sort((a, b) => b - a);
+            if (!l.length) { await app.alerta({ titulo: "Sin discos", mensaje: "Escribe los tamaños separados por punto y coma, por ejemplo 20; 10; 2,5." }); return; }
+            g((x) => { x.discos = l; });
+          } }),
         ])));
     },
   };

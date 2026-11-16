@@ -1,10 +1,10 @@
-// Modelo de datos de la versión 2 y conversiones puras (sin IndexedDB): se prueban en node.
+// Modelo de datos (esquema 4, docs/ESQUEMA.md) y conversiones puras (sin IndexedDB): se prueban en node.
 import { desdeLegacy, convertirSesiones } from "../migracion/index.js";
 import { canon } from "../core/nombres.js";
 import { validarCopia, textoProblemas } from "./esquema.js";
 
-export const ESQUEMA = 3;          // versión de los datos (1-2: formato antiguo; 3: modelo estructurado)
-export const VERSION_COPIA = 2;    // versión del fichero de copia de seguridad
+export const ESQUEMA = 4;          // versión de los datos (1-2: formato antiguo; 3: modelo estructurado; 4: RPE, superseries, medidas…)
+export const VERSION_COPIA = 3;    // versión del fichero de copia de seguridad (acepta 1, 2 y 3)
 export const CLAVES_ANTIGUAS = ["sessions", "templates", "configs", "settings", "library", "draft"];
 
 export const GRUPOS_BASE = ["Pecho", "Espalda", "Pierna", "Hombro", "Bíceps", "Tríceps", "Core", "Antebrazo"];
@@ -20,7 +20,10 @@ export function ajustesBase() {
   return {
     version: 2,
     apariencia: { tema: "auto", acento: "azul", haptica: true },
-    entreno: { descanso: 90, presets: [30, 60, 90, 120, 180], pasoPeso: 2.5, sonido: true, pantallaEncendida: true },
+    entreno: { descanso: 90, presets: [30, 60, 90, 120, 180], pasoPeso: 2.5, sonido: true, pantallaEncendida: true,
+      barra: 20, discos: [25, 20, 15, 10, 5, 2.5, 1.25, 0.5],        // calculadora de discos
+      controlesBloqueo: false,                                        // Media Session (experimental)
+      push: { activo: false, url: "" } },                             // aviso por un servidor propio
     horario: { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null, 7: null },
     bloques: [], umbrales: [],
     objetivos: { seriesSemana: [], incrementos: [{ tipo: "máquina", kg: 2.5 }, { tipo: "polea", kg: 2.5 }, { tipo: "mancuerna", kg: 2 }, { tipo: "barra", kg: 2.5 }] },
@@ -32,6 +35,10 @@ export function ajustesBase() {
     estandares: {},
     copia: null,
     migracion: null,
+    // Propuesta de descarga (docs/ESQUEMA.md): caída de e1RM ≥ caidaPct % en ≥ `ejercicios` ejercicios,
+    // RPE medio que sube ≥ rpeSube, o sueño medio < `sueno` h; solo tras ≥ semanasMin semanas sin descarga
+    descarga: { caidaPct: 3, ejercicios: 2, rpeSube: 1, sueno: 7, semanasMin: 6, pospuestaHasta: null, descartadaEn: null },
+    csv: { separador: ";", decimal: "," },
   };
 }
 
@@ -40,7 +47,8 @@ export function completarAjustes(a) {
   const b = ajustesBase();
   if (!a) return b;
   const out = Object.assign({}, b, a);
-  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "ligas", "copiasInternas", "avisoCopia"]) out[k] = Object.assign({}, b[k], a[k] || {});
+  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "ligas", "copiasInternas", "avisoCopia", "descarga", "csv"]) out[k] = Object.assign({}, b[k], a[k] || {});
+  out.entreno.push = Object.assign({}, b.entreno.push, (a.entreno && a.entreno.push) || {});
   out.horario = Object.assign({}, b.horario, a.horario || {});
   if (!Array.isArray(out.grupos) || !out.grupos.length) out.grupos = b.grupos;
   return out;
@@ -105,7 +113,7 @@ export function rescatarSesiones(sessionsViejas, existentes) {
 
 export function crearCopia(estado, ahora = new Date().toISOString()) {
   return { app: "gym", version: VERSION_COPIA, esquema: ESQUEMA, exportado: ahora,
-    sesiones: estado.sesiones, catalogo: estado.catalogo, rutinas: estado.rutinas, pesajes: estado.pesajes, ajustes: estado.ajustes };
+    sesiones: estado.sesiones, catalogo: estado.catalogo, rutinas: estado.rutinas, pesajes: estado.pesajes, medidas: estado.medidas || [], ajustes: estado.ajustes };
 }
 
 /** Lee el texto de una copia (nueva, antigua o seed.json) y devuelve el modelo. Lanza Error con un motivo legible. */
@@ -117,12 +125,12 @@ export function leerCopia(texto, { ahora = new Date().toISOString() } = {}) {
   if (o.version >= 2 && Array.isArray(o.sesiones)) {
     const problemas = validarCopia(o, { version: VERSION_COPIA, esquema: ESQUEMA });
     if (problemas.length) throw new Error(textoProblemas(problemas));
-    return { sesiones: o.sesiones, catalogo: o.catalogo, rutinas: o.rutinas, pesajes: o.pesajes, ajustes: completarAjustes(o.ajustes), borrador: null, origen: "v" + o.version };
+    return { sesiones: o.sesiones, catalogo: o.catalogo, rutinas: o.rutinas, pesajes: o.pesajes, medidas: o.medidas || [], ajustes: completarAjustes(o.ajustes), borrador: null, origen: "v" + o.version };
   }
   if (Array.isArray(o.sessions)) {
     if (o.schema > 2) throw new Error("La copia es de una versión más nueva de la app.");
     const p = planMigracion(o, { ahora });
-    return { sesiones: p.sesiones, catalogo: p.catalogo, rutinas: p.rutinas, pesajes: p.pesajes, ajustes: p.ajustes, borrador: null, origen: "v1" };
+    return { sesiones: p.sesiones, catalogo: p.catalogo, rutinas: p.rutinas, pesajes: p.pesajes, medidas: [], ajustes: p.ajustes, borrador: null, origen: "v1" };
   }
   throw new Error("El archivo no contiene sesiones: no parece una copia de esta app.");
 }

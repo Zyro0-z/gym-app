@@ -28,6 +28,7 @@ await p.locator(".hoja .campo-texto").fill("Torso");
 await p.locator(".hoja .btn-barra.fuerte").click();
 await espera(900);
 assert.equal((await estado()).rutinas.length, 1);
+await p.waitForFunction(() => /rutina\/torso/.test(location.hash), null, { timeout: 5000 }).catch(() => {});
 assert.match(await p.evaluate(() => location.hash), /rutina\/torso/);
 
 paso("añadir dos ejercicios nuevos a la rutina");

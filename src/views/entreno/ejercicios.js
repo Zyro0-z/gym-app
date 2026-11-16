@@ -6,11 +6,12 @@ import { seleccion } from "../../ui/haptica.js";
 import { kg, fechaCorta, capital } from "../../ui/textos.js";
 import { fmt } from "../../core/formato.js";
 import { elegirEjercicio } from "../selector.js";
-import { vacia, nombreDe } from "./estado.js";
+import { vacia, nombreDe, aTexto } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
 import { filaSerie } from "./serie.js";
-import { descartar } from "./revision.js";
+import { descartar, notaSesion } from "./revision.js";
 import { E } from "./estado.js";
+import { sugerenciaDe, aplicarSugerencia, repetirUltima, posicionSuperserie, unirConSiguiente, separarDeSuperserie, limpiarGrupos, calculadoraDiscos } from "./herramientas.js";
 
 export function sesionAnterior(ejercicioId) {
   const fechaTope = E.M.modo === "edicion" ? E.M.d.fecha : "9999";
@@ -59,7 +60,7 @@ export function detallesEdicion() {
     celda({ titulo: "Fecha", control: campo("date", d.fecha, (v) => { if (v) d.fecha = v; }, "Fecha") }),
     celda({ titulo: "Inicio", control: campo("time", d.inicioTxt, (v) => { d.inicioTxt = v; }, "Hora de inicio") }),
     celda({ titulo: "Fin", control: campo("time", d.finTxt, (v) => { d.finTxt = v; }, "Hora de fin") }),
-  ]));
+  ]), h("div", { class: "celda-area", style: { marginTop: "12px" } }, notaSesion(d)));
 }
 
 export function bloqueEjercicio(e, i) {
@@ -67,22 +68,37 @@ export function bloqueEjercicio(e, i) {
   const paso = E.app.store.estado.ajustes.entreno.pasoPeso || 2.5;
   const info = infoEjercicio(e.ejercicioId);
   const filas = e.series.map((s, j) => filaSerie(e, i, s, j, ant ? ant.e.series[j] : null, paso));
-  return h("section", { class: "ej", dataset: { ej: String(i) } },
+  const sug = sugerenciaDe(e.ejercicioId);
+  const pos = posicionSuperserie(E.M.d.ejercicios, i);
+  return h("section", { class: ["ej", pos && "superserie", pos && "ss-" + pos], dataset: { ej: String(i) } },
+    pos === "inicio" ? h("div", { class: "ss-etiqueta" }, "Superserie") : null,
     h("div", { class: "ej-cab" },
       h("button", { class: "ej-nombre", onClick: () => menuEjercicio(i) }, e.nombre || nombreDe(e.ejercicioId)),
       h("button", { class: "btn-icono", "aria-label": "Opciones de " + (e.nombre || ""), onClick: () => menuEjercicio(i) }, icono("opciones"))),
     info ? h("div", { class: "ej-info" }, info) : null,
+    sug ? h("button", { class: "chip-sugerencia", "aria-label": "Sugerencia: " + aTexto(sug.peso) + " kilos por " + sug.reps + " repeticiones. " + sug.motivo + ". Toca para ponerla en las series vacías.",
+      onClick: () => { const n = aplicarSugerencia(e, sug); seleccion(); guardarPronto(); pintarCuerpo(); if (!n) E.app.toast("Las series ya tienen peso"); } },
+      h("span", { class: "t" }, "Sugerido"), h("span", { class: "num" }, aTexto(sug.peso) + " kg × " + sug.reps), h("span", { class: "m" }, sug.motivo)) : null,
     e.nota ? h("div", { class: "ej-nota" }, e.nota) : null,
     h("div", { class: "series" },
-      h("div", { class: "fila-cab", "aria-hidden": "true" }, h("span", null, "Serie"), h("span", null, "Anterior"), h("span", null, "kg"), h("span", null, "Reps"), h("span", { class: "c-check" }, icono("check", { tam: 16, grosor: 2.4 }))),
+      h("div", { class: "fila-cab", "aria-hidden": "true" }, h("span", null, "Serie"), h("span", null, "Anterior"), h("span", null, "kg"), h("span", null, "Reps"), h("span", null, "RPE"), h("span", { class: "c-check" }, icono("check", { tam: 16, grosor: 2.4 }))),
       filas),
-    h("button", { class: "btn-anadir-serie", onClick: () => { const ult = e.series[e.series.length - 1]; e.series.push(Object.assign(vacia(), ult ? { peso: ult.peso, tipo: ult.tipo === "calentamiento" ? "normal" : ult.tipo } : {})); seleccion(); guardarPronto(); pintarCuerpo(); } },
-      icono("mas", { tam: 18 }), h("span", null, "Añadir serie")));
+    h("div", { class: "fila-botones-serie" },
+      h("button", { class: "btn-anadir-serie", onClick: () => { const ult = e.series[e.series.length - 1]; e.series.push(Object.assign(vacia(), ult ? { peso: ult.peso, tipo: ult.tipo === "calentamiento" ? "normal" : ult.tipo } : {})); seleccion(); guardarPronto(); pintarCuerpo(); } },
+        icono("mas", { tam: 18 }), h("span", null, "Añadir serie")),
+      h("button", { class: "btn-anadir-serie", onClick: () => {
+        if (!repetirUltima(e)) { E.app.toast("Marca antes una serie como hecha"); return; }
+        seleccion(); guardarPronto(); pintarCuerpo();
+      } }, icono("repetir", { tam: 18 }), h("span", null, "Repetir última"))));
 }
 
 export async function menuEjercicio(i) {
   const e = E.M.d.ejercicios[i];
   const op = [{ texto: "Cambiar ejercicio", valor: "cambiar" }, { texto: "Ver historia", valor: "historia" }, { texto: e.nota ? "Editar nota" : "Añadir nota", valor: "nota" }];
+  const ejs = E.M.d.ejercicios;
+  if (i < ejs.length - 1 && !(e.grupoId && ejs[i + 1].grupoId === e.grupoId)) op.push({ texto: "Unir con el siguiente", valor: "unir" });
+  if (posicionSuperserie(ejs, i)) op.push({ texto: "Separar de la superserie", valor: "separar" });
+  if (!e.tipo || e.tipo === "peso") op.push({ texto: "Calculadora de discos", valor: "discos" });
   if (i > 0) op.push({ texto: "Subir", valor: "subir" });
   if (i < E.M.d.ejercicios.length - 1) op.push({ texto: "Bajar", valor: "bajar" });
   op.push({ texto: "Quitar ejercicio", valor: "quitar", peligro: true });
@@ -93,11 +109,15 @@ export async function menuEjercicio(i) {
     if (x && E.M) { e.ejercicioId = x.ejercicioId; e.nombre = x.nombre; }
   } else if (r === "historia") return verHistoria(e);
   else if (r === "nota") return editarNota(e);
+  else if (r === "discos") return calculadoraDiscos(e);
+  else if (r === "unir") unirConSiguiente(E.M.d.ejercicios, i);
+  else if (r === "separar") separarDeSuperserie(E.M.d.ejercicios, i);
   else if (r === "subir" || r === "bajar") { const k = r === "subir" ? i - 1 : i + 1; [E.M.d.ejercicios[i], E.M.d.ejercicios[k]] = [E.M.d.ejercicios[k], E.M.d.ejercicios[i]]; }
   else if (r === "quitar") {
     if (e.series.some((s) => s.hecha) && !(await E.app.confirmar("¿Quitar " + e.nombre + "?", "Tiene series hechas que se perderán.", "Quitar", true))) return;
     E.M.d.ejercicios.splice(i, 1);
   }
+  limpiarGrupos(E.M.d.ejercicios);
   guardarYa(); pintarCuerpo();
 }
 

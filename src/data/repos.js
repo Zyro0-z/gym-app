@@ -14,17 +14,50 @@ export async function cargar({ tema = null } = {}) {
   for (const k of CLAVES_ANTIGUAS) { const v = await leerKV(k); if (v !== undefined && v !== null) viejo[k] = v; }
   const hayViejo = Object.keys(viejo).length > 0;
   let informe = null;
-  if (schema < ESQUEMA && hayViejo) informe = await migrar(Object.assign({ schema }, viejo), tema);
+  if (schema < 3 && hayViejo) informe = await migrar(Object.assign({ schema }, viejo), tema);
+  else if (schema === 3) informe = await migrar3a4();
   else if (schema < ESQUEMA) await escribirKV("schema", ESQUEMA);
   else if (viejo.sessions && viejo.sessions.length) informe = await rescatar(viejo);
 
-  const [sesiones, catalogo, rutinas, pesajes, ajustes, borrador] = await Promise.all([
-    todasSesiones(), leerKV("catalogo"), leerKV("rutinas"), leerKV("pesajes"), leerKV("ajustes"), leerKV("borrador")]);
+  const [sesiones, catalogo, rutinas, pesajes, medidas, ajustes, borrador] = await Promise.all([
+    todasSesiones(), leerKV("catalogo"), leerKV("rutinas"), leerKV("pesajes"), leerKV("medidas"), leerKV("ajustes"), leerKV("borrador")]);
   let b = borrador || null;
   const esp = leerEspejo();
   // El borrador replicado en localStorage gana si es más reciente (iOS pudo perder la última escritura)
   if (esp && esp.borrador && (!b || (esp.borrador.cambio || 0) > (b.cambio || 0))) b = esp.borrador;
-  return { sesiones, catalogo: catalogo || [], rutinas: rutinas || [], pesajes: pesajes || [], ajustes: completarAjustes(ajustes), borrador: b, informe };
+  return { sesiones, catalogo: catalogo || [], rutinas: rutinas || [], pesajes: pesajes || [], medidas: medidas || [], ajustes: completarAjustes(ajustes), borrador: b, informe };
+}
+
+/**
+ * Esquema 3 → 4 en UNA transacción que lee y escribe: copia íntegra en «backup-esquema-v3» (si
+ * no existía ya) y en la rotación de copias internas, ajustes completados, medidas vacías y
+ * schema = 4. Las sesiones no se reescriben: los campos nuevos son opcionales. Si algo falla no
+ * se escribe nada y la próxima apertura lo vuelve a intentar.
+ */
+export async function migrar3a4(ahora = new Date().toISOString()) {
+  let n = 0, error = null;
+  await tx(["kv", "sesiones"], "readwrite", (s, t) => {
+    const datos = {}, claves = ["catalogo", "rutinas", "pesajes", "ajustes", "medidas", "schema", "backup-esquema-v3"];
+    let pend = claves.length + 1;
+    const listo = () => {
+      if (--pend) return;
+      try { escribir(); } catch (e) { error = e; t.abort(); }     // nada a medias: se deshace todo
+    };
+    const escribir = () => {
+      if (datos.schema !== 3) return;                    // otra pestaña ya migró: nada que hacer
+      n = datos.sesiones.length;
+      const estado = { sesiones: datos.sesiones, catalogo: datos.catalogo || [], rutinas: datos.rutinas || [], pesajes: datos.pesajes || [], ajustes: datos.ajustes || null };
+      if (datos["backup-esquema-v3"] === undefined) s.kv.put(plano({ fecha: ahora, esquema: 3, datos: estado }), "backup-esquema-v3");
+      const inst = instantanea(estado, "migrar", ahora); inst.esquema = 3;
+      rotarRespaldos(s.kv, inst);
+      s.kv.put(plano(completarAjustes(datos.ajustes)), "ajustes");
+      if (!Array.isArray(datos.medidas)) s.kv.put([], "medidas");
+      s.kv.put(ESQUEMA, "schema");
+    };
+    for (const k of claves) { const q = s.kv.get(k); q.onsuccess = () => { datos[k] = q.result; listo(); }; }
+    const q = s.sesiones.getAll(); q.onsuccess = () => { datos.sesiones = q.result; listo(); };
+  }).catch((e) => { throw error || e; });
+  return { tipo: "esquema4", sesiones: n };
 }
 
 /** Migración de los datos antiguos en UNA transacción: o se escribe todo o nada. */
@@ -65,6 +98,7 @@ export const guardarCatalogo = (c) => escribirKV("catalogo", plano(c));
 export const guardarRutinas = (r) => escribirKV("rutinas", plano(r));
 export const guardarPesajes = (p) => escribirKV("pesajes", plano(p));
 export const guardarAjustes = (a) => escribirKV("ajustes", plano(a));
+export const guardarMedidas = (m) => escribirKV("medidas", plano(m));
 export async function guardarBorrador(b) {
   const v = b ? Object.assign(plano(b), { cambio: Date.now() }) : null;
   guardarEspejo({ borrador: v });
@@ -114,7 +148,8 @@ export async function leerRespaldo(clave) {
   const r = await leerKV(clave);
   if (!r) return null;
   const d = r.datos || r;
-  const out = { app: "gym", version: 2, esquema: r.esquema || 3, exportado: r.fecha, sesiones: d.sesiones, catalogo: d.catalogo, rutinas: d.rutinas, pesajes: d.pesajes, ajustes: d.ajustes };
+  const esq = r.esquema || 3;
+  const out = { app: "gym", version: esq >= 4 ? 3 : 2, esquema: esq, exportado: r.fecha, sesiones: d.sesiones, catalogo: d.catalogo, rutinas: d.rutinas, pesajes: d.pesajes, ajustes: d.ajustes };
   if (d.medidas) out.medidas = d.medidas;
   return out;
 }
@@ -126,7 +161,7 @@ export async function leerRespaldo(clave) {
 export async function reemplazarTodo(m, actual, motivo = "importar") {
   await tx(["kv", "sesiones"], "readwrite", (s) => {
     s.kv.put(plano({ fecha: new Date().toISOString(), sesiones: actual.sesiones, catalogo: actual.catalogo, rutinas: actual.rutinas,
-      pesajes: actual.pesajes, ajustes: actual.ajustes }), "respaldo-importacion");
+      pesajes: actual.pesajes, medidas: actual.medidas || [], ajustes: actual.ajustes }), "respaldo-importacion");
     rotarRespaldos(s.kv, instantanea(actual, motivo));
     s.sesiones.clear();
     for (const ses of m.sesiones) s.sesiones.put(plano(ses));
@@ -134,6 +169,7 @@ export async function reemplazarTodo(m, actual, motivo = "importar") {
     s.kv.put(plano(m.rutinas), "rutinas");
     s.kv.put(plano(m.pesajes), "pesajes");
     s.kv.put(plano(m.ajustes), "ajustes");
+    s.kv.put(plano(m.medidas || []), "medidas");
     s.kv.put(ESQUEMA, "schema");
   });
 }

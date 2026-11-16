@@ -37,6 +37,7 @@
 .celda-desliza + .celda-desliza::before, .celda + .celda-desliza::before, .celda-desliza + .celda::before { content: ""; position: absolute; top: 0; right: 0; left: 16px; height: .5px; background: var(--separator); z-index: 2; }
 .celda-desliza > .celda { transition: transform var(--t-fast) var(--spring); will-change: transform; }
 .celda-desliza > .celda::before { display: none; }
+.celda-desliza:not(.desplazada) .borrar { visibility: hidden; }
 .celda-desliza .borrar { position: absolute; top: 0; bottom: 0; right: 0; width: 100%; display: flex; justify-content: flex-end; align-items: stretch; background: var(--bad); }
 .celda-desliza .borrar button { color: #fff; font-size: var(--f-body); padding: 0 20px; min-width: 88px; }
 
@@ -304,7 +305,7 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .ej-info { font-size: var(--f-footnote); color: var(--label-2); margin: -4px 0 8px; }
 .ej-nota { font-size: var(--f-footnote); color: var(--label); background: var(--fill-2); border-radius: 8px; padding: 6px 10px; margin-bottom: 8px; white-space: pre-wrap; }
 .series { background: var(--cell); border-radius: var(--r-cell); overflow: hidden; }
-.fila-cab, .serie { display: grid; grid-template-columns: 40px minmax(0, 1fr) 74px 60px 48px; align-items: center; gap: 6px; padding: 0 6px 0 8px; }
+.fila-cab, .serie { display: grid; grid-template-columns: 34px minmax(0, 1fr) 66px 50px 46px 44px; align-items: center; gap: 5px; padding: 0 4px 0 8px; }
 .fila-cab { min-height: 30px; font-size: var(--f-caption1); color: var(--label-2); text-align: center; }
 .fila-cab span:nth-child(2) { text-align: left; }
 .fila-cab .c-check { display: flex; justify-content: center; }
@@ -332,6 +333,38 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .serie.hecha .check svg { background: var(--ok); }
 .btn-anadir-serie { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; margin-top: 8px; border-radius: 10px; background: var(--fill-2); color: var(--accent-ink); font-size: var(--f-subhead); font-weight: 600; }
 .btn-anadir-serie:active { opacity: .6; }
+.fila-botones-serie { display: flex; gap: 8px; }
+.fila-botones-serie .btn-anadir-serie { flex: 1; }
+
+/* RPE por serie */
+.rpe-serie { display: grid; place-items: center; min-height: 44px; padding: 0; border-radius: 8px; font-size: var(--f-subhead); font-weight: 600; color: var(--label); }
+.rpe-serie.sin-rpe { font-weight: 500; color: var(--label-2); font-size: var(--f-footnote); }
+.chips-rpe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+.chip-rpe { min-height: 48px; border-radius: 12px; background: var(--cell); color: var(--label); font-size: var(--f-title3); font-weight: 600; font-variant-numeric: tabular-nums; }
+.chip-rpe.objetivo { box-shadow: inset 0 0 0 1.5px var(--separator); }
+.chip-rpe.activo { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+
+/* Sugerencia de carga */
+.chip-sugerencia { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; width: 100%; min-height: 44px; margin: 0 0 8px; padding: 10px 12px; border-radius: 10px;
+  background: var(--fill-2); color: var(--label); text-align: left; font-size: var(--f-subhead); }
+.chip-sugerencia .t { font-weight: 600; color: var(--accent-ink); }
+.chip-sugerencia .num { font-weight: 600; }
+.chip-sugerencia .m { color: var(--label-2); font-size: var(--f-footnote); }
+.chip-sugerencia:active { opacity: .6; }
+
+/* Superseries: una línea a la izquierda une los ejercicios del grupo */
+.ej.superserie { position: relative; padding-left: 12px; }
+.ej.superserie::before { content: ""; position: absolute; left: 0; top: 0; bottom: -28px; width: 3px; border-radius: 2px; background: var(--accent); }
+.ej.ss-inicio::before { top: 26px; }
+.ej.ss-fin::before { bottom: 0; }
+.ss-etiqueta { font-size: var(--f-caption1); font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--accent-ink); min-height: 22px; }
+
+/* Calculadora de discos */
+.celda-area { margin: 0 var(--gutter); }
+.discos-vista { display: flex; align-items: center; gap: 3px; min-height: 96px; padding: 8px var(--gutter); overflow-x: auto; }
+.discos-barra { flex: none; width: 36px; height: 10px; border-radius: 3px; background: var(--fill); }
+.disco { flex: none; display: grid; place-items: center; width: 26px; height: var(--alto, 40px); border-radius: 5px; background: var(--label); color: var(--bg);
+  font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; writing-mode: vertical-rl; transform: rotate(180deg); }
 .campo-fila { border: 0; background: var(--fill-2); border-radius: 8px; padding: 6px 10px; font-size: var(--f-body); color: var(--label); min-height: 34px; font-variant-numeric: tabular-nums; }
 .area-nota { width: 100%; border: 0; border-radius: var(--r-cell); background: var(--cell); padding: 12px 14px; font-size: var(--f-body); color: var(--label); resize: none; outline: none; }
 .buscador { width: 100%; height: 38px; border: 0; border-radius: 10px; background: var(--fill-2); padding: 0 12px 0 34px; font-size: var(--f-body); color: var(--label); outline: none; -webkit-appearance: none; appearance: none;

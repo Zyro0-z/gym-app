@@ -1,15 +1,12 @@
 // Ajustes › Catálogo de ejercicios: lista y ficha de cada ejercicio.
-import { versionInstalada } from "../../ui/version.js";
-import { VERSION } from "../ajustes.js";
 import { h, poner } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
-import { seccion, lista, celda, vacio, interruptor, segmentado, stepper, reordenable, pedirTexto, chip } from "../../ui/controles.js";
-import { colorGrupo, temaEfectivo } from "../../ui/tema.js";
+import { seccion, lista, celda, vacio, interruptor, stepper, pedirTexto } from "../../ui/controles.js";
+import { colorGrupo } from "../../ui/tema.js";
 import { fmt, plural } from "../../core/formato.js";
 import { canon, sinTildes } from "../../core/nombres.js";
-import { fechaCorta, capital, kg } from "../../ui/textos.js";
+import { capital } from "../../ui/textos.js";
 import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
-import { abrirPesaje } from "../pesaje.js";
 import { kgTxt, usosEjercicio, renombrarEjercicio } from "./comun.js";
 
 /* ---------- Catálogo de ejercicios ---------- */

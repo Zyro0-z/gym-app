@@ -113,6 +113,7 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
       cambio("sesiones");
     },
     async guardarPesajes(p) { await repos.guardarPesajes(p); estado.pesajes = copiar(p); cambio("pesajes"); },
+    async guardarMedidas(m) { await repos.guardarMedidas(m); estado.medidas = copiar(m); cambio("medidas", false); },
     async guardarRutinas(r) { await repos.guardarRutinas(r); estado.rutinas = copiar(r); cambio("rutinas"); },
     async guardarCatalogo(c) { await repos.guardarCatalogo(c); estado.catalogo = copiar(c); cambio("catalogo"); },
     /** El borrador del entrenamiento en curso no afecta al análisis. */
@@ -128,7 +129,7 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     /** Sustituye todo por la copia `m`; los datos actuales quedan en «respaldo-importacion» y en las copias internas. */
     async importar(m, motivo = "importar") {
       await repos.reemplazarTodo(m, estado, motivo);
-      estado = Object.assign({}, estado, { sesiones: copiar(m.sesiones), catalogo: copiar(m.catalogo), rutinas: copiar(m.rutinas), pesajes: copiar(m.pesajes), ajustes: copiar(m.ajustes) });
+      estado = Object.assign({}, estado, { sesiones: copiar(m.sesiones), catalogo: copiar(m.catalogo), rutinas: copiar(m.rutinas), pesajes: copiar(m.pesajes), medidas: copiar(m.medidas || []), ajustes: copiar(m.ajustes) });
       cambio("todo");
     },
     listarRespaldos: () => repos.listarRespaldos(),

@@ -1,15 +1,10 @@
 // Piezas compartidas por los editores de Ajustes.
-import { versionInstalada } from "../../ui/version.js";
-import { VERSION } from "../ajustes.js";
-import { h, poner } from "../../ui/dom.js";
-import { icono } from "../../ui/iconos.js";
-import { seccion, lista, celda, vacio, interruptor, segmentado, stepper, reordenable, pedirTexto, chip } from "../../ui/controles.js";
-import { colorGrupo, temaEfectivo } from "../../ui/tema.js";
+import { h } from "../../ui/dom.js";
+import { celda } from "../../ui/controles.js";
 import { fmt, plural } from "../../core/formato.js";
-import { canon, sinTildes } from "../../core/nombres.js";
-import { fechaCorta, capital, kg } from "../../ui/textos.js";
-import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
-import { abrirPesaje } from "../pesaje.js";
+import { canon } from "../../core/nombres.js";
+import { kg } from "../../ui/textos.js";
+import { nuevoEjercicio } from "../selector.js";
 
 export const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 export const fila = (...hijos) => h("div", { class: "celda" }, h("div", { style: { flex: "1", padding: "8px 0" } }, ...hijos));

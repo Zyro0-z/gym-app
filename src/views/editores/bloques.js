@@ -1,15 +1,10 @@
 // Ajustes › Bloques: deloads y bloques de foco, con sus fechas y grupos.
-import { versionInstalada } from "../../ui/version.js";
-import { VERSION } from "../ajustes.js";
 import { h, poner } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
-import { seccion, lista, celda, vacio, interruptor, segmentado, stepper, reordenable, pedirTexto, chip } from "../../ui/controles.js";
-import { colorGrupo, temaEfectivo } from "../../ui/tema.js";
-import { fmt, plural } from "../../core/formato.js";
-import { canon, sinTildes } from "../../core/nombres.js";
-import { fechaCorta, capital, kg } from "../../ui/textos.js";
-import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
-import { abrirPesaje } from "../pesaje.js";
+import { seccion, lista, celda, vacio, segmentado, chip } from "../../ui/controles.js";
+import { colorGrupo } from "../../ui/tema.js";
+import { canon } from "../../core/nombres.js";
+import { fechaCorta, capital } from "../../ui/textos.js";
 import { fila } from "./comun.js";
 
 /* ---------- Bloques ---------- */

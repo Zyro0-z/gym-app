@@ -56,7 +56,8 @@ export function deslizable(celdaEl, alBorrar, texto = "Borrar") {
   const cont = h("div", { class: "celda-desliza" }, fondo, celdaEl);
   const ANCHO = 88;
   let g = null, abierta = false;
-  const fijar = (x, anim) => { celdaEl.style.transition = anim ? "" : "none"; celdaEl.style.transform = x ? `translateX(${x}px)` : ""; };
+  // El fondo rojo solo existe mientras la celda se desplaza: si no, asoma por las esquinas redondeadas
+  const fijar = (x, anim) => { celdaEl.style.transition = anim ? "" : "none"; celdaEl.style.transform = x ? `translateX(${x}px)` : ""; if (x) cont.classList.add("desplazada"); else if (!anim) cont.classList.remove("desplazada"); else setTimeout(() => { if (!abierta) cont.classList.remove("desplazada"); }, 260); };
   cont.addEventListener("pointerdown", (e) => { if (e.target.closest(".borrar")) return; g = { id: e.pointerId, x0: e.clientX, y0: e.clientY, base: abierta ? -ANCHO : 0, decidido: false, x: 0 }; });
   cont.addEventListener("pointermove", (e) => {
     if (!g || e.pointerId !== g.id) return;

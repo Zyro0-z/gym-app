@@ -1,15 +1,12 @@
 // Ajustes › Rutinas: lista, alta y editor de una rutina.
-import { versionInstalada } from "../../ui/version.js";
-import { VERSION } from "../ajustes.js";
+import { CHIPS_RPE, esRpe, rpeTxt } from "../../core/rpe.js";
 import { h, poner } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
-import { seccion, lista, celda, vacio, interruptor, segmentado, stepper, reordenable, pedirTexto, chip } from "../../ui/controles.js";
-import { colorGrupo, temaEfectivo } from "../../ui/tema.js";
-import { fmt, plural } from "../../core/formato.js";
-import { canon, sinTildes } from "../../core/nombres.js";
-import { fechaCorta, capital, kg } from "../../ui/textos.js";
-import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
-import { abrirPesaje } from "../pesaje.js";
+import { seccion, lista, celda, vacio, interruptor, stepper, reordenable, pedirTexto } from "../../ui/controles.js";
+import { colorGrupo } from "../../ui/tema.js";
+import { plural } from "../../core/formato.js";
+import { canon } from "../../core/nombres.js";
+import { elegirEjercicio } from "../selector.js";
 import { DIAS, fila, compacto, actualizarSesiones } from "./comun.js";
 
 /* ---------- Rutinas ---------- */
@@ -99,6 +96,16 @@ export function vistaRutina([id], app) {
           pie: r.ejercicios.length ? "Arrastra el asa para cambiar el orden; desliza a la izquierda para quitar." : null },
           r.ejercicios.length ? listaEj : null,
           lista([celda({ titulo: "Añadir ejercicio", estilo: "accion", izquierda: h("span", { class: "c-accent", style: { display: "flex" } }, icono("mas", { tam: 22 })), alPulsar: anadir })])),
+        r.ejercicios.length ? seccion({ cab: "RPE objetivo", pie: "Se muestra en cada serie mientras entrenas, como referencia del esfuerzo que buscas." },
+          lista(r.ejercicios.map((e, i) => {
+            const ce = cat.find((x) => x.id === e.ejercicioId);
+            return celda({ titulo: ce ? ce.nombre : e.ejercicioId, valor: esRpe(e.rpe) ? rpeTxt(e.rpe) : "Sin objetivo", chevron: true, alPulsar: async () => {
+              const v = await app.hojaAcciones({ mensaje: "RPE objetivo · " + (ce ? ce.nombre : ""), opciones: [{ texto: "Sin objetivo", valor: "no" }]
+                .concat(CHIPS_RPE.map((x) => ({ texto: rpeTxt(x) + (x === e.rpe ? " · actual" : ""), valor: String(x) }))) });
+              if (!v) return;
+              await guardar((x) => { if (v === "no") delete x.ejercicios[i].rpe; else x.ejercicios[i].rpe = Number(v); });
+            } });
+          }))) : null,
         seccion({ cab: "Avisos de duración", pie: "Marca como dudosa una sesión de esta rutina que pase de esta duración o tenga un descanso entre series demasiado largo." }, lista([
           celda({ titulo: "Avisar", control: interruptor(!!umb, (v) => store.guardarAjustes((a) => {
             a.umbrales = (a.umbrales || []).filter((u) => canon(u.rutina) !== canon(r.nombre));

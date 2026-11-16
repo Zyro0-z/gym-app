@@ -56,8 +56,8 @@ export function borradorDeRutina(nombre) {
   const r = nombre ? E.app.store.estado.rutinas.find((x) => x.nombre === nombre) : null;
   return {
     rutina: r ? r.nombre : null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null,
-    ejercicios: r ? r.ejercicios.map((e) => ({ ejercicioId: e.ejercicioId, nombre: nombreDe(e.ejercicioId), objetivo: e.series || 3,
-      series: Array.from({ length: Math.max(1, e.series || 3) }, vacia) })) : [],
+    ejercicios: r ? r.ejercicios.map((e) => Object.assign({ ejercicioId: e.ejercicioId, nombre: nombreDe(e.ejercicioId), objetivo: e.series || 3,
+      series: Array.from({ length: Math.max(1, e.series || 3) }, vacia) }, e.rpe ? { rpeObjetivo: e.rpe } : {})) : [],
   };
 }
 
@@ -90,7 +90,8 @@ export function editarSesion(s) {
   E.M = {
     modo: "edicion", id: s.id, original: s,
     d: { rutina: s.rutina, fecha: s.fecha, inicioTxt: s.inicio || "", finTxt: s.fin || "", descanso: null,
-      ejercicios: s.ejercicios.map((e) => ({ ejercicioId: e.ejercicioId, nombre: e.nombre || nombreDe(e.ejercicioId), tipo: e.tipo, nota: e.nota,
+      nota: s.nota || "", recuperacion: s.recuperacion || null,
+      ejercicios: s.ejercicios.map((e) => ({ ejercicioId: e.ejercicioId, nombre: e.nombre || nombreDe(e.ejercicioId), tipo: e.tipo, nota: e.nota, grupoId: e.grupoId,
         series: e.series.map((x) => Object.assign({}, x, { peso: aTexto(x.peso), reps: aTexto(x.reps), hecha: x.hecha !== false })) })) },
   };
   E.M.inicial = JSON.stringify(E.M.d);

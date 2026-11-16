@@ -10,6 +10,8 @@ import { hhmm, fechaLocal, nombreDe, contarHechas } from "./estado.js";
 import { cerrarModal, guardarYa } from "./pantalla.js";
 import { mostrarResumen } from "./resumen.js";
 import { E } from "./estado.js";
+import { esRpe } from "../../core/rpe.js";
+import { posicionSuperserie } from "./herramientas.js";
 
 export async function descartar() {
   const ok = await E.app.confirmar("¿Descartar el entrenamiento?", "Se perderán las series de esta sesión.", "Descartar", true);
@@ -23,16 +25,24 @@ export function aSesion(d, { id, fecha, inicio, fin, conSinMarcar = false }) {
   const minutosDe = (t) => { const [a, b] = t.split(":").map(Number); return a * 60 + b; };
   let duracion = null;
   if (inicio && fin) { duracion = minutosDe(fin) - minutosDe(inicio); if (duracion < 0) duracion += 1440; }
-  const ejercicios = d.ejercicios.map((e) => {
+  const ejercicios = d.ejercicios.map((e, i) => {
     const series = e.series.filter((s) => s.hecha || (conSinMarcar && leerNumero(s.reps) > 0)).map((s) => {
-      const out = Object.assign({}, s, { peso: s.peso === "" ? 0 : leerNumero(s.peso) || 0, reps: leerNumero(s.reps) || 0, tipo: s.tipo || "normal", hecha: true });
+      const out = { peso: s.peso === "" ? 0 : leerNumero(s.peso) || 0, reps: leerNumero(s.reps) || 0, tipo: s.tipo || "normal", hecha: true };
+      if (s.segundos != null) out.segundos = s.segundos;
+      if (esRpe(s.rpe)) out.rpe = s.rpe;
       return out;
     });
     const x = { ejercicioId: e.ejercicioId, nombre: e.nombre || nombreDe(e.ejercicioId), tipo: e.tipo || "peso", series };
     if (e.nota) x.nota = e.nota;
+    if (e.grupoId && posicionSuperserie(d.ejercicios, i)) x.grupoId = e.grupoId;
     return x;
   }).filter((e) => e.series.length);
-  return { id, rutina: d.rutina || null, fecha, inicio: inicio || null, fin: fin || null, duracion, ejercicios };
+  // Una superserie que se queda con un solo ejercicio (los demás sin series) deja de serlo
+  for (let i = 0; i < ejercicios.length; i++) if (ejercicios[i].grupoId && !posicionSuperserie(ejercicios, i)) delete ejercicios[i].grupoId;
+  const ses = { id, rutina: d.rutina || null, fecha, inicio: inicio || null, fin: fin || null, duracion, ejercicios };
+  if (d.nota && d.nota.trim()) ses.nota = d.nota.trim();
+  if (d.recuperacion && Object.values(d.recuperacion).some((v) => v != null)) ses.recuperacion = d.recuperacion;
+  return ses;
 }
 
 export async function terminar() {
@@ -74,10 +84,19 @@ export async function terminar() {
           const n = e.series.filter((s) => s.hecha).length;
           return celda({ titulo: e.nombre, valor: n + " de " + e.series.length });
         }))),
+        seccion({ cab: "Nota de la sesión" }, h("div", { class: "celda-area" }, notaSesion(d))),
         sinMarcar ? seccion({ pie: "Hay " + plural(sinMarcar, "serie sin marcar", "series sin marcar") + " con repeticiones. Por defecto no se guardan." }, lista([
           celda({ titulo: "Guardar también las sin marcar", control: interruptor(false, (v) => { r.conSinMarcar = v; }, "Guardar también las series sin marcar") })])) : null);
     },
   });
+}
+
+/** Campo de texto para la nota de la sesión entera (se guarda en el borrador al escribir). */
+export function notaSesion(d) {
+  const ta = h("textarea", { class: "area-nota", rows: 3, placeholder: "Cómo fue, molestias, cambios…", "aria-label": "Nota de la sesión",
+    onInput: (e) => { d.nota = e.target.value; if (E.M && E.M.modo === "entreno") guardarYa(); } });
+  ta.value = d.nota || "";
+  return ta;
 }
 
 export async function cancelarEdicion() {

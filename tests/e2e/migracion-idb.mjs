@@ -45,7 +45,7 @@ for (const nombre of motores) {
   const kv = await p.evaluate(() => new Promise((ok) => { const r = indexedDB.open("gymapp"); r.onsuccess = () => {
     const t = r.result.transaction("kv"); const s = t.objectStore("kv"); const out = {};
     const k = s.getAllKeys(); k.onsuccess = () => { let n = k.result.length; for (const c of k.result) { const g = s.get(c); g.onsuccess = () => { out[c] = g.result; if (!--n) { r.result.close(); ok(out); } }; } }; }; }));
-  ok(kv.schema === 3, "schema 3");
+  ok(kv.schema === 4, "schema 4 (de la versión 1 se pasa directamente al esquema actual)");
   ok(!("sessions" in kv) && !("configs" in kv), "claves antiguas retiradas del uso");
   ok(kv.legacy && JSON.stringify(kv.legacy.datos.sessions) === JSON.stringify(d.sessions) && JSON.stringify(kv.legacy.datos.configs) === JSON.stringify(d.configs), "copia íntegra en «legacy»");
   ok(kv["backup-esquema-v2"] && kv["backup-esquema-v2"].datos.sessions.length === d.sessions.length, "copia en backup-esquema-v2");

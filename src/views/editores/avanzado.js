@@ -1,15 +1,9 @@
 // Ajustes › Avanzado: ligas, estándares y versión instalada.
 import { versionInstalada } from "../../ui/version.js";
 import { VERSION } from "../ajustes.js";
-import { h, poner } from "../../ui/dom.js";
-import { icono } from "../../ui/iconos.js";
-import { seccion, lista, celda, vacio, interruptor, segmentado, stepper, reordenable, pedirTexto, chip } from "../../ui/controles.js";
-import { colorGrupo, temaEfectivo } from "../../ui/tema.js";
+import { poner } from "../../ui/dom.js";
+import { seccion, lista, celda, interruptor } from "../../ui/controles.js";
 import { fmt, plural } from "../../core/formato.js";
-import { canon, sinTildes } from "../../core/nombres.js";
-import { fechaCorta, capital, kg } from "../../ui/textos.js";
-import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
-import { abrirPesaje } from "../pesaje.js";
 import { fila } from "./comun.js";
 
 /* ---------- Avanzado ---------- */

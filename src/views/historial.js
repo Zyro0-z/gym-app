@@ -1,4 +1,5 @@
 // Historial: «¿qué hice?». Mapa de calor del mes y la lista de sesiones por meses.
+import { esRpe, rpeTxt } from "../core/rpe.js";
 import { h, poner } from "../ui/dom.js";
 import { seccion, lista, celda, vacio } from "../ui/controles.js";
 import { mapaCalor } from "../ui/calor.js";
@@ -84,14 +85,17 @@ export function vistaSesion([id], app) {
         h("div", { class: "t-subhead c-2", style: { marginTop: "2px" } }, lineaSesion(s)));
       const ejs = s.ejercicios.map((e) => {
         const p = previa(e.ejercicioId);
+        const ss = e.grupoId ? s.ejercicios.filter((x) => x.grupoId === e.grupoId) : [];
+        const enSuperserie = ss.length > 1 ? " · superserie " + (ss.indexOf(e) + 1) + "/" + ss.length : "";
         let n = 0;
-        return seccion({ cab: e.nombre || e.ejercicioId, pie: e.nota || (p ? "Comparado con el " + fechaCorta(p.x.fecha, hoy) : null) }, lista(e.series.map((x, i) => {
+        return seccion({ cab: (e.nombre || e.ejercicioId) + enSuperserie, pie: e.nota || (p ? "Comparado con el " + fechaCorta(p.x.fecha, hoy) : null) }, lista(e.series.map((x, i) => {
           if (x.tipo !== "calentamiento") n++;
           const etq = x.tipo === "calentamiento" ? "Calentamiento" : "Serie " + n + (x.tipo === "fallo" ? " · al fallo" : x.tipo === "descendente" ? " · descendente" : "");
-          return celda({ titulo: etq, valor: h("span", null, x.peso > 0 ? kg(x.peso) + " × " + x.reps : x.reps ? x.reps + " reps" : "—", delta(x, p && p.e.series[i])) });
+          return celda({ titulo: etq, valor: h("span", null, (x.peso > 0 ? kg(x.peso) + " × " + x.reps : x.reps ? x.reps + " reps" : "—") + (esRpe(x.rpe) ? " @" + rpeTxt(x.rpe) : ""), delta(x, p && p.e.series[i])) });
         })));
       });
-      poner(c, cab, ejs, seccion({}, lista([celda({ titulo: "Borrar sesión", estilo: "destructiva", alPulsar: async () => {
+      const nota = s.nota ? seccion({ cab: "Nota" }, h("div", { class: "celda-area" }, h("div", { class: "ej-nota", style: { margin: 0, padding: "12px 14px", fontSize: "var(--f-body)" } }, s.nota))) : null;
+      poner(c, cab, nota, ejs, seccion({}, lista([celda({ titulo: "Borrar sesión", estilo: "destructiva", alPulsar: async () => {
         const ok = await app.confirmar("¿Borrar la sesión?", "Se borrará la sesión del " + fechaCorta(s.fecha, hoy) + ". No se puede deshacer.", "Borrar", true);
         if (!ok) return;
         await store.borrarSesion(s.id);

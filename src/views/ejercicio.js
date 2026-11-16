@@ -1,4 +1,5 @@
 // Detalle de ejercicio (e1RM, próxima vez, estado, récords y sesiones) y detalle de grupo muscular.
+import { e1rmAjustado, esRpe, rpeTxt } from "../core/rpe.js";
 import { h, poner } from "../ui/dom.js";
 import { icono } from "../ui/iconos.js";
 import { seccion, lista, celda, vacio, chip, segmentado } from "../ui/controles.js";
@@ -16,6 +17,23 @@ import { ligaVigente } from "./ligas.js";
 const RANGOS = [{ valor: "1M", texto: "1M" }, { valor: "3M", texto: "3M" }, { valor: "6M", texto: "6M" }, { valor: "Todo", texto: "Todo" }];
 const MATERIAL = { maquina: "máquina", máquina: "máquina", polea: "polea", mancuerna: "mancuerna", barra: "barra" };
 const serieTxt = (st) => (st.peso > 0 ? fmt(st.peso, Number.isInteger(st.peso) ? 0 : 1) + "×" + st.reps : st.reps + " reps");
+
+/** Mejor e1RM ajustado por RPE de la última sesión del ejercicio con alguna serie con RPE, o null. */
+function rmConRpe(sesiones, k) {
+  let ult = null;
+  for (const s of sesiones) for (const e of s.ejercicios) {
+    if (e.ejercicioId !== k || !e.series.some((st) => esRpe(st.rpe))) continue;
+    if (!ult || s.fecha > ult.s.fecha || (s.fecha === ult.s.fecha && s.id > ult.s.id)) ult = { s, e };
+  }
+  if (!ult) return null;
+  let mejor = null;
+  for (const st of ult.e.series) {
+    if (st.tipo === "calentamiento" || st.hecha === false || !esRpe(st.rpe)) continue;
+    const v = e1rmAjustado(st.peso, st.reps, st.rpe);
+    if (v > 0 && (!mejor || v > mejor.kg)) mejor = { kg: v, st };
+  }
+  return mejor;
+}
 
 export function vistaEjercicio([k], app) {
   const { store } = app;
@@ -41,12 +59,15 @@ export function vistaEjercicio([k], app) {
       const hist = e.hist.filter((x) => x.mejorRM > 0 && x.dia >= desde);
       const actual = e.hist.length ? e.hist[e.hist.length - 1].mejorRM : 0;
       const t = d && d.tend, ic = iconoTend(t);
+      const ajustado = rmConRpe(store.estado.sesiones, k);
       const grafica = hist.length ? graficaLinea({ puntos: hist.map((x) => ({ x: numDia(x.dia), y: x.mejorRM, detalle: capital(fechaCorta(x.dia, A.hoy)) + " · " + x.mejorRMReps + " reps" })),
         formato: (v) => kg(v), ejeX: (n) => fechaCorta(deNum(n)), etiqueta: "e1RM por sesión" }) : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Sin sesiones en este periodo.");
       const out = [
         seccion({}, h("div", { class: "tarjeta" },
           h("div", { class: "fila entre" }, h("div", null, h("div", { class: "etiqueta" }, "e1RM de la última sesión"), h("div", { class: "cifra t-title1 c-accent" }, fmt(actual, 1), h("span", { class: "ud" }, " kg"))),
             t && ic ? chip(pctTxt(t.pct), ic === "sube" ? "ok" : ic === "baja" ? "bad" : null, { icono: ic }) : null),
+          ajustado ? h("div", { class: "etiqueta", style: { marginTop: "4px" } }, "Ajustado por RPE: ", h("span", { class: "num", style: { color: "var(--label)", fontWeight: "600" } }, fmt(ajustado.kg, 1) + " kg"),
+            " (" + fmt(ajustado.st.peso, Number.isInteger(ajustado.st.peso) ? 0 : 1) + " × " + ajustado.st.reps + " @" + rpeTxt(ajustado.st.rpe) + ")") : null,
           h("div", { style: { margin: "12px 0 4px" } }, segmentado(RANGOS, rango, (v) => { rango = v; this.render(c); }, { etiqueta: "Rango" })),
           grafica,
           e.hist.length < 3 ? h("div", { class: "etiqueta", style: { marginTop: "6px" } }, "Con 3 sesiones o más se calcula la tendencia.") : null)),
@@ -87,6 +108,7 @@ export function comoSeCalcula(app) {
     render(c) {
       poner(c,
         seccion({ cab: "e1RM" }, h("div", { class: "tarjeta" }, p("Es el peso que podrías levantar una vez, estimado con la fórmula de Epley: peso × (1 + reps / 30). Solo cuentan las series con peso que no son de calentamiento."))),
+        seccion({ cab: "Ajustado por RPE" }, h("div", { class: "tarjeta" }, p("Si anotas el RPE, las repeticiones que te quedaban en reserva (10 − RPE) se suman a las hechas antes de aplicar Epley: 100 kg × 5 a RPE 8 cuenta como 100 kg × 7. Es una referencia aparte; no cambia el e1RM, las tendencias ni las ligas."))),
         seccion({ cab: "Semáforo" }, h("div", { class: "tarjeta" }, p("Compara tu mejor e1RM reciente con el anterior. Estancado: muchos días sin récord. Retrocede: el e1RM baja. Los días de descarga (deload) no cuentan."))),
         seccion({ cab: "Próxima vez" }, h("div", { class: "tarjeta" }, p("Doble progresión: cuando todas las series llegan al máximo del rango de repeticiones, sube el peso con el incremento del ejercicio y vuelve al mínimo del rango."))),
         seccion({ cab: "Ligas" }, h("div", { class: "tarjeta" }, p("Tu e1RM se compara con tablas de estándares según tu peso corporal. La liga de un grupo es la media de sus ejercicios, ponderada por las series. Para bajar de división hay un margen, así que un mal día no te hace descender."))));

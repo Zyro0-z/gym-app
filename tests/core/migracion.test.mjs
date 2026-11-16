@@ -63,8 +63,14 @@ test("copias: nueva, antigua y seed; rechaza las más nuevas", () => {
   const p = planMigracion(viejo());
   const copia = crearCopia(p, "2026-11-15T12:00:00.000Z");
   const r = leerCopia(JSON.stringify(copia));
-  assert.equal(r.origen, "v2");
+  assert.equal(r.origen, "v3");
+  assert.equal(copia.esquema, 4);
+  assert.deepEqual(r.medidas, []);
   assert.equal(r.sesiones.length, p.sesiones.length);
+  // una copia de la versión 2.0 (version 2, esquema 3, sin medidas) se sigue aceptando
+  const v2 = Object.assign({}, copia, { version: 2, esquema: 3 }); delete v2.medidas;
+  const r2 = leerCopia(JSON.stringify(v2));
+  assert.equal(r2.origen, "v2"); assert.deepEqual(r2.medidas, []); assert.equal(r2.ajustes.entreno.barra, 20);
   assert.deepEqual(r.sesiones, p.sesiones);
   const d = fixture();
   const r1 = leerCopia(JSON.stringify({ version: 1, schema: 2, sessions: d.sessions, templates: d.templates, configs: d.configs, settings: {}, library: d.library }));
@@ -72,7 +78,8 @@ test("copias: nueva, antigua y seed; rechaza las más nuevas", () => {
   assert.equal(r1.sesiones.length, d.sessions.length);
   const seed = leerCopia(JSON.stringify(d));
   assert.equal(seed.sesiones.length, d.sessions.length);
-  assert.throws(() => leerCopia(JSON.stringify({ version: 3, sesiones: [] })), /más nueva/);
+  assert.throws(() => leerCopia(JSON.stringify({ version: 4, sesiones: [] })), /más nueva/);
+  assert.throws(() => leerCopia(JSON.stringify({ version: 3, esquema: 5, sesiones: [] })), /más nueva/);
   assert.throws(() => leerCopia("no es json"), /JSON/);
   assert.throws(() => leerCopia(JSON.stringify({ hola: 1 })), /no contiene sesiones/);
   assert.throws(() => leerCopia(JSON.stringify({ version: 2, sesiones: [{}], catalogo: [], rutinas: [], pesajes: [] })), /dañada/);

@@ -1,15 +1,10 @@
 // Ajustes › Grupos musculares: nombres, colores y regiones del diagrama.
-import { versionInstalada } from "../../ui/version.js";
-import { VERSION } from "../ajustes.js";
 import { h, poner } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
-import { seccion, lista, celda, vacio, interruptor, segmentado, stepper, reordenable, pedirTexto, chip } from "../../ui/controles.js";
+import { seccion, lista, celda, pedirTexto } from "../../ui/controles.js";
 import { colorGrupo, temaEfectivo } from "../../ui/tema.js";
-import { fmt, plural } from "../../core/formato.js";
-import { canon, sinTildes } from "../../core/nombres.js";
-import { fechaCorta, capital, kg } from "../../ui/textos.js";
-import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
-import { abrirPesaje } from "../pesaje.js";
+import { plural } from "../../core/formato.js";
+import { canon } from "../../core/nombres.js";
 
 /* ---------- Grupos musculares ---------- */
 
