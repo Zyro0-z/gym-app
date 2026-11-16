@@ -11,7 +11,7 @@ const lista = JSON.parse(sw.match(/const FICHEROS = (\[[\s\S]*?\]);/)[1].replace
 
 test("FICHEROS incluye cada módulo y hoja de estilo de src/", () => {
   const faltan = [];
-  for (const d of ["src", "src/ui", "src/views", "src/core", "src/data", "src/worker"])
+  for (const d of ["src", "src/ui", "src/views", "src/core", "src/data", "src/worker", "src/migracion"])
     for (const f of readdirSync(join(RAIZ, d))) if (/\.(js|css)$/.test(f) && !lista.includes(join(d, f))) faltan.push(join(d, f));
   assert.deepEqual(faltan, []);
 });

@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile, readdir, access } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { desdeLegacy } from "../../src/core/legacy.js";
+import { desdeLegacy } from "../../src/migracion/index.js";
 import { analizar } from "../../src/core/analisis.js";
 import { canon } from "../../src/core/nombres.js";
 import { fmt, conSigno } from "../../src/core/formato.js";

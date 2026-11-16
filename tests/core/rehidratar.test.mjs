@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { analizar } from "../../src/core/analisis.js";
 import { aPlano, rehidratar } from "../../src/core/rehidratar.js";
-import { desdeLegacy } from "../../src/core/legacy.js";
+import { desdeLegacy } from "../../src/migracion/index.js";
 import { fixture } from "../golden/fixture.mjs";
 
 const RAIZ = fileURLToPath(new URL("../..", import.meta.url));

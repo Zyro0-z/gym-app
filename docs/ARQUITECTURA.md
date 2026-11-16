@@ -9,74 +9,126 @@
 - La lógica de cálculo tiene que dar los mismos resultados que el dashboard anterior. Lo garantiza un
   *golden master* (§5).
 
-## 2. Módulos
+## 2. Capas y módulos
+
+### Capas
+
+| Capa | Qué hace | Puede importar |
+|---|---|---|
+| `core/` | cálculo **puro**: recibe datos y `hoy`, devuelve datos. Sin DOM, sin almacenamiento | solo `core/` |
+| `migracion/` | lectura del formato de la versión 1 y conversión al modelo (pura) | `core/` |
+| `data/` | modelo, IndexedDB, migraciones de esquema, copias, validación | `core/`, `migracion/` |
+| `worker/` | Web Worker de módulo que ejecuta el análisis | `core/` |
+| `store.js` | estado en memoria, escrituras (primero IndexedDB), análisis vía Worker | `core/`, `data/` (y crea el Worker) |
+| `ui/` | sistema de diseño: tokens, componentes, navegación, gráficas, insignias | `core/` (solo utilidades de formato y fechas) |
+| `views/` | pantallas | todo lo anterior |
+| `app.js` | arranque | todo |
+
+Las reglas se comprueban leyendo los imports de cada fichero (`tests/core/capas.test.mjs`): `core` no
+importa nada de `migracion` ni de ninguna capa superior; `ui` no conoce `views`, `data` ni el store;
+ningún fichero pasa de ~350 líneas (excepción justificada: `ui/componentes.css`, la hoja de todos los
+componentes; partirla añadiría peticiones sin ganar claridad).
+
+### Flujo de datos
+
+```
+            ┌──────────── IndexedDB «gymapp» ────────────┐
+            │  kv (catálogo, rutinas, ajustes, copias…)   │
+            │  sesiones · medidas                         │
+            └───────────────▲───────────────┬─────────────┘
+                 escritura  │               │ lectura y migración (data/repos.js)
+                            │               ▼
+  vista ──acción──▶ store.guardarX() ──▶ estado en memoria ──▶ versión++ ──▶ avisar("sesiones"…)
+    ▲                                       │
+    │                                       │ foto del modelo (postMessage)
+    │                                       ▼
+    │                             worker/analisis.js: analizar() → aPlano()
+    │                                       │ structuredClone
+    │                                       ▼
+    └──repinta◀── avisar("analisis") ◀── rehidratar() (contexto y funciones, en el hilo principal)
+```
+
+- Las vistas leen `store.estado` y `store.analisis()`; nunca recalculan por su cuenta.
+- `store.analisis()` devuelve al momento el último análisis disponible (aunque sea del cambio
+  anterior) y pide uno nuevo si los datos o el día cambiaron. Mientras no hay ninguno, la navegación
+  pinta un esqueleto en las vistas marcadas con `vista.analisis = true`; mientras se recalcula, una
+  línea fina bajo la barra lo indica.
+- Solo hay una petición al Worker en curso; las que llegan mientras tanto se funden en una y una
+  respuesta obsoleta se descarta. Si no hay Worker o falla, se calcula en el hilo principal.
+- `aPlano` quita del análisis el contexto y las funciones; `rehidratar` los reconstruye con
+  `crearContexto` y `funcionesLiga`. `tests/core/rehidratar.test.mjs` comprueba que el resultado es
+  igual al de `analizar` (datos sintéticos y reales).
+
+### Módulos
 
 ```
 index.html            arranque mínimo: tema y acento antes del primer pintado, #app y la tab bar
-sw.js                 service worker: precache versionado (FICHEROS + V), cache-first
+sw.js                 service worker: precaché completa por versión, cache-first sin escrituras
 src/
   app.js              arranque: apariencia, carga y migración, navegación, service worker
-  store.js            estado persistido con suscripciones; análisis bajo demanda, memoizado por versión
-  core/               PURO: sin DOM ni almacenamiento; recibe datos y `hoy`, devuelve datos
-    fechas.js         día ISO, lunes de la semana, claves de semana/mes, numDia, meses
-    formato.js        números en es-ES (coma decimal, punto de miles)
-    nombres.js        canon(), Levenshtein, posibles variantes, nombre visible
-    constantes.js     umbrales y textos fijos de la lógica
-    legacy.js         lector del formato antiguo (para migrar y para importar copias antiguas)
+  store.js            estado persistido con suscripciones; análisis en el Worker, memoizado por versión
+  core/               PURO
+    fechas.js, formato.js, nombres.js, constantes.js
     contexto.js       contexto de cálculo: catálogo, grupos, objetivos, bloques, horario, ligas
     sesiones.js       normaliza sesiones: series que cuentan, volumen, e1RM, duración fiable
     estancamiento.js  semáforo, días sin PR descontando bloques, flecha de tendencia
     progresion.js     doble progresión, incrementos, «próxima vez»
     semanal.js        semanas, racha, hoy toca, series vs objetivo, volumen por grupo, balance
     peso.js           pesajes, medias, ritmo, tendencia por fase
-    ligas.js          estándares, puntuación, divisiones con histéresis, grupos, general
+    ligas.js          estándares, puntuación, divisiones con histéresis; funcionesLiga()
     calidad.js        avisos de calidad de los datos
-    analisis.js       orquesta todo lo anterior → un objeto `Analisis`
+    analisis.js       orquesta todo lo anterior → un objeto `Analisis` (no se toca: golden master)
+    rehidratar.js     aPlano / rehidratar para el paso por el Worker
+    presentacion.js   comparaciones periodo a periodo sin cifras engañosas
+    (Fase 3 y 5: rpe.js, sugerencia.js, discos.js, recuperacion.js, descarga.js, comparar.js, csv.js)
+  migracion/          formato de la versión 1: claves.js, lineas.js, config*.js, conversion.js, index.js
+  worker/analisis.js  analizar en un Worker de módulo
   data/
     db.js             IndexedDB versionada (onupgradeneeded) y transacciones
-    modelo.js         modelo, ajustes por defecto, plan de migración, copias (crear/leer/estado)
-    repos.js          cargar (migrando o rescatando), guardar cada parte, importar con respaldo
+    modelo.js         modelo, ajustes por defecto, plan de migración, copias, copias internas
+    esquema.js        validación de copias (docs/ESQUEMA.md)
+    repos.js          cargar (migrando o rescatando), guardar, importar y restaurar con respaldo
     espejo.js         réplica en localStorage del borrador
   ui/
-    tokens.css, base.css, componentes.css   variables (§3 de DISENO.md), estructura, componentes
-    dom.js            h()/s() para crear nodos, animar() con la Web Animations API
-    iconos.js         iconos SVG propios
-    navegacion.js     pilas por pestaña, History API, gesto de borde, tab bar, barra de navegación
-    capas.js          hoja con alturas, alerta, hoja de acciones, toast
-    controles.js      secciones, listas y celdas, deslizar para borrar, interruptor, segmentado,
-                      stepper, chip, estado vacío, botones, anillo, barra fina
-    graficas.js       barras (simples y apiladas), línea con área, sparkline, selección por arrastre
-    calor.js          mapa de calor mensual
-    cuerpo.js         diagrama corporal coloreado por grupo
-    insignias.js      generador de las insignias de liga
-    tema.js           tema, acento y color de cada grupo
-    textos.js         fechas y cifras para la interfaz
-    teclado.js        barra sobre el teclado numérico (−, +, Siguiente)
-    haptica.js, sonido.js
-  views/              indice.js registra pestañas y rutas; una pantalla o familia por fichero:
-    hoy.js, progreso.js, historial.js, ajustes.js     raíces de las cuatro pestañas
-    entreno.js        entrenamiento a pantalla completa, barra minimizada, edición y resumen
-    ejercicio.js, ligas.js                            detalle de ejercicio, grupo y ligas
-    editores.js       editores de Ajustes (rutinas, horario, ejercicios, grupos, objetivos,
-                      peso corporal, bloques, entrenamiento, calidad de los datos, avanzado)
-    selector.js, pesaje.js, datos.js, guia.js, comun.js
+    tokens.css, base.css, componentes.css
+    dom.js, iconos.js, navegacion.js, capas.js, controles.js, graficas.js, calor.js, cuerpo.js
+    insignias.js      presentación; insignias/graficos.js (primitivas), registro.js (las 15 ligas),
+                      montaje.js (composición y caché)
+    tema.js, textos.js, teclado.js, haptica.js, sonido.js, version.js
+  views/
+    indice.js         pestañas, rutas y vistas que necesitan el análisis
+    hoy.js, progreso.js, historial.js, ajustes.js, ejercicio.js, ligas.js, datos.js, …
+    entreno.js        API del entrenamiento; las piezas, en entreno/:
+      estado.js         estado compartido (E.app, E.M) y utilidades
+      pantalla.js       modal a pantalla completa, barra minimizada, Wake Lock, guardado, cabecera
+      ejercicios.js     bloques de ejercicio, referencias, menú, historia y notas
+      serie.js          fila de serie (tipo, anterior, peso, reps, hecha)
+      descanso.js       temporizador de descanso
+      revision.js       terminar (revisión), descartar, guardar una edición
+      resumen.js        resumen al terminar
+    editores.js       API de los editores de Ajustes; uno por fichero en editores/:
+      comun.js, rutinas.js, horario.js, ejercicios.js, grupos.js, objetivos.js, peso.js,
+      bloques.js, entrenamiento.js, calidad.js, avanzado.js
 tests/
-  core/*.test.mjs     node:test sobre src/core y src/data, golden master, lista del service worker
+  core/*.test.mjs     node:test: núcleo, golden master, migración, esquema, capas, service worker…
   golden/             generador y salida del dashboard anterior (sintético y, en local, seed)
-  e2e/*.mjs           Playwright: migración en IndexedDB, arranque con datos v1, navegación,
-                      entrenamiento completo y recorrido de todas las pantallas con capturas
+  bench/              rendimiento del análisis con 820 sesiones
+  e2e/*.mjs           Playwright (todas.mjs las lanza todas con un motor)
   webkit.sh           ejecuta una prueba con WebKit en un contenedor Ubuntu (docker)
-docs/                 DISENO.md, ARQUITECTURA.md
+tools/                estampar-version.mjs (CI), make-seed.mjs
+docs/                 DISENO.md, ARQUITECTURA.md, ESQUEMA.md
 ```
 
-**Reglas.**
+**Otras reglas.**
 
-- `core/` no importa nada de `data/`, `ui/` ni `views/`.
-- Las vistas leen `Analisis` del store y nunca recalculan por su cuenta.
 - No hay variables globales (`window.*`): todo pasa por imports y por el store. La única excepción es
   `window.__gym`, que solo existe bajo Playwright (`navigator.webdriver`) para las pruebas.
+- Todo fichero que cargue la app va en `FICHEROS` de `sw.js`; `tests/core/sw.test.mjs` sigue los
+  imports desde `index.html` y lo comprueba.
 
 ## 3. Modelo de datos (esquema 3)
+
+El detalle campo a campo, con el esquema 4 y la validación de copias, está en `docs/ESQUEMA.md`.
 
 IndexedDB `gymapp`, versión de base de datos 2:
 
@@ -132,7 +184,7 @@ el orden en que se guardaron las sesiones, igual que en la versión 1.
 2. Si `schema < 3` y existe alguna clave antigua (`sessions`, `templates`, `configs`, `settings`,
    `library`, `draft`), calcula el plan con `planMigracion()`. Es puro y se prueba en node:
    - los textos de configuración se leen una sola vez con las mismas reglas que la versión 1
-     (`src/core/legacy.js`);
+     (`src/migracion/`);
    - de ellos salen el catálogo, las rutinas, los pesajes y los ajustes estructurados;
    - `settings` y el tema de `localStorage` pasan a `ajustes.entreno` y `ajustes.apariencia`;
    - el borrador antiguo se convierte;

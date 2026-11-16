@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { leerConfig, leerLineas, desdeLegacy } from "../../src/core/legacy.js";
+import { leerConfig, leerLineas, desdeLegacy } from "../../src/migracion/index.js";
 import { fixture } from "../golden/fixture.mjs";
 
 test("líneas «clave:: valor» con sus tipos", () => {

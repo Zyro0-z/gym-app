@@ -1,5 +1,5 @@
 // Modelo de datos de la versión 2 y conversiones puras (sin IndexedDB): se prueban en node.
-import { desdeLegacy, convertirSesiones } from "../core/legacy.js";
+import { desdeLegacy, convertirSesiones } from "../migracion/index.js";
 import { canon } from "../core/nombres.js";
 import { validarCopia, textoProblemas } from "./esquema.js";
 

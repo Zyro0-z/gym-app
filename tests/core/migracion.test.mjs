@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { planMigracion, leerCopia, crearCopia, estadoCopia, convertirBorrador, rescatarSesiones, completarAjustes } from "../../src/data/modelo.js";
-import { desdeLegacy } from "../../src/core/legacy.js";
+import { desdeLegacy } from "../../src/migracion/index.js";
 import { analizar } from "../../src/core/analisis.js";
 import { fixture } from "../golden/fixture.mjs";
 
