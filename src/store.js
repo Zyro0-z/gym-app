@@ -132,6 +132,11 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
       estado = Object.assign({}, estado, { sesiones: copiar(m.sesiones), catalogo: copiar(m.catalogo), rutinas: copiar(m.rutinas), pesajes: copiar(m.pesajes), medidas: copiar(m.medidas || []), ajustes: copiar(m.ajustes) });
       cambio("todo");
     },
+    /** Deja la app sin sesiones, pesajes, medidas, rutinas ni borrador. Conserva ajustes y catálogo; antes guarda una copia interna. */
+    async borrarTodo() {
+      await store.importar({ sesiones: [], catalogo: estado.catalogo, rutinas: [], pesajes: [], medidas: [], ajustes: estado.ajustes }, "borrar");
+      await store.guardarBorrador(null);
+    },
     listarRespaldos: () => repos.listarRespaldos(),
     /** Restaura una copia interna: se valida igual que un archivo y los datos actuales se guardan antes. */
     async restaurarRespaldo(clave) {

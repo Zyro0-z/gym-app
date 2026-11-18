@@ -49,7 +49,7 @@ export function importarCopia(app) {
   input.click();
 }
 
-const MOTIVOS = { sesiones: "Automática", importar: "Antes de importar", restaurar: "Antes de restaurar", migrar: "Antes de actualizar los datos" };
+const MOTIVOS = { sesiones: "Automática", importar: "Antes de importar", restaurar: "Antes de restaurar", borrar: "Antes de borrar", migrar: "Antes de actualizar los datos" };
 const tamano = (b) => (b >= 1048576 ? fmt(b / 1048576, 1) + " MB" : fmt(Math.max(1, Math.round(b / 1024))) + " KB");
 
 /** Restaura una copia interna, tras confirmar; los datos actuales se guardan antes. */
@@ -62,6 +62,18 @@ async function restaurar(app, r) {
   try { await app.store.restaurarRespaldo(r.clave); }
   catch (e) { await app.alerta({ titulo: "No se pudo restaurar", mensaje: e.message }); return false; }
   exito(); app.toast("Copia restaurada");
+  return true;
+}
+
+/** Borra todos los datos, tras confirmar; antes queda una copia interna. */
+async function borrarTodo(app) {
+  const n = app.store.estado.sesiones.length;
+  const ok = await app.confirmar("¿Borrar todos los datos?",
+    "Se borran " + plural(n, "sesión", "sesiones") + ", pesajes, medidas y rutinas de este iPhone. Se conservan los ajustes y el catálogo de ejercicios. Antes se guarda una copia interna que puedes restaurar.", "Borrar todo", true);
+  if (!ok) return false;
+  try { await app.store.borrarTodo(); }
+  catch (e) { await app.alerta({ titulo: "No se pudo borrar", mensaje: e.message }); return false; }
+  exito(); app.toast("Datos borrados");
   return true;
 }
 
@@ -102,6 +114,9 @@ export function vistaDatos(_p, app) {
           celda({ titulo: "Espacio usado", valor: mb }),
           celda({ titulo: "Sesiones", valor: String(est.sesiones.length) }),
           celda({ titulo: "Pesajes", valor: String(est.pesajes.length) }),
+        ])),
+        seccion({ cab: "Borrar", pie: "Exporta antes una copia en Archivos: la copia interna se pierde si desinstalas la app." }, lista([
+          celda({ titulo: "Borrar todos los datos", estilo: "destructiva", alPulsar: async () => { if (await borrarTodo(app)) recargar(); } }),
         ])),
         seccion({ cab: "Sincronización", pie: "Los datos viven solo en este iPhone y no se sincronizan con otros dispositivos: la app no tiene servidor. En iPhone, una web no puede guardar sola en iCloud Drive ni en Archivos; la copia se guarda a mano con «Guardar copia en Archivos» y, en la hoja de Compartir, «Guardar en Archivos». Para pasar los datos a otro dispositivo, importa allí esa copia." }),
       );
