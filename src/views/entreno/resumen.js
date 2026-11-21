@@ -1,5 +1,6 @@
 // Resumen al terminar: totales, récords y comparación con la sesión anterior.
-import { h, poner } from "../../ui/dom.js";
+import { h, poner, reducirMovimiento } from "../../ui/dom.js";
+import { record } from "../../ui/haptica.js";
 import { icono } from "../../ui/iconos.js";
 import { seccion, lista, celda, chip } from "../../ui/controles.js";
 import { kg, kgTotal, minutos } from "../../ui/textos.js";
@@ -8,6 +9,19 @@ import { epley } from "../../core/sesiones.js";
 import { E } from "./estado.js";
 
 export function mejorRM(series) { let m = 0; for (const s of series) if (s.peso > 0 && s.reps > 0) m = Math.max(m, epley(s.peso, s.reps)); return m; }
+
+/** Sube de 0 al valor final en ~600 ms (ease-out); con movimiento reducido pone el valor directamente. */
+function contar(el, hasta, formato) {
+  if (reducirMovimiento() || !(hasta > 0)) { el.textContent = formato(hasta); return; }
+  const t0 = performance.now(), dur = 600;
+  const paso = (t) => {
+    if (!el.isConnected) return;
+    const k = Math.min(1, (t - t0) / dur);
+    el.textContent = formato(hasta * (1 - Math.pow(1 - k, 3)));
+    if (k < 1) requestAnimationFrame(paso);
+  };
+  el.textContent = formato(0); requestAnimationFrame(paso);
+}
 
 export async function mostrarResumen(ses) {
   const { store } = E.app;
@@ -28,18 +42,22 @@ export async function mostrarResumen(ses) {
   };
   let series = 0, vol = 0;
   for (const e of ses.ejercicios) for (const s of e.series) { series++; if (s.peso > 0) vol += s.peso * s.reps; }
+  const nSeries = h("span"), nVol = vol ? h("span") : null;
+  if (prs.length) record();
   E.app.abrirHoja({
     titulo: "", cancelar: null, alturas: ["grande"],
     accion: { texto: "Hecho", alPulsar: () => {} },
     render(c) {
+      contar(nSeries, series, (v) => plural(Math.round(v), "serie", "series"));
+      if (nVol) contar(nVol, vol, kgTotal);
       poner(c,
         h("div", { class: "seccion resumen-cab" },
           h("div", { class: "fila", style: { gap: "10px" } }, h("span", { class: "c-ok", style: { display: "flex" } }, icono("check", { tam: 30, grosor: 2.6 })), h("div", { class: "t-title1" }, ses.rutina || "Entrenamiento")),
-          h("div", { class: "t-subhead c-2", style: { marginTop: "4px" } }, [ses.duracion ? minutos(ses.duracion) : null, plural(series, "serie", "series"), vol ? kgTotal(vol) : null].filter(Boolean).join(" · "))),
+          h("div", { class: "t-subhead c-2 num", style: { marginTop: "4px" } }, ...[ses.duracion ? minutos(ses.duracion) : null, nSeries, nVol].filter(Boolean).flatMap((x, i) => (i ? [" · ", x] : [x])))),
         prs.length ? h("div", { class: "seccion" }, h("div", { class: "tarjeta" },
           h("div", { class: "fila", style: { gap: "8px", marginBottom: "8px" } }, h("span", { class: "c-accent", style: { display: "flex" } }, icono("trofeo", { tam: 22 })),
             h("span", { class: "t-headline" }, prs.length === 1 ? "1 récord nuevo" : prs.length + " récords nuevos")),
-          prs.map((p) => h("div", { class: "fila entre fila-pr" }, h("span", null, p.e.nombre), h("span", { class: "num c-2" }, p.rm ? "e1RM " + kg(p.rm) : kg(p.peso)))))) : null,
+          prs.map((p, i) => h("div", { class: "fila entre fila-pr", style: { "--i": Math.min(i, 6) } }, h("span", null, p.e.nombre), h("span", { class: "num c-2" }, p.rm ? "e1RM " + kg(p.rm) : kg(p.peso)))))) : null,
         seccion({ cab: "Por ejercicio" }, lista(ses.ejercicios.map((e) => {
           const mejor = e.series.reduce((m, s) => (!m || epley(s.peso, s.reps) > epley(m.peso, m.reps) ? s : m), null);
           const ant = anteriorDe(e.ejercicioId);

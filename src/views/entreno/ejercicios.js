@@ -8,7 +8,7 @@ import { fmt } from "../../core/formato.js";
 import { elegirEjercicio } from "../selector.js";
 import { vacia, nombreDe, aTexto } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
-import { filaSerie } from "./serie.js";
+import { filaSerie, resaltarActual } from "./serie.js";
 import { descartar, notaSesion } from "./revision.js";
 import { celdaRecuperacion } from "./recuperacion.js";
 import { E } from "./estado.js";
@@ -53,6 +53,7 @@ export function pintarCuerpo() {
     E.M.modo === "entreno" ? h("button", { class: "btn texto", style: { color: "var(--bad-ink)" }, onClick: descartar }, "Descartar entrenamiento") : null));
   poner(cont, bloques);
   cont.scrollTop = scroll;
+  resaltarActual();
 }
 
 export function detallesEdicion() {

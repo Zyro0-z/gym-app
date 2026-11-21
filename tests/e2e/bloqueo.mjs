@@ -169,6 +169,8 @@ await descartar();
 
 paso("4.4 Ajustes › Entrenamiento: aviso de prueba");
 await p.evaluate(() => window.__gym.nav.ir("entrenamiento", { pestana: "ajustes" })); await espera(900);
+assert.equal(await p.getByText("Enviar aviso de prueba").count(), 0, "los avisos están plegados en «Avanzado»");
+await p.getByText("Opciones avanzadas").click(); await espera(500);
 await p.getByText("Enviar aviso de prueba").click(); await espera(600);
 assert.equal((await pedidas("/v1/probar")).length, 1);
 assert.match(await p.evaluate(() => window.__gym.nav.pantalla.el.innerText), /Enviado/);

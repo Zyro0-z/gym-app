@@ -54,6 +54,12 @@ await p.getByLabel("Peso de la serie 1").first().fill("60,5");
 await p.getByLabel("Repeticiones de la serie 1").first().fill("8");
 await p.locator(".modal-completo .serie .check").first().click(); await espera();
 assert.equal(await p.locator(".barra-descanso:not([hidden])").count(), 1, "el descanso empieza al marcar");
+// Foco: solo la serie que toca (la primera sin hacer) lleva el acento; el check marcado rebota
+assert.equal(await p.locator(".modal-completo .serie.actual").count(), 1, "una sola serie resaltada");
+assert.equal(await p.locator(".modal-completo .serie.actual.hecha").count(), 0, "la resaltada no está hecha");
+assert.equal(await p.locator(".modal-completo .serie.hecha .check.pop").count(), 1, "el check marcado anima");
+const col = (sel) => p.evaluate((q) => getComputedStyle(document.querySelector(q)).backgroundColor, sel);
+assert.notEqual(await col(".modal-completo .serie.actual .check svg"), await col(".modal-completo .serie:not(.actual):not(.hecha) .check svg"), "el check actual se distingue");
 // Descanso por defecto «No» (0): marcar una serie no arranca ningún descanso
 await p.getByRole("button", { name: "Saltar" }).click(); await espera(300);
 await p.evaluate(() => window.__gym.store.guardarAjustes((a) => { a.entreno.descanso = 0; }, { analitico: false })); await espera(300);

@@ -323,15 +323,15 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .ej-info { font-size: var(--f-footnote); color: var(--label-2); margin: -4px 0 8px; }
 .ej-nota { font-size: var(--f-footnote); color: var(--label); background: var(--fill-2); border-radius: 8px; padding: 6px 10px; margin-bottom: 8px; white-space: pre-wrap; }
 .series { background: var(--cell); border-radius: var(--r-cell); overflow: hidden; }
-.fila-cab, .serie { display: grid; grid-template-columns: 34px minmax(0, 1fr) 66px 50px 46px 44px; align-items: center; gap: 5px; padding: 0 4px 0 8px; }
+.fila-cab, .serie { display: grid; grid-template-columns: 34px minmax(0, 1fr) 66px 50px 46px 46px; align-items: center; gap: 5px; padding: 0 4px 0 8px; }
 .fila-cab { min-height: 30px; font-size: min(var(--f-caption1), 13px); color: var(--label-2); text-align: center; }
 .fila-cab span:nth-child(2) { text-align: left; }
 .fila-cab .c-check { display: flex; justify-content: center; }
 .serie { min-height: 48px; background: var(--cell); transition: background-color var(--dur-2) linear; position: relative; }
 .series .celda-desliza + .celda-desliza::before { left: 8px; }
 .serie.hecha { background: color-mix(in srgb, var(--ok) 15%, var(--cell)); }
-.serie.error { animation: temblor 300ms linear; }
-@keyframes temblor { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.serie.error { animation: temblor 300ms cubic-bezier(.36, .07, .19, .97); }
+@keyframes temblor { 20% { transform: translateX(-6px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
 .num-serie { height: 32px; border-radius: 8px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--label); background: var(--fill-2); position: relative; }
 .num-serie::after { content: ""; position: absolute; inset: -6px -4px; }
 .num-serie.tipo-calentamiento { color: var(--warn-ink); }
@@ -345,10 +345,21 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .campo-serie::placeholder { color: var(--label-3); font-weight: 500; }
 .campo-serie:focus, .campo-fila:focus { box-shadow: inset 0 0 0 2px var(--accent); }
 .serie.hecha .campo-serie { background: transparent; }
-.check { width: 44px; height: 44px; display: grid; place-items: center; color: var(--label-icono); }
-.check svg { width: 22px; height: 22px; padding: 4px; border-radius: 8px; background: var(--fill-2); box-sizing: content-box; }
+.check { width: 46px; height: 46px; display: grid; place-items: center; color: var(--label-icono); }
+.check svg { width: 22px; height: 22px; padding: 6px; border-radius: 10px; background: var(--fill-2); box-sizing: content-box; transition: background-color var(--dur-2) linear, transform var(--dur-1) var(--spring); }
+.check:active svg { transform: scale(.92); }
 .serie.hecha .check { color: #fff; }
 .serie.hecha .check svg { background: var(--ok); }
+/* la serie que toca: su check es el único con color de acento */
+.serie.actual:not(.hecha) .check { color: var(--on-accent); }
+.serie.actual:not(.hecha) .check svg { background: var(--accent); }
+.ej { transition: opacity var(--dur-3) linear; }
+.ej.completo { opacity: .55; }
+/* al marcar: el trazo se dibuja y el botón rebota (solo en el toque, no al pintar) */
+.check.pop svg { animation: pop var(--dur-3) var(--muelle); }
+.check.pop svg path { stroke-dasharray: 20; animation: trazo var(--dur-2) var(--spring) both; }
+@keyframes pop { from { transform: scale(.78); } to { transform: scale(1); } }
+@keyframes trazo { from { stroke-dashoffset: 20; } to { stroke-dashoffset: 0; } }
 .btn-anadir-serie { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; margin-top: 8px; border-radius: 10px; background: var(--fill-2); color: var(--accent-ink); font-size: var(--f-subhead); font-weight: 600; }
 .btn-anadir-serie:active { opacity: .6; }
 .fila-botones-serie { display: flex; gap: 8px; }
@@ -513,3 +524,8 @@ body.con-modal .aviso-actualizacion { display: none; }
   .serie.error { animation: none; outline: 2px solid var(--bad); outline-offset: -2px; }
   .calculando .pestana.activa .pantalla:not([hidden]) > .barra-nav::after { animation: none; transform: none; opacity: .35; }
 }
+
+/* resumen: el récord entra en cascada corta y el check final rebota */
+.fila-pr { animation: entra var(--dur-3) var(--spring) both; animation-delay: calc(var(--i, 0) * var(--dur-1) / 4); }
+.resumen-cab .c-ok svg { animation: pop var(--dur-3) var(--muelle) both; }
+@keyframes entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }

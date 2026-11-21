@@ -54,9 +54,22 @@ export function filaSerie(e, i, s, j, ant, paso) {
     } else s.hecha = false;
     fila.classList.toggle("hecha", s.hecha);
     check.setAttribute("aria-pressed", String(s.hecha));
+    check.classList.remove("pop");
+    if (s.hecha) { void check.offsetWidth; check.classList.add("pop"); }
+    resaltarActual();
     guardarYa();
   });
   return deslizable(fila, () => { e.series.splice(j, 1); guardarYa(); pintarCuerpo(); });
+}
+
+/** Foco: solo el check de la serie que toca lleva el color de acento; el ejercicio terminado se atenúa. */
+export function resaltarActual() {
+  if (!E.M || E.M.modo !== "entreno" || !E.M.cuerpo) return;
+  const c = E.M.cuerpo;
+  for (const x of c.querySelectorAll(".serie.actual")) x.classList.remove("actual");
+  const sig = c.querySelector(".serie:not(.hecha)");
+  if (sig) sig.classList.add("actual");
+  for (const b of c.querySelectorAll(".ej")) b.classList.toggle("completo", !!b.querySelector(".serie") && !b.querySelector(".serie:not(.hecha)"));
 }
 
 export async function elegirTipo(s) {

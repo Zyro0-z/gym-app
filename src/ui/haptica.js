@@ -35,3 +35,9 @@ export function exito() {
   if (!soportaSwitch() && navigator.vibrate) { if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return; try { navigator.vibrate([12, 60, 18]); } catch (e) {} return; }
   toque(); setTimeout(toque, 110);
 }
+/** Récord: tres toques seguidos, más largo que el de éxito. */
+export function record() {
+  if (!activa) return;
+  if (!soportaSwitch() && navigator.vibrate) { if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return; try { navigator.vibrate([12, 50, 12, 50, 28]); } catch (e) {} return; }
+  toque(); setTimeout(toque, 90); setTimeout(toque, 180);
+}

@@ -74,6 +74,8 @@
 
   /* movimiento */
   --spring: cubic-bezier(.32, .72, 0, 1);
+  /* Muelle con rebote leve: linear() en Safari 17.2+, curva con sobreimpulso en el resto */
+  --muelle: cubic-bezier(.34, 1.4, .64, 1);
   /* Duraciones (Fase 6.6): con movimiento reducido valen 0 y no hay desplazamientos */
   --dur-1: 150ms;
   --dur-2: 250ms;
@@ -141,5 +143,10 @@
 :root[data-theme="dark"][data-accent="grafito"]  { --accent: #757579; --accent-ink: #A5A5AA; }
 
 @media (prefers-reduced-motion: reduce) {
-  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; --t-push: 0ms; --t-fast: 0ms; --spring: linear; }
+  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; --t-push: 0ms; --t-fast: 0ms; --spring: linear; --muelle: linear; }
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  :root { --muelle: linear(0, 0.033, 0.116, 0.231, 0.361, 0.493, 0.619, 0.733, 0.83, 0.911, 0.974, 1.02, 1.052, 1.072, 1.082, 1.083, 1.079, 1.072, 1.062, 1.051, 1.04, 1.029, 1); }
+  @media (prefers-reduced-motion: reduce) { :root { --muelle: linear; } }
 }
