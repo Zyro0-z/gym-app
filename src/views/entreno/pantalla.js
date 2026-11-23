@@ -96,7 +96,7 @@ export function abrirEntreno({ sinAnimar = false } = {}) {
   if (!b) return;
   if (E.M) { if (E.M.modo === "entreno") return; cerrarModal(true); }
   marcarMin(false);
-  E.M = { modo: "entreno", d: copiar(b) };
+  E.M = { modo: "entreno", d: copiar(b), abiertos: new WeakSet() };
   if (!E.M.d.inicio) E.M.d.inicio = Date.now();
   mostrarModal(sinAnimar);
   pintarBarraMin();
@@ -106,7 +106,7 @@ export function abrirEntreno({ sinAnimar = false } = {}) {
 export function editarSesion(s) {
   if (E.M) cerrarModal(true);
   E.M = {
-    modo: "edicion", id: s.id, original: s,
+    modo: "edicion", id: s.id, original: s, abiertos: new WeakSet(),
     d: { rutina: s.rutina, fecha: s.fecha, inicioTxt: s.inicio || "", finTxt: s.fin || "", descanso: null,
       nota: s.nota || "", recuperacion: s.recuperacion || null,
       ejercicios: s.ejercicios.map((e) => ({ ejercicioId: e.ejercicioId, nombre: e.nombre || nombreDe(e.ejercicioId), tipo: e.tipo, nota: e.nota, grupoId: e.grupoId,

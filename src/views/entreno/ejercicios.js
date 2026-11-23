@@ -8,7 +8,7 @@ import { fmt } from "../../core/formato.js";
 import { elegirEjercicio } from "../selector.js";
 import { vacia, nombreDe, aTexto } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
-import { filaSerie, resaltarActual } from "./serie.js";
+import { filaSerie, resaltarActual, resumenDe } from "./serie.js";
 import { descartar, notaSesion } from "./revision.js";
 import { celdaRecuperacion } from "./recuperacion.js";
 import { E } from "./estado.js";
@@ -68,8 +68,12 @@ export function detallesEdicion() {
 
 export function bloqueEjercicio(e, i) {
   const ant = sesionAnterior(e.ejercicioId);
-  const paso = E.app.store.estado.ajustes.entreno.pasoPeso || 2.5;
+  const cat = E.app.store.estado.catalogo.find((x) => x.id === e.ejercicioId);
+  const paso = (cat && cat.incremento > 0 ? cat.incremento : 0) || E.app.store.estado.ajustes.entreno.pasoPeso || 2.5;
   const info = infoEjercicio(e.ejercicioId);
+  const notaFija = cat && cat.notaFija;
+  const ultimaNota = E.M.modo === "entreno" && ant && ant.e.nota ? ant.e.nota : "";
+  const resumen = resumenDe(e);
   const filas = e.series.map((s, j) => filaSerie(e, i, s, j, ant ? ant.e.series[j] : null, paso));
   const sug = sugerenciaDe(e.ejercicioId);
   const pos = posicionSuperserie(E.M.d.ejercicios, i);
@@ -82,6 +86,10 @@ export function bloqueEjercicio(e, i) {
     sug ? h("button", { class: "chip-sugerencia", "aria-label": "Sugerencia: " + aTexto(sug.peso) + " kilos por " + sug.reps + " repeticiones. " + sug.motivo + ". Toca para ponerla en las series vacías.",
       onClick: () => { const n = aplicarSugerencia(e, sug); seleccion(); guardarPronto(); pintarCuerpo(); if (!n) E.app.toast("Las series ya tienen peso"); } },
       h("span", { class: "t" }, "Sugerido"), h("span", { class: "num" }, aTexto(sug.peso) + " kg × " + sug.reps), h("span", { class: "m" }, sug.motivo)) : null,
+    h("button", { class: "ej-resumen", "aria-label": "Ejercicio terminado, " + resumen + ". Toca para desplegar", onClick: () => { E.M.abiertos.add(e); resaltarActual(); } },
+      icono("check", { tam: 16, grosor: 2.6 }), h("span", null, resumen), icono("chevron-abajo", { tam: 16 })),
+    notaFija ? h("div", { class: "ej-nota fija" }, h("b", null, "Fija · "), notaFija) : null,
+    ultimaNota ? h("div", { class: "ej-nota" }, h("b", null, "Última vez · "), ultimaNota) : null,
     e.nota ? h("div", { class: "ej-nota" }, e.nota) : null,
     h("div", { class: "series" },
       h("div", { class: "fila-cab", "aria-hidden": "true" }, h("span", null, "Serie"), h("span", null, "Anterior"), h("span", null, "kg"), h("span", null, "Reps"), h("span", null, "RPE"), h("span", { class: "c-check" }, icono("check", { tam: 16, grosor: 2.4 }))),
@@ -98,6 +106,7 @@ export function bloqueEjercicio(e, i) {
 export async function menuEjercicio(i) {
   const e = E.M.d.ejercicios[i];
   const op = [{ texto: "Cambiar ejercicio", valor: "cambiar" }, { texto: "Ver historia", valor: "historia" }, { texto: e.nota ? "Editar nota" : "Añadir nota", valor: "nota" }];
+  if (E.app.store.estado.catalogo.some((x) => x.id === e.ejercicioId)) op.push({ texto: "Nota fija del ejercicio", valor: "notafija" });
   const ejs = E.M.d.ejercicios;
   if (i < ejs.length - 1 && !(e.grupoId && ejs[i + 1].grupoId === e.grupoId)) op.push({ texto: "Unir con el siguiente", valor: "unir" });
   if (posicionSuperserie(ejs, i)) op.push({ texto: "Separar de la superserie", valor: "separar" });
@@ -112,6 +121,7 @@ export async function menuEjercicio(i) {
     if (x && E.M) { e.ejercicioId = x.ejercicioId; e.nombre = x.nombre; }
   } else if (r === "historia") return verHistoria(e);
   else if (r === "nota") return editarNota(e);
+  else if (r === "notafija") return editarNotaFija(e);
   else if (r === "discos") return calculadoraDiscos(e);
   else if (r === "unir") unirConSiguiente(E.M.d.ejercicios, i);
   else if (r === "separar") separarDeSuperserie(E.M.d.ejercicios, i);
@@ -156,6 +166,24 @@ export function editarNota(e) {
     titulo: "Nota", alturas: ["media"],
     accion: { texto: "Guardar", alPulsar: () => { e.nota = ta.value.trim() || undefined; guardarYa(); pintarCuerpo(); } },
     sucio: () => ta.value.trim() !== (e.nota || ""),
+    render(c) { poner(c, h("div", { class: "seccion" }, ta)); setTimeout(() => ta.focus(), 350); },
+  });
+}
+
+/** Recordatorio permanente del ejercicio (ajuste de máquina, cues): vive en el catálogo y sale en todas las sesiones. */
+export function editarNotaFija(e) {
+  const cat = E.app.store.estado.catalogo.find((x) => x.id === e.ejercicioId);
+  if (!cat) return;
+  const ta = h("textarea", { class: "area-nota", rows: 4, placeholder: "Ajuste de la máquina, cues, agarre…", "aria-label": "Nota fija" });
+  ta.value = cat.notaFija || "";
+  E.app.abrirHoja({
+    titulo: "Nota fija", alturas: ["media"],
+    accion: { texto: "Guardar", alPulsar: async () => {
+      const v = ta.value.trim();
+      await E.app.store.guardarCatalogo(E.app.store.estado.catalogo.map((x) => (x.id === cat.id ? Object.assign({}, x, v ? { notaFija: v } : { notaFija: undefined }) : x)));
+      if (E.M) pintarCuerpo();
+    } },
+    sucio: () => ta.value.trim() !== (cat.notaFija || ""),
     render(c) { poner(c, h("div", { class: "seccion" }, ta)); setTimeout(() => ta.focus(), 350); },
   });
 }

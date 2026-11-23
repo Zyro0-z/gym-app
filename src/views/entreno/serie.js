@@ -9,8 +9,11 @@ import { guardarPronto, guardarYa } from "./pantalla.js";
 import { pintarCuerpo } from "./ejercicios.js";
 import { empezarDescanso } from "./descanso.js";
 import { E } from "./estado.js";
-import { elegirRpe, finDeRonda } from "./herramientas.js";
-import { esRpe, rpeTxt } from "../../core/rpe.js";
+import { finDeRonda, calculadoraDiscos } from "./herramientas.js";
+import { CHIPS_RPE, esRpe, rpeTxt } from "../../core/rpe.js";
+
+let tiraAbierta = null;   // solo hay una tira de RPE desplegada a la vez
+const cerrarTira = () => { if (tiraAbierta) { tiraAbierta.hidden = true; tiraAbierta = null; } };
 
 export function filaSerie(e, i, s, j, ant, paso) {
   const letra = letraTipo(s.tipo);
@@ -19,6 +22,7 @@ export function filaSerie(e, i, s, j, ant, paso) {
   const kgIn = h("input", { class: "campo-serie num", type: "text", inputmode: "decimal", enterkeyhint: "next", autocomplete: "off", value: s.peso,
     placeholder: ant && ant.peso > 0 ? aTexto(ant.peso) : "", "aria-label": "Peso de la serie " + (j + 1), dataset: { teclado: "1", paso: String(paso) },
     onInput: (ev) => { s.peso = ev.target.value; guardarPronto(); } });
+  if (!e.tipo || e.tipo === "peso") { kgIn.dataset.discos = "1"; kgIn.addEventListener("discos", () => { kgIn.blur(); calculadoraDiscos(e); }); }
   const repsIn = h("input", { class: "campo-serie num", type: "text", inputmode: "numeric", enterkeyhint: "next", autocomplete: "off", value: s.reps,
     placeholder: ant && ant.reps ? String(ant.reps) : "", "aria-label": "Repeticiones de la serie " + (j + 1), dataset: { teclado: "1", paso: "1" },
     onInput: (ev) => { s.reps = ev.target.value; guardarPronto(); } });
@@ -31,12 +35,17 @@ export function filaSerie(e, i, s, j, ant, paso) {
     rpeBtn.setAttribute("aria-label", "RPE de la serie " + (j + 1) + ": " + (esRpe(s.rpe) ? rpeTxt(s.rpe) : "sin anotar") + (obj ? ", objetivo " + rpeTxt(obj) : ""));
   };
   pintarRpe();
-  rpeBtn.addEventListener("click", async () => {
-    const v = await elegirRpe(esRpe(s.rpe) ? s.rpe : null, e.rpeObjetivo);
-    if (v === undefined || !E.M) return;
-    if (v === null) delete s.rpe; else s.rpe = v;
-    pintarRpe(); guardarPronto();
-  });
+  const obj = esRpe(e.rpeObjetivo) ? e.rpeObjetivo : null;
+  const tira = h("div", { class: "tira-rpe", hidden: true, role: "radiogroup", "aria-label": "RPE de la serie " + (j + 1) },
+    CHIPS_RPE.map((v) => h("button", { class: ["chip-rpe", v === obj && "objetivo"], role: "radio", dataset: { v: String(v) },
+      "aria-label": "RPE " + rpeTxt(v) + (v === obj ? ", objetivo" : ""), onClick: () => {
+        if (s.rpe === v) delete s.rpe; else s.rpe = v;
+        seleccion(); pintarRpe(); pintarTira(); cerrarTira(); rpeBtn.setAttribute("aria-expanded", "false"); guardarYa(); resaltarActual();
+      } }, rpeTxt(v))));
+  const pintarTira = () => { for (const b of tira.children) { const act = esRpe(s.rpe) && Number(b.dataset.v) === s.rpe; b.classList.toggle("activo", act); b.setAttribute("aria-checked", String(act)); } };
+  const abrirTira = () => { if (tiraAbierta !== tira) cerrarTira(); tira.hidden = false; tiraAbierta = tira; pintarTira(); rpeBtn.setAttribute("aria-expanded", "true"); };
+  rpeBtn.setAttribute("aria-expanded", "false");
+  rpeBtn.addEventListener("click", () => { if (tira.hidden) abrirTira(); else cerrarTira(); rpeBtn.setAttribute("aria-expanded", String(!tira.hidden)); });
   const check = h("button", { class: "check", "aria-label": "Serie hecha", "aria-pressed": String(!!s.hecha) }, icono("check", { grosor: 2.6 }));
   const fila = h("div", { class: ["serie", s.hecha && "hecha"] },
     h("button", { class: ["num-serie", letra && "tipo-" + s.tipo], "aria-label": "Serie " + (j + 1) + ", tipo " + nombreTipo.toLowerCase() + ". Cambiar el tipo", onClick: () => elegirTipo(s) }, letra || String(nNormal)),
@@ -49,9 +58,10 @@ export function filaSerie(e, i, s, j, ant, paso) {
       const r = leerNumero(s.reps), p = s.peso === "" ? 0 : leerNumero(s.peso);
       if (!(r > 0) || !Number.isFinite(p) || p < 0) { (r > 0 ? kgIn : repsIn).focus(); fila.classList.add("error"); setTimeout(() => fila.classList.remove("error"), 600); return; }
       s.hecha = true; impacto();
+      if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && !esRpe(s.rpe) && E.app.store.estado.ajustes.entreno.rpeAlMarcar !== false) abrirTira();
       // En una superserie el descanso empieza al acabar la ronda (el último ejercicio del grupo)
       if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && finDeRonda(E.M.d.ejercicios, i)) empezarDescanso(E.app.store.estado.ajustes.entreno.descanso ?? 90);   // 0 = «No»: sin descanso automático
-    } else s.hecha = false;
+    } else { s.hecha = false; if (tiraAbierta === tira) cerrarTira(); }
     fila.classList.toggle("hecha", s.hecha);
     check.setAttribute("aria-pressed", String(s.hecha));
     check.classList.remove("pop");
@@ -59,17 +69,40 @@ export function filaSerie(e, i, s, j, ant, paso) {
     resaltarActual();
     guardarYa();
   });
-  return deslizable(fila, () => { e.series.splice(j, 1); guardarYa(); pintarCuerpo(); });
+  const borrar = () => {
+    const quitada = e.series.splice(j, 1)[0];
+    cerrarTira(); guardarYa(); pintarCuerpo();
+    E.app.toast("Serie " + (j + 1) + " eliminada", { icono: "papelera", accion: { texto: "Deshacer", alPulsar: () => {
+      if (!E.M || !E.M.d.ejercicios.includes(e)) return;
+      e.series.splice(Math.min(j, e.series.length), 0, quitada); guardarYa(); pintarCuerpo();
+    } } });
+  };
+  return [deslizable(fila, borrar), tira];
 }
 
 /** Foco: solo el check de la serie que toca lleva el color de acento; el ejercicio terminado se atenúa. */
+/** «3 series · 115 × 4»: resumen del ejercicio terminado (mejor serie de trabajo por peso). */
+export function resumenDe(e) {
+  const hechas = e.series.filter((x) => x.hecha && x.tipo !== "calentamiento");
+  if (!hechas.length) return "Terminado";
+  const kgDe = (x) => leerNumero(x.peso) || 0;
+  const m = hechas.reduce((a, x) => (kgDe(x) > kgDe(a) ? x : a), hechas[0]);
+  return hechas.length + (hechas.length === 1 ? " serie" : " series") + " · " + (kgDe(m) > 0 ? fmt(kgDe(m), Number.isInteger(kgDe(m)) ? 0 : 1) + " × " : "") + m.reps;
+}
+
 export function resaltarActual() {
   if (!E.M || E.M.modo !== "entreno" || !E.M.cuerpo) return;
   const c = E.M.cuerpo;
   for (const x of c.querySelectorAll(".serie.actual")) x.classList.remove("actual");
   const sig = c.querySelector(".serie:not(.hecha)");
   if (sig) sig.classList.add("actual");
-  for (const b of c.querySelectorAll(".ej")) b.classList.toggle("completo", !!b.querySelector(".serie") && !b.querySelector(".serie:not(.hecha)"));
+  for (const b of c.querySelectorAll(".ej")) {
+    const completo = !!b.querySelector(".serie") && !b.querySelector(".serie:not(.hecha)");
+    b.classList.toggle("completo", completo);
+    const e = E.M.d.ejercicios[Number(b.dataset.ej)];
+    if (completo && e) { const t = resumenDe(e), r = b.querySelector(".ej-resumen"); if (r) { r.querySelector("span").textContent = t; r.setAttribute("aria-label", "Ejercicio terminado, " + t + ". Toca para desplegar"); } }
+    b.classList.toggle("plegado", completo && !!e && !E.M.abiertos.has(e) && !(tiraAbierta && b.contains(tiraAbierta)));
+  }
 }
 
 export async function elegirTipo(s) {

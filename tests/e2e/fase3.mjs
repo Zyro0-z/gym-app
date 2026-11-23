@@ -56,9 +56,11 @@ assert.equal(await press.getByLabel("Peso de la serie 1").inputValue(), "82,5");
 assert.equal(await press.getByLabel("Peso de la serie 2").inputValue(), "82,5");
 
 paso("anotar el RPE de una serie con los chips");
-await rpe1.click(); await espera(500);
-await p.locator(".hoja .chip-rpe", { hasText: "8,5" }).click(); await espera(500);
+await rpe1.click(); await espera(300);
+assert.equal(await press.locator(".tira-rpe:not([hidden]) .chip-rpe").count(), 7, "la tira de RPE se despliega en línea");
+await press.locator(".tira-rpe:not([hidden]) .chip-rpe", { hasText: "8,5" }).click(); await espera(300);
 assert.equal((await press.locator(".rpe-serie").first().textContent()).trim(), "8,5");
+assert.equal(await press.locator(".tira-rpe:not([hidden])").count(), 0, "la tira se cierra al elegir");
 
 paso("«Repetir última» copia peso, reps y RPE en la siguiente serie");
 await press.getByLabel("Repeticiones de la serie 1").fill("7");

@@ -201,11 +201,14 @@ export function hojaAcciones({ mensaje = null, opciones }) {
 }
 
 let toastEl = null, toastT = 0;
-/** Píldora breve sobre la tab bar (2 s). */
-export function toast(texto, { icono: ic = "check" } = {}) {
+/** Píldora breve sobre la tab bar (2 s; 4 s si lleva una acción, p. ej. «Deshacer»). */
+export function toast(texto, { icono: ic = "check", accion = null } = {}) {
   if (!toastEl) { toastEl = h("div", { class: "toast", role: "status", "aria-live": "polite" }); document.body.append(toastEl); }
-  poner(toastEl, ic ? icono(ic) : null, h("span", null, texto));
+  const cerrar = () => { clearTimeout(toastT); toastEl.classList.remove("visible"); };
+  poner(toastEl, ic ? icono(ic) : null, h("span", null, texto),
+    accion ? h("button", { class: "toast-accion", onClick: () => { cerrar(); accion.alPulsar(); } }, accion.texto) : null);
+  toastEl.classList.toggle("con-accion", !!accion);
   requestAnimationFrame(() => toastEl.classList.add("visible"));
   clearTimeout(toastT);
-  toastT = setTimeout(() => toastEl.classList.remove("visible"), 2000);
+  toastT = setTimeout(() => toastEl.classList.remove("visible"), accion ? 4000 : 2000);
 }
