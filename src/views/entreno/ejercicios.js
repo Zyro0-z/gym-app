@@ -5,6 +5,8 @@ import { seccion, lista, celda } from "../../ui/controles.js";
 import { seleccion } from "../../ui/haptica.js";
 import { kg, fechaCorta, capital } from "../../ui/textos.js";
 import { fmt } from "../../core/formato.js";
+import { esRpe, rpeTxt } from "../../core/rpe.js";
+import { e1rmReciente, cargaParaRpe } from "../../core/prescripcion.js";
 import { elegirEjercicio } from "../selector.js";
 import { vacia, nombreDe, aTexto } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
@@ -12,7 +14,7 @@ import { filaSerie, resaltarActual, resumenDe } from "./serie.js";
 import { descartar, notaSesion } from "./revision.js";
 import { celdaRecuperacion } from "./recuperacion.js";
 import { E } from "./estado.js";
-import { sugerenciaDe, aplicarSugerencia, repetirUltima, posicionSuperserie, unirConSiguiente, separarDeSuperserie, limpiarGrupos, calculadoraDiscos, anadirCalentamiento } from "./herramientas.js";
+import { sugerenciaDe, aplicarSugerencia, repetirUltima, posicionSuperserie, unirConSiguiente, separarDeSuperserie, limpiarGrupos, calculadoraDiscos, anadirCalentamiento, anadirBackoffs } from "./herramientas.js";
 
 export function sesionAnterior(ejercicioId) {
   const fechaTope = E.M.modo === "edicion" ? E.M.d.fecha : "9999";
@@ -36,6 +38,17 @@ export function infoEjercicio(id) {
     try {
       const A = E.app.store.analisis(), p = A.progresionDe(id);
       if (p) { const t = A.proximaVez(p); if (t) partes.push("Próxima vez: " + t); }
+      const ej = A.ejercicios.find((x) => x.k === id), r = ej && e1rmReciente(ej);
+      if (r) {
+        partes.push("e1RM " + fmt(r.e1rm, 0) + " kg (" + r.confianza + ")");
+        const obj = E.M.d.ejercicios.find((x) => x.ejercicioId === id);
+        const reps = p && p.work[0] ? p.work[0].reps : c && c.rangoReps ? c.rangoReps.min : 0;
+        if (obj && esRpe(obj.rpeObjetivo) && reps > 0) {
+          const paso = (c && c.incremento > 0 ? c.incremento : 0) || E.app.store.estado.ajustes.entreno.pasoPeso || 2.5;
+          const w = cargaParaRpe(r.e1rm, reps, obj.rpeObjetivo, paso);
+          if (w > 0) partes.push(reps + " reps @" + rpeTxt(obj.rpeObjetivo) + " ≈ " + aTexto(w) + " kg");
+        }
+      }
     } catch (e) { /* sin análisis */ }
   }
   return partes.join(" · ");
@@ -75,7 +88,7 @@ export function bloqueEjercicio(e, i) {
   const ultimaNota = E.M.modo === "entreno" && ant && ant.e.nota ? ant.e.nota : "";
   const resumen = resumenDe(e);
   const filas = e.series.map((s, j) => filaSerie(e, i, s, j, ant ? ant.e.series[j] : null, paso));
-  const sug = sugerenciaDe(e.ejercicioId);
+  const sug = sugerenciaDe(e.ejercicioId, e.rpeObjetivo);
   const pos = posicionSuperserie(E.M.d.ejercicios, i);
   return h("section", { class: ["ej", pos && "superserie", pos && "ss-" + pos], dataset: { ej: String(i) } },
     pos === "inicio" ? h("div", { class: "ss-etiqueta" }, "Superserie") : null,
@@ -112,6 +125,7 @@ export async function menuEjercicio(i) {
   if (posicionSuperserie(ejs, i)) op.push({ texto: "Separar de la superserie", valor: "separar" });
   if (!e.tipo || e.tipo === "peso") op.push({ texto: "Calculadora de discos", valor: "discos" });
   if (E.M.modo === "entreno" && (!e.tipo || e.tipo === "peso") && !e.series.some((s) => s.tipo === "calentamiento")) op.push({ texto: "Generar calentamiento", valor: "calentar" });
+  if (E.M.modo === "entreno" && (!e.tipo || e.tipo === "peso") && e.series.some((s) => s.hecha && s.tipo !== "calentamiento")) op.push({ texto: "Añadir back-offs", valor: "backoffs" });
   if (i > 0) op.push({ texto: "Subir", valor: "subir" });
   if (i < E.M.d.ejercicios.length - 1) op.push({ texto: "Bajar", valor: "bajar" });
   op.push({ texto: "Quitar ejercicio", valor: "quitar", peligro: true });
@@ -124,6 +138,7 @@ export async function menuEjercicio(i) {
   else if (r === "nota") return editarNota(e);
   else if (r === "notafija") return editarNotaFija(e);
   else if (r === "discos") return calculadoraDiscos(e);
+  else if (r === "backoffs") { const b = anadirBackoffs(e); if (!b) { E.app.toast("Marca antes una serie con peso y repeticiones", { icono: null }); return; } E.app.toast("Back-offs: " + aTexto(b[0].peso) + " kg × " + b[0].reps + " a RPE " + rpeTxt(b[0].rpe), { icono: null }); }
   else if (r === "calentar") { if (!anadirCalentamiento(e)) { E.app.toast("Pon antes el peso de la primera serie de trabajo", { icono: null }); return; } }
   else if (r === "unir") unirConSiguiente(E.M.d.ejercicios, i);
   else if (r === "separar") separarDeSuperserie(E.M.d.ejercicios, i);

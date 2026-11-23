@@ -2,7 +2,9 @@
 import { h } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
 import { deslizable } from "../../ui/controles.js";
-import { impacto, seleccion } from "../../ui/haptica.js";
+import { impacto, seleccion, record } from "../../ui/haptica.js";
+import { superaRecord, ruidoE1rm } from "../../core/prescripcion.js";
+import { canon } from "../../core/nombres.js";
 import { leerNumero, fmt } from "../../core/formato.js";
 import { TIPOS, letraTipo, aTexto } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
@@ -14,6 +16,23 @@ import { CHIPS_RPE, esRpe, rpeTxt } from "../../core/rpe.js";
 
 let tiraAbierta = null;   // solo hay una tira de RPE desplegada a la vez
 const cerrarTira = () => { if (tiraAbierta) { tiraAbierta.hidden = true; tiraAbierta = null; } };
+
+/** Si la serie recién marcada supera un récord (de su rango de repeticiones o de e1RM), lo devuelve; cada récord se avisa una vez por sesión. */
+function prEnVivo(e, s) {
+  if (E.M.modo !== "entreno" || s.tipo === "calentamiento" || (e.tipo && e.tipo !== "peso")) return null;
+  const peso = leerNumero(s.peso), reps = leerNumero(s.reps);
+  let ej = null;
+  try { const A = E.app.store.analisis(); ej = A && A.ejercicios.find((x) => x.k === e.ejercicioId || x.k === canon(e.nombre || "")); } catch (_) { return null; }
+  if (!ej) return null;
+  const r = superaRecord(ej, peso, reps);
+  if (!r) return null;
+  const clave = r.tipo + "|" + ej.k + "|" + (r.rango ? r.rango.id : ""), valor = r.tipo === "e1rm" ? r.e1rm : peso;
+  const vistos = E.M.prVistos || (E.M.prVistos = new Map());
+  if ((vistos.get(clave) ?? 0) >= valor) return null;
+  vistos.set(clave, valor);
+  const ruido = ruidoE1rm(ej.hist);
+  return Object.assign(r, { peso, reps, dentroDelRuido: !!ruido && r.e1rm - r.e1rmPrevio < ruido.sd });
+}
 
 export function filaSerie(e, i, s, j, ant, paso) {
   const letra = letraTipo(s.tipo);
@@ -59,10 +78,17 @@ export function filaSerie(e, i, s, j, ant, paso) {
       const r = leerNumero(s.reps), p = s.peso === "" ? 0 : leerNumero(s.peso);
       if (!(r > 0) || !Number.isFinite(p) || p < 0) { (r > 0 ? kgIn : repsIn).focus(); fila.classList.add("error"); setTimeout(() => fila.classList.remove("error"), 600); return; }
       s.hecha = true; impacto();
+      const pr = prEnVivo(e, s);
+      if (pr) {
+        record(); fila.classList.add("pr");
+        const kgT = (v) => fmt(v, Number.isInteger(v) ? 0 : 1);
+        E.app.toast(pr.tipo === "e1rm" ? "Récord de e1RM: " + kgT(pr.e1rm) + " kg" + (pr.dentroDelRuido ? " (dentro de tu ruido)" : "")
+          : "Récord en " + pr.rango.txt + " reps: " + kgT(pr.peso) + " × " + pr.reps + (pr.previo ? " (antes " + kgT(pr.previo.peso) + ")" : ""), { icono: "trofeo" });
+      }
       if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && !esRpe(s.rpe) && E.app.store.estado.ajustes.entreno.rpeAlMarcar !== false) abrirTira();
       // En una superserie el descanso empieza al acabar la ronda (el último ejercicio del grupo)
       if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && finDeRonda(E.M.d.ejercicios, i)) empezarDescanso(E.app.store.estado.ajustes.entreno.descanso ?? 90);   // 0 = «No»: sin descanso automático
-    } else { s.hecha = false; if (tiraAbierta === tira) cerrarTira(); }
+    } else { s.hecha = false; fila.classList.remove("pr"); if (tiraAbierta === tira) cerrarTira(); }
     fila.classList.toggle("hecha", s.hecha);
     check.setAttribute("aria-pressed", String(s.hecha));
     check.classList.remove("pop");

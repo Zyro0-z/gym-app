@@ -109,7 +109,11 @@ export function crearContexto(modelo, hoy) {
     bloques, protege, bloquesActivos, bloqueProtector, diasProtegidos, umbrales, peso, pesoEn, ligas, correccionPolea,
     tablas, estandares, colores, volumenObj: ((A.objetivos && A.objetivos.seriesSemana) || []).slice(),
     unilateral: (k) => { const c = catalogo.get(k); return !!(c && c.unilateral); },
+    fraccionSecundaria: fraccion(A.analisis && A.analisis.fraccionSecundaria),
   };
 }
+
+/** Peso de una serie en un músculo secundario (0 a 1). Por defecto 0,5. */
+const fraccion = (v) => (typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1 ? v : 0.5);
 
 export const esDescanso = (s) => canon(s) === canon("Descanso") || canon(s) === "off" || canon(s) === "libre";

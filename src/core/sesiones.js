@@ -63,7 +63,8 @@ export function leerSesiones(C) {
         const paraSeries = !!CUENTA[tipo] && (tipoEj === "duration" ? segundos > 0 : reps > 0);
         const paraPR = paraSeries && tipoEj !== "duration" && peso > 0 && reps > 0;
         sets.push({ peso, reps, segundos, tipo, tipoEj, paraSeries, paraPR, unilateral, ...(modo === "total" ? {} : { modoCarga: modo, anotado: pesoAnotado }),
-          volumen: paraPR ? peso * reps * lados : 0, oneRM: paraPR ? epley(peso, reps) : 0 });
+          volumen: paraPR ? peso * reps * lados : 0, oneRM: paraPR ? epley(peso, reps) : 0,
+          ...(typeof st.rpe === "number" && st.rpe >= 5 && st.rpe <= 10 ? { rpe: st.rpe } : {}) });
         if (paraSeries) { series += 1; volumen += paraPR ? peso * reps * lados : 0; if (!paraPR) sinPeso += 1; }
         else descartadas += 1;
       }

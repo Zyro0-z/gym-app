@@ -10,6 +10,7 @@ import { vistaGuia } from "./guia.js";
 import { vistaEjercicio, vistaGrupo } from "./ejercicio.js";
 import { vistaLigas, vistaLiga } from "./ligas.js";
 import { vistaFatiga } from "./fatiga.js";
+import { vistaMusculos } from "./musculos.js";
 import { vistaComparar } from "./comparar.js";
 import { vistaMedidas } from "./medidas.js";
 import { vistaRutinas, vistaRutina, vistaHorario, vistaEjercicios, vistaEjercicioCat, vistaGrupos, vistaObjetivos, vistaCuerpo,
@@ -37,6 +38,6 @@ export const VISTAS = {
   rutinas: vistaRutinas, rutina: vistaRutina, horario: vistaHorario, ejercicios: vistaEjercicios, ejercicioCat: vistaEjercicioCat,
   grupos: vistaGrupos, objetivos: vistaObjetivos, cuerpo: vistaCuerpo, bloques: vistaBloques, bloque: vistaBloque,
   entrenamiento: vistaEntrenamiento, calidad: vistaCalidad, avanzado: vistaAvanzado,
-  fatiga: vistaFatiga, comparar: vistaComparar, medidas: vistaMedidas,
+  fatiga: vistaFatiga, musculos: vistaMusculos, comparar: vistaComparar, medidas: vistaMedidas,
   noEncontrada: vistaNoEncontrada,
 };

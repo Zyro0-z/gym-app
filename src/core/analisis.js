@@ -7,6 +7,7 @@ import { calcularLigas } from "./ligas.js";
 import { analizarPeso, resumenPeso } from "./peso.js";
 import { ultimasSemanas, resumenSemana, racha, hoyToca, seriesObjetivo, grupoSemana, volumenPorGrupo, balance } from "./semanal.js";
 import { calidad } from "./calidad.js";
+import { volumenMusculos } from "./volumen.js";
 
 /**
  * @param {object} modelo {sesiones, catalogo, rutinas, pesajes, ajustes}
@@ -39,6 +40,7 @@ export function analizar(modelo, hoy) {
     liga: LIGA, peso: pesoA, resumenPeso: resumenPeso(C, pesoA), semanas, resumen: resumenSemana(C, SESIONES),
     racha: racha(C, SESIONES), hoyToca: hoyToca(C, SESIONES, progresionDe), seriesObjetivo: seriesObjetivo(C, SESIONES, TODAS),
     grupoSemana: grupoSemana(C, TODAS), volumenPorGrupo: volumenPorGrupo(TODAS, semanas),
+    volumenMusculos: (o) => volumenMusculos(C, TODAS, o),
     balance: (periodo) => balance(C, TODAS, periodo), nuevosPR, calidad: calidad(C, SESIONES, TODAS, LIGA),
   };
 }

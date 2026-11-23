@@ -13,6 +13,7 @@ import { ESTADOS } from "../core/estancamiento.js";
 import { kg, kgTotal, fechaCorta, capital } from "../ui/textos.js";
 import { tonoEstado, iconoTend, pctTxt } from "./progreso.js";
 import { ligaVigente } from "./ligas.js";
+import { e1rmReciente, ruidoE1rm, prPorRango } from "../core/prescripcion.js";
 
 const RANGOS = [{ valor: "1M", texto: "1M" }, { valor: "3M", texto: "3M" }, { valor: "6M", texto: "6M" }, { valor: "Todo", texto: "Todo" }];
 const MATERIAL = { maquina: "máquina", máquina: "máquina", polea: "polea", mancuerna: "mancuerna", barra: "barra" };
@@ -60,6 +61,9 @@ export function vistaEjercicio([k], app) {
       const actual = e.hist.length ? e.hist[e.hist.length - 1].mejorRM : 0;
       const t = d && d.tend, ic = iconoTend(t);
       const ajustado = rmConRpe(store.estado.sesiones, k);
+      const rec1 = e1rmReciente(e), ruido = ruidoE1rm(e.hist);
+      const fiabilidad = rec1 ? "Fiabilidad de la última estimación: " + rec1.confianza + " (" + rec1.reps + " reps" + (rec1.rpe != null ? " @" + rpeTxt(rec1.rpe) : ", sin RPE") + ")"
+        + (ruido ? " · ruido personal ±" + fmt(ruido.sd, 1) + " kg (" + fmt(ruido.pct, 1) + " %, " + ruido.n + " sesiones): una mejora menor no se distingue de la variación normal" : " · con 5 sesiones se mide tu ruido personal") + "." : null;
       const grafica = hist.length ? graficaLinea({ puntos: hist.map((x) => ({ x: numDia(x.dia), y: x.mejorRM, detalle: capital(fechaCorta(x.dia, A.hoy)) + " · " + x.mejorRMReps + " reps" })),
         formato: (v) => kg(v), ejeX: (n) => fechaCorta(deNum(n)), etiqueta: "e1RM por sesión" }) : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Sin sesiones en este periodo.");
       const out = [
@@ -68,6 +72,7 @@ export function vistaEjercicio([k], app) {
             t && ic ? chip(pctTxt(t.pct), ic === "sube" ? "ok" : ic === "baja" ? "bad" : null, { icono: ic }) : null),
           ajustado ? h("div", { class: "etiqueta", style: { marginTop: "4px" } }, "Ajustado por RPE: ", h("span", { class: "num", style: { color: "var(--label)", fontWeight: "600" } }, fmt(ajustado.kg, 1) + " kg"),
             " (" + fmt(ajustado.st.peso, Number.isInteger(ajustado.st.peso) ? 0 : 1) + " × " + ajustado.st.reps + " @" + rpeTxt(ajustado.st.rpe) + ")") : null,
+          fiabilidad ? h("div", { class: "etiqueta", style: { marginTop: "4px" } }, fiabilidad) : null,
           h("div", { style: { margin: "12px 0 4px" } }, segmentado(RANGOS, rango, (v) => { rango = v; this.render(c); }, { etiqueta: "Rango" })),
           grafica,
           e.hist.length < 3 ? h("div", { class: "etiqueta", style: { marginTop: "6px" } }, "Con 3 sesiones o más se calcula la tendencia.") : null)),
@@ -92,6 +97,9 @@ export function vistaEjercicio([k], app) {
       const mejorVol = e.hist.reduce((m, x) => (!m || x.vol > m.vol ? x : m), null);
       if (mejorVol && mejorVol.vol) rec.push(celda({ titulo: "Volumen en una sesión", valor: kgTotal(mejorVol.vol) }));
       if (rec.length) out.push(seccion({ cab: "Récords" }, lista(rec)));
+      const porRango = prPorRango(e);
+      if (porRango.length) out.push(seccion({ cab: "Récords por repeticiones", pie: "Más peso levantado en cada rango de repeticiones. Un rango sin registro no tiene récord que batir." },
+        lista(porRango.map((x) => celda({ titulo: x.rango.txt + (x.rango.id === "1" ? " repetición" : " reps"), sub: capital(fechaCorta(x.dia, A.hoy)), valor: serieTxt({ peso: x.peso, reps: x.reps }) })))));
       out.push(seccion({ cab: "Sesiones" }, lista(e.hist.slice().reverse().slice(0, 30).map((x) => celda({ titulo: capital(fechaCorta(x.dia, A.hoy)), sub: x.series.map(serieTxt).join(" · "),
         valor: x.mejorRM ? fmt(x.mejorRM, 1) : null })))));
       poner(c, out);

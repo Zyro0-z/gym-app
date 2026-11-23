@@ -6,9 +6,10 @@
 import { crearContexto } from "./contexto.js";
 import { incrementoDe, proximaVez, avisosProgresion } from "./progresion.js";
 import { balance } from "./semanal.js";
+import { volumenMusculos } from "./volumen.js";
 import { funcionesLiga } from "./ligas.js";
 
-const FUNCIONES = ["progresionDe", "incrementoDe", "proximaVez", "avisosProgresion", "balance"];
+const FUNCIONES = ["progresionDe", "incrementoDe", "proximaVez", "avisosProgresion", "balance", "volumenMusculos"];
 const FUNCIONES_LIGA = ["nivelDe", "pct", "progreso", "falta", "faltaTxt", "faltaGrupoTxt", "mensual"];
 
 export function aPlano(A) {
@@ -34,6 +35,7 @@ export function rehidratar(P, modelo) {
     proximaVez: (p) => proximaVez(C, SESIONES, p),
     avisosProgresion,
     balance: (periodo) => balance(C, TODAS, periodo),
+    volumenMusculos: (o) => volumenMusculos(C, TODAS, o),
   });
   if (P.liga && P.liga.ok) Object.assign(P.liga, funcionesLiga(C));
   return A;

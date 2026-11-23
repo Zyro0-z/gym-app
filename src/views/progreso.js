@@ -111,6 +111,7 @@ function resumen(A, app, semVol, cambiarSem) {
   const vg = L && L.ok ? ligaVigente(L.general) : null;
   out.push(seccion({ cab: "Más análisis" }, lista([
     vg ? celda({ izquierda: insignia(vg.p.nivel, 32), titulo: "Liga", sub: vg.viejo ? "Última conocida" : null, valor: vg.p.nivel.txt, chevron: true, alPulsar: () => app.nav.ir("ligas") }) : null,
+    celda({ titulo: "Series por músculo", sub: "Volumen semanal efectivo, con recuento fraccional", chevron: true, alPulsar: () => app.nav.ir("musculos") }),
     celda({ titulo: "Fatiga y descarga", sub: "Semana a semana: e1RM, RPE y recuperación", chevron: true, alPulsar: () => app.nav.ir("fatiga") }),
     celda({ titulo: "Comparar periodos", sub: "4 semanas, mes o 3 meses frente al anterior", chevron: true, alPulsar: () => app.nav.ir("comparar") }),
   ].filter(Boolean))));

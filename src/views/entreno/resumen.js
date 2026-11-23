@@ -7,6 +7,7 @@ import { kg, kgTotal, minutos } from "../../ui/textos.js";
 import { fmt, plural } from "../../core/formato.js";
 import { epley } from "../../core/sesiones.js";
 import { E } from "./estado.js";
+import { derivaEjercicio, UMBRAL_GENERICO_PCT } from "../../core/deriva.js";
 
 export function mejorRM(series) { let m = 0; for (const s of series) if (s.peso > 0 && s.reps > 0) m = Math.max(m, epley(s.peso, s.reps)); return m; }
 
@@ -25,10 +26,16 @@ function contar(el, hasta, formato) {
 
 export async function mostrarResumen(ses) {
   const { store } = E.app;
-  let prs = [];
+  let prs = [], deriva = [];
   try {
     // Los récords salen del análisis CON esta sesión: se espera al Worker (como mucho 2 s)
     const A = await Promise.race([store.analisisFresco(), new Promise((ok) => setTimeout(() => ok(store.analisis()), 2000))]);
+    for (const e of ses.ejercicios) {
+      const ej = A.ejercicios.find((x) => x.k === e.ejercicioId || x.nombre === e.nombre);
+      if (!ej || !ej.hist.length || ej.hist[ej.hist.length - 1].dia !== ses.fecha) continue;
+      const d = derivaEjercicio(ej.hist);
+      if (d) deriva.push({ nombre: e.nombre, d });
+    }
     prs = A.nuevosPR.filter((p) => (p.rm && p.e.rmMax && p.e.rmMax.ses && p.e.rmMax.ses.id === ses.id) || (p.peso && p.e.pesoMax && p.e.pesoMax.ses && p.e.pesoMax.ses.id === ses.id));
   } catch (e) { prs = []; }
   const anteriorDe = (id) => {
@@ -58,6 +65,9 @@ export async function mostrarResumen(ses) {
           h("div", { class: "fila", style: { gap: "8px", marginBottom: "8px" } }, h("span", { class: "c-accent", style: { display: "flex" } }, icono("trofeo", { tam: 22 })),
             h("span", { class: "t-headline" }, prs.length === 1 ? "1 récord nuevo" : prs.length + " récords nuevos")),
           prs.map((p, i) => h("div", { class: "fila entre fila-pr", style: { "--i": Math.min(i, 6) } }, h("span", null, p.e.nombre), h("span", { class: "num c-2" }, p.rm ? "e1RM " + kg(p.rm) : kg(p.peso)))))) : null,
+        deriva.length ? seccion({ cab: "Fatiga dentro de la sesión", pie: "Caída del e1RM de la primera a la última serie de trabajo. «Tu umbral» sale de tus propias sesiones del ejercicio (mediana + 1,5 desviaciones); con menos de 4 sesiones previas se usa un umbral genérico del " + UMBRAL_GENERICO_PCT + " %." },
+          lista(deriva.map(({ nombre, d }) => celda({ titulo: nombre, sub: d.personal ? "Tu mediana " + fmt(d.personal.mediana, 1) + " % · umbral " + fmt(d.umbral, 1) + " %" : "Umbral genérico " + d.umbral + " %",
+            valor: chip((d.caida > 0 ? "−" : "+") + fmt(Math.abs(d.caida), 1) + " %", d.alta ? "warn" : "ok") })))) : null,
         seccion({ cab: "Por ejercicio" }, lista(ses.ejercicios.map((e) => {
           const mejor = e.series.reduce((m, s) => (!m || epley(s.peso, s.reps) > epley(m.peso, m.reps) ? s : m), null);
           const ant = anteriorDe(e.ejercicioId);

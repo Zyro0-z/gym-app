@@ -24,6 +24,7 @@ export function ajustesBase() {
       barra: 20, discos: [25, 20, 15, 10, 5, 2.5, 1.25, 0.5],        // calculadora de discos
       controlesBloqueo: false,                                        // Media Session (experimental)
       push: { activo: false, url: "" } },                             // aviso por un servidor propio
+    analisis: { fraccionSecundaria: 0.5 },                             // series de un músculo secundario cuentan esta fracción
     gimnasios: [], gimnasioActivo: null,                                // perfiles de gimnasio (barra y discos); vacío = uno implícito
     horario: { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null, 7: null },
     bloques: [], umbrales: [],
@@ -48,7 +49,7 @@ export function completarAjustes(a) {
   const b = ajustesBase();
   if (!a) return b;
   const out = Object.assign({}, b, a);
-  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "ligas", "copiasInternas", "avisoCopia", "descarga", "csv"]) out[k] = Object.assign({}, b[k], a[k] || {});
+  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "ligas", "copiasInternas", "avisoCopia", "descarga", "csv", "analisis"]) out[k] = Object.assign({}, b[k], a[k] || {});
   out.entreno.push = Object.assign({}, b.entreno.push, (a.entreno && a.entreno.push) || {});
   out.horario = Object.assign({}, b.horario, a.horario || {});
   if (!Array.isArray(out.grupos) || !out.grupos.length) out.grupos = b.grupos;

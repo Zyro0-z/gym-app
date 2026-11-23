@@ -8,6 +8,7 @@ import { esRpe } from "../../core/rpe.js";
 import { calcularDiscos, agrupar } from "../../core/discos.js";
 import { gimnasioActivo } from "../../core/gimnasios.js";
 import { generarCalentamiento } from "../../core/calentamiento.js";
+import { ajustarPorRpe, backoffs } from "../../core/prescripcion.js";
 import { sugerirCarga } from "../../core/sugerencia.js";
 import { E, aTexto, vacia } from "./estado.js";
 
@@ -16,13 +17,13 @@ const kgTxt = (v) => fmt(v, Number.isInteger(v) ? 0 : v * 10 === Math.round(v * 
 /* ---------- Sugerencia de carga ---------- */
 
 /** Sugerencia para el ejercicio (solo durante el entrenamiento) o null. */
-export function sugerenciaDe(id) {
+export function sugerenciaDe(id, rpeObjetivo = null) {
   if (!E.M || E.M.modo !== "entreno") return null;
   try {
     const A = E.app.store.analisis();
     if (!A) return null;
     const p = A.progresionDe(id);
-    return p ? sugerirCarga(p, A.incrementoDe(p)) : null;
+    return p ? ajustarPorRpe(sugerirCarga(p, A.incrementoDe(p)), p, rpeObjetivo) : null;
   } catch (e) { return null; }
 }
 
@@ -132,4 +133,21 @@ export function anadirCalentamiento(e) {
   const w = generarCalentamiento(trabajo, barra ? { barra: g.barra, discos: g.discos, paso } : { paso });
   e.series.unshift(...w.map((x) => ({ peso: aTexto(x.peso), reps: String(x.reps), tipo: "calentamiento", hecha: false })));
   return w.length;
+}
+
+/** Añade 2 back-offs tras la serie top: mismas repeticiones, un punto de RPE por debajo (máx. RPE 9), con el e1RM de esa serie. Devuelve los añadidos o null. */
+export function anadirBackoffs(e) {
+  const hechas = e.series.filter((s) => s.hecha && s.tipo !== "calentamiento" && leerNumero(s.peso) > 0 && leerNumero(s.reps) > 0);
+  if (!hechas.length) return null;
+  const top = hechas.reduce((m, s) => (leerNumero(s.peso) > leerNumero(m.peso) ? s : m), hechas[0]);
+  const cat = E.app.store.estado.catalogo.find((x) => x.id === e.ejercicioId);
+  const paso = (cat && cat.incremento > 0 ? cat.incremento : 0) || E.app.store.estado.ajustes.entreno.pasoPeso || 2.5;
+  const b = backoffs({ peso: leerNumero(top.peso), reps: leerNumero(top.reps), rpe: esRpe(top.rpe) ? top.rpe : undefined }, { n: 2, paso });
+  if (!b.length) return null;
+  const vacias = e.series.filter((s) => !s.hecha && s.tipo !== "calentamiento" && s.peso === "" && s.reps === "");
+  for (let i = 0; i < b.length; i++) {
+    const dest = vacias[i] || (() => { const n = vacia(); e.series.push(n); return n; })();
+    Object.assign(dest, { peso: aTexto(b[i].peso), reps: String(b[i].reps) });
+  }
+  return b;
 }

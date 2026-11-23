@@ -38,7 +38,7 @@ function recorrido(ids) {
   for (const s of ["Resumen", "Ejercicios", "Músculos", "Cuerpo"]) P.push(["progreso-" + s.toLowerCase(), async (g) => { await g.tab("progreso"); await g.seg(s); }]);
   P.push(["historial", (g) => g.tab("historial")], ["ajustes", (g) => g.tab("ajustes")]);
   const rutas = [["ejercicio", ids.ej && "ejercicio/" + encodeURIComponent(ids.ej), "progreso"], ["grupo", "grupo/" + encodeURIComponent(ids.grupo), "progreso"], ["ligas", "ligas", "progreso"],
-    ["liga", ids.liga && "liga/grupo/" + encodeURIComponent(ids.liga), "progreso"], ["fatiga", "fatiga", "progreso"], ["comparar", "comparar", "progreso"], ["medidas", "medidas", "progreso"],
+    ["liga", ids.liga && "liga/grupo/" + encodeURIComponent(ids.liga), "progreso"], ["fatiga", "fatiga", "progreso"], ["musculos", "musculos", "progreso"], ["comparar", "comparar", "progreso"], ["medidas", "medidas", "progreso"],
     ["sesion", ids.ses && "sesion/" + encodeURIComponent(ids.ses), "historial"], ["rutinas", "rutinas", "ajustes"], ["rutina", ids.rut && "rutina/" + encodeURIComponent(ids.rut), "ajustes"],
     ["horario", "horario", "ajustes"], ["ejercicios", "ejercicios", "ajustes"], ["ejercicio-cat", ids.cat && "ejercicioCat/" + encodeURIComponent(ids.cat), "ajustes"],
     ["entrenamiento", "entrenamiento", "ajustes"], ["objetivos", "objetivos", "ajustes"], ["cuerpo", "cuerpo", "ajustes"], ["bloques", "bloques", "ajustes"], ["bloque", "bloque/+", "ajustes"],
