@@ -2,6 +2,7 @@
 import { h, poner } from "../ui/dom.js";
 import { seccion, lista, celda, vacio, stepper } from "../ui/controles.js";
 import { fmt, plural } from "../core/formato.js";
+import { diagramaCuerpo } from "../ui/cuerpo.js";
 
 const n1 = (x) => fmt(x, Number.isInteger(Math.round(x * 100) / 100) ? 0 : x * 10 === Math.round(x * 10) ? 1 : 2);
 const REFERENCIA = 10;   // series efectivas semanales por músculo: referencia de las revisiones dosis-respuesta (Schoenfeld 2017), no un objetivo
@@ -21,6 +22,9 @@ export function vistaMusculos(_p, app) {
         return el;
       };
       poner(c,
+        V.filas.length ? seccion({ cab: "Mapa de la semana", pie: "Cada zona se colorea con las series efectivas de su músculo esta semana. Toca una zona para ver su valor." },
+          h("div", { class: "tarjeta" }, diagramaCuerpo(V.filas.map((f) => ({ nombre: f.nombre, tokens: [f.id + "-*"], valor: Math.round(f.actual * 100) / 100 })),
+            { etiqueta: "Series efectivas por músculo esta semana", unidad: (v) => n1(v) + (v === 1 ? " serie" : " series") }))) : null,
         V.filas.length ? seccion({ cab: "Esta semana", pie: "Principal = 1 serie, secundario = " + n1(V.fraccion) + ". La marca vertical es " + REFERENCIA + " series, la referencia de las revisiones dosis-respuesta para hipertrofia (más series, más ganancia hasta cierto punto); no es un objetivo obligatorio. Solo series de trabajo, sin calentamiento." },
           lista(V.filas.map((f) => celda({ titulo: f.nombre, sub: h("span", { class: "barra-objetivo" }, barra(f), h("span", { class: "num" }, "pasada " + n1(f.previa) + " · media 4 sem. " + n1(f.media4))),
             valor: h("span", { class: "num" }, n1(f.actual)), "aria-label": f.nombre + ": " + n1(f.actual) + " series efectivas esta semana, la pasada " + n1(f.previa) + ", media de 4 semanas " + n1(f.media4) })))) : null,

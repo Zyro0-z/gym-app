@@ -76,8 +76,10 @@ for (const nombre of motores) for (const f of FIXTURES) {
   ok(b.kv["respaldo-auto-1"] && b.kv["respaldo-auto-1"].motivo === "migrar" && b.kv["respaldo-auto-1"].sesiones === dump.sesiones.length, "copia interna «migrar» en la rotación");
   const aj = b.kv.ajustes;
   ok(aj.entreno.barra === 20 && aj.entreno.discos.length === 8 && aj.descarga.caidaPct === 3 && aj.csv.separador === ";", "ajustes nuevos con sus valores por defecto");
-  ok(JSON.stringify(Object.assign({}, aj, { entreno: undefined, descarga: undefined, csv: undefined })) ===
-     JSON.stringify(Object.assign({}, require_completo(dump.kv.ajustes, aj), { entreno: undefined, descarga: undefined, csv: undefined })), "los ajustes que ya había no cambian");
+  ok(JSON.stringify(Object.assign({}, aj, { entreno: undefined, descarga: undefined, csv: undefined, grupos: undefined })) ===
+     JSON.stringify(Object.assign({}, require_completo(dump.kv.ajustes, aj), { entreno: undefined, descarga: undefined, csv: undefined, grupos: undefined })), "los ajustes que ya había no cambian");
+  // Los grupos conservan nombre y color; solo sus regiones pasan del mapa antiguo al de músculos
+  ok(JSON.stringify(aj.grupos.map((g) => [g.nombre, g.color])) === JSON.stringify(dump.kv.ajustes.grupos.map((g) => [g.nombre, g.color])), "los grupos conservan nombre y color");
   ok(Array.isArray(b.kv.medidas) && b.kv.medidas.length === 0, "medidas vacías");
   const huellaDespues = await p.evaluate(() => window.R.cargar().then((e) => window.huella({ sesiones: e.sesiones, catalogo: e.catalogo, rutinas: e.rutinas, pesajes: e.pesajes, ajustes: e.ajustes })));
   ok(huellaAntes === huellaDespues, "el análisis da exactamente los mismos números antes y después");

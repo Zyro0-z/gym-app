@@ -61,6 +61,19 @@ paso("Hoy ofrece cambiar de gimnasio cuando hay más de uno");
 await p.evaluate(() => window.__gym.nav.ir("hoy", { pestana: "hoy" })); await espera(900);
 assert.equal(await p.locator(".chip-gimnasio").count() >= 1, true);
 
+paso("Por gimnasio: aparece al haber un ejercicio en dos gimnasios y lista cada uno");
+await p.evaluate(async () => {
+  const s = window.__gym.store;
+  const base = s.estado.sesiones[0];
+  for (const [id, f, g, kg] of [["g1", "2026-11-14", "principal", 90], ["g2", "2026-11-15", "principal", 92.5], ["g3", "2026-11-16", "garaje", 85]])
+    await s.guardarSesion({ id, rutina: "Torso", fecha: f, gimnasio: g, inicio: "18:00", fin: "19:00", duracion: 60, ejercicios: [{ ejercicioId: base.ejercicios[0].ejercicioId, nombre: base.ejercicios[0].nombre, tipo: "peso", series: [{ peso: kg, reps: 5, tipo: "normal", hecha: true }] }] });
+  await s.guardarAjustes((a) => { a.gimnasios = [{ id: "principal", nombre: "Mi gimnasio", barra: 20, discos: a.entreno.discos }, { id: "garaje", nombre: "Garaje", barra: 15, discos: a.entreno.discos }]; });
+});
+await p.evaluate(() => window.__gym.nav.ir("porGimnasio", { pestana: "progreso" })); await espera(900);
+const vg = await p.locator('.pantalla[data-ruta="porGimnasio"]').innerText();
+assert.match(vg, /Garaje/); assert.match(vg, /referencia/); assert.match(vg, /%/);
+await textoMalo();
+
 assert.deepEqual(errores, [], "errores de consola: " + errores.join(" | "));
 console.log(motor, "errores: ninguno");
 await b.close(); srv.close();

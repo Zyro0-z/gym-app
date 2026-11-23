@@ -518,7 +518,7 @@ sesión» en rojo con una confirmación.
 │ │ ▣ Datos          ● 2 avisos   › │ │
 │ │ ▣ Avanzado                     › │ │
 │ └──────────────────────────────────┘ │
-│ Versión 2.0 · Diagrama: body-muscles │  pie
+│ Versión 2.0 · Diagrama: MIT, ver README │  pie
 ```
 
 - **Rutina:** lista reordenable con asa, un stepper de series objetivo en cada fila, deslizar para

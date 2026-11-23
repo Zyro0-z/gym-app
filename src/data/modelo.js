@@ -9,10 +9,41 @@ export const CLAVES_ANTIGUAS = ["sessions", "templates", "configs", "settings", 
 
 export const GRUPOS_BASE = ["Pecho", "Espalda", "Pierna", "Hombro", "Bíceps", "Tríceps", "Core", "Antebrazo"];
 export const REGIONES_BASE = {
-  Pecho: ["chest-*"], Espalda: ["lats-*", "traps-*", "spine", "lower-back-*"], Hombro: ["shoulder-front-*", "shoulder-side-*", "deltoid-rear-*"],
-  "Bíceps": ["biceps-*"], "Tríceps": ["triceps-*"], Core: ["abs-*", "obliques-*", "serratus-*"],
-  Pierna: ["quads-*", "adductors-*", "hamstrings-*", "calves-*", "tibialis-*", "hip-flexor-*", "gluteus-*"], Antebrazo: ["forearm-*"],
+  Pecho: ["pecho-*"], Espalda: ["dorsal-*", "redondo-*", "trapecio-*", "romboides-*", "erectores-*"], Hombro: ["deltoide-*", "manguito-*"],
+  "Bíceps": ["biceps-*", "braquial-*"], "Tríceps": ["triceps-*"], Core: ["recto-abdominal-*", "oblicuos-*", "serrato-*"],
+  Pierna: ["recto-femoral-*", "vastos-*", "aductores-*", "gluteo-*", "isquiotibiales-*", "gemelos-*", "soleo-*"], Antebrazo: ["antebrazo-*"],
 };
+// Regiones del diagrama anterior (body-muscles) → regiones por músculo. Gana la primera que encaje por prefijo.
+const REGIONES_ANTIGUAS = [
+  ["chest-upper", ["pecho-clavicular-*"]], ["chest-lower", ["pecho-esternal-*"]], ["chest", ["pecho-*"]],
+  ["lats", ["dorsal-*", "redondo-*"]], ["traps-upper", ["trapecio-superior-*"]], ["traps", ["trapecio-*", "romboides-*"]],
+  ["spine", ["erectores-*"]], ["lower-back", ["erectores-*"]],
+  ["shoulder-front", ["deltoide-anterior-*"]], ["shoulder-side", ["deltoide-lateral-*"]], ["deltoid-rear", ["deltoide-posterior-*", "manguito-*"]],
+  ["biceps-", ["biceps-*", "braquial-*"]], ["triceps-long", ["triceps-largo-*"]], ["triceps-lateral-left", ["triceps-lateral-medial-*"]], ["triceps-lateral-right", ["triceps-lateral-medial-*"]],
+  ["abs", ["recto-abdominal-*"]], ["obliques", ["oblicuos-*"]], ["serratus", ["serrato-*"]],
+  ["quads", ["recto-femoral-*", "vastos-*"]], ["adductors", ["aductores-*"]], ["hamstrings", ["isquiotibiales-*"]],
+  ["calves-soleus", ["soleo-*"]], ["calves", ["gemelos-*", "soleo-*"]], ["gluteus", ["gluteo-*"]], ["forearm", ["antebrazo-*"]],
+];
+const SIN_REGION_ANTIGUA = ["head", "face", "neck", "nape", "knee", "foot", "hand", "elbow", "tibialis", "hip-flexor", "shoulder-"];
+const coincide = (t, k) => t === k || t.startsWith(k.endsWith("-") ? k : k + "-");
+/** Convierte las regiones guardadas de un grupo al diagrama por músculos. Las que ya son nuevas se dejan como están. */
+export function migrarRegiones(tokens) {
+  if (!Array.isArray(tokens)) return [];
+  const ant = (t) => typeof t === "string" && (REGIONES_ANTIGUAS.some(([k]) => coincide(t, k)) || SIN_REGION_ANTIGUA.some((k) => coincide(t, k)));
+  // El grupo Bíceps de antes era solo «biceps-*» y ahora incluye el braquial: también es el diagrama antiguo.
+  const biceps = tokens.length === 1 && tokens[0] === "biceps-*";
+  if (!biceps && !tokens.some(ant)) return tokens;
+  const out = [];
+  const poner = (t) => { if (!out.includes(t)) out.push(t); };
+  for (const t of tokens) {
+    if (typeof t !== "string") continue;
+    const m = REGIONES_ANTIGUAS.find(([k]) => coincide(t, k));
+    if (m) m[1].forEach(poner);
+    else if (t === "biceps-*") { poner("biceps-*"); poner("braquial-*"); }
+    else if (!ant(t)) poner(t);
+  }
+  return out;
+}
 export const ACENTOS = ["azul", "indigo", "morado", "rosa", "rojo", "naranja", "verde", "grafito"];
 
 /** Ajustes por defecto de una instalación nueva. */
@@ -53,6 +84,7 @@ export function completarAjustes(a) {
   out.entreno.push = Object.assign({}, b.entreno.push, (a.entreno && a.entreno.push) || {});
   out.horario = Object.assign({}, b.horario, a.horario || {});
   if (!Array.isArray(out.grupos) || !out.grupos.length) out.grupos = b.grupos;
+  else out.grupos = out.grupos.map((g) => (g && Array.isArray(g.regiones) ? Object.assign({}, g, { regiones: migrarRegiones(g.regiones) }) : g));
   return out;
 }
 

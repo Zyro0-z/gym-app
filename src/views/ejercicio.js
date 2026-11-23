@@ -14,6 +14,8 @@ import { kg, kgTotal, fechaCorta, capital } from "../ui/textos.js";
 import { tonoEstado, iconoTend, pctTxt } from "./progreso.js";
 import { ligaVigente } from "./ligas.js";
 import { e1rmReciente, ruidoE1rm, prPorRango } from "../core/prescripcion.js";
+import { nombreMusculo } from "../core/musculos.js";
+import { diagramaCuerpo, vistaPara } from "../ui/cuerpo.js";
 
 const RANGOS = [{ valor: "1M", texto: "1M" }, { valor: "3M", texto: "3M" }, { valor: "6M", texto: "6M" }, { valor: "Todo", texto: "Todo" }];
 const MATERIAL = { maquina: "máquina", máquina: "máquina", polea: "polea", mancuerna: "mancuerna", barra: "barra" };
@@ -77,6 +79,18 @@ export function vistaEjercicio([k], app) {
           grafica,
           e.hist.length < 3 ? h("div", { class: "etiqueta", style: { marginTop: "6px" } }, "Con 3 sesiones o más se calcula la tendencia.") : null)),
       ];
+      const mc = cat() && cat().musculos;
+      if (mc && ((mc.p && mc.p.length) || (mc.s && mc.s.length))) {
+        const ids = [...(mc.p || []), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m))];
+        const lista = (xs) => xs.map(nombreMusculo).join(", "), vista = vistaPara(ids);
+        out.push(seccion({ cab: "Músculos", pie: "Oscuro: principal (1 serie). Claro: secundario (cuenta " + fmt((store.estado.ajustes.analisis || {}).fraccionSecundaria ?? 0.5, 2) + " serie). Se corrige en Ajustes › Ejercicios." },
+          h("div", { class: "tarjeta fila", style: vista === "ambas" ? { gap: "12px", flexDirection: "column", alignItems: "stretch" } : { gap: "16px", alignItems: "center" } },
+            diagramaCuerpo([...(mc.p || []).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 2 })), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m)).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 1 }))],
+              { etiqueta: "Músculos de " + (e.nombre || "este ejercicio"), unidad: (v) => (v >= 2 ? "principal" : "secundario"), vista, mini: true }),
+            h("div", { class: "pila", style: { flex: "1", minWidth: "0" } },
+              mc.p && mc.p.length ? h("div", null, h("div", { class: "etiqueta" }, "Principales"), h("div", { class: "t-subhead" }, lista(mc.p))) : null,
+              mc.s && mc.s.length ? h("div", null, h("div", { class: "etiqueta" }, "Secundarios"), h("div", { class: "t-subhead c-2" }, lista(mc.s))) : null))));
+      }
       if (p) {
         const txt = A.proximaVez(p);
         out.push(seccion({ cab: "Próxima vez" }, h("div", { class: "tarjeta" },

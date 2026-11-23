@@ -67,13 +67,13 @@ export function filaSerie(e, i, s, j, ant, paso) {
   rpeBtn.setAttribute("aria-expanded", "false");
   rpeBtn.addEventListener("click", () => { if (tira.hidden) abrirTira(); else cerrarTira(); rpeBtn.setAttribute("aria-expanded", String(!tira.hidden)); });
   const check = h("button", { class: "check", "aria-label": "Serie hecha", "aria-pressed": String(!!s.hecha) }, icono("check", { grosor: 2.6 }));
-  const fila = h("div", { class: ["serie", s.hecha && "hecha"] },
+  const fila = h("div", { class: ["serie", s.hecha && "hecha", e.tipo === "reps" && "solo-reps"] },
     h("button", { class: ["num-serie", letra && "tipo-" + s.tipo], "aria-label": "Serie " + (j + 1) + ", tipo " + nombreTipo.toLowerCase() + ". Cambiar el tipo", onClick: () => elegirTipo(s) }, letra || String(nNormal)),
     h("button", { class: "anterior num", "aria-label": "Copiar la serie anterior", onClick: () => { if (!ant) return; kgIn.value = s.peso = ant.peso > 0 ? aTexto(ant.peso) : ""; repsIn.value = s.reps = ant.reps ? String(ant.reps) : ""; seleccion(); guardarPronto(); } }, antTxt),
-    kgIn, repsIn, rpeBtn, check);
+    e.tipo === "reps" ? null : kgIn, repsIn, rpeBtn, check);
   check.addEventListener("click", () => {
     if (!s.hecha) {
-      if (!s.peso && kgIn.placeholder) s.peso = kgIn.value = kgIn.placeholder;
+      if (e.tipo !== "reps" && !s.peso && kgIn.placeholder) s.peso = kgIn.value = kgIn.placeholder;
       if (!s.reps && repsIn.placeholder) s.reps = repsIn.value = repsIn.placeholder;
       const r = leerNumero(s.reps), p = s.peso === "" ? 0 : leerNumero(s.peso);
       if (!(r > 0) || !Number.isFinite(p) || p < 0) { (r > 0 ? kgIn : repsIn).focus(); fila.classList.add("error"); setTimeout(() => fila.classList.remove("error"), 600); return; }

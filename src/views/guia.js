@@ -60,8 +60,8 @@ export function vistaGuia(_p, app) {
           graficaLinea({ puntos, ejeX: (n) => fechaCorta(deNum(n)), formato: (v) => kg(v), secundaria: puntos.map((p, i, a) => ({ x: p.x, y: a.slice(Math.max(0, i - 3), i + 1).reduce((s, q) => s + q.y, 0) / Math.min(i + 1, 4) })) }))),
         seccion({ cab: "Mapa de calor" }, h("div", { class: "tarjeta" }, mapaCalor({ mes: hoy.slice(0, 7), hoy, nivel: (iso) => (+iso.slice(8) * 7) % 5, deload: (iso) => +iso.slice(8) <= 3, alCambiarMes: () => {} }))),
         seccion({ cab: "Diagrama corporal" }, h("div", { class: "tarjeta" }, diagramaCuerpo([
-          { nombre: "Pecho", tokens: ["chest-*"], valor: 16 }, { nombre: "Espalda", tokens: ["lats-*", "traps-*"], valor: 8 },
-          { nombre: "Pierna", tokens: ["quads-*", "hamstrings-*", "calves-*", "gluteus-*"], valor: 12 }, { nombre: "Bíceps", tokens: ["biceps-*"], valor: 4 }], { unidad: (v) => v + " series" }))),
+          { nombre: "Pecho", tokens: ["pecho-*"], valor: 16 }, { nombre: "Espalda", tokens: ["dorsal-*", "redondo-*", "trapecio-*", "romboides-*"], valor: 8 },
+          { nombre: "Pierna", tokens: ["recto-femoral-*", "vastos-*", "isquiotibiales-*", "gemelos-*", "gluteo-*"], valor: 12 }, { nombre: "Bíceps", tokens: ["biceps-*", "braquial-*"], valor: 4 }], { unidad: (v) => v + " series" }))),
         seccion({ cab: "Insignias de liga · 96, 32 y 20" }, h("div", { class: "tarjeta" },
           h("div", { class: "fila", style: { justifyContent: "center", gap: "20px" } }, insignia({ insignia: 9, div: "II" }, 96), insignia({ insignia: 9, div: "II" }, 32), insignia({ insignia: 9, div: "II" }, 20)),
           h("div", { class: "escalera" }, nombresLigas().map((n, i) => h("div", null, insignia({ insignia: i + 1, div: "" }, 32), h("span", null, n)))))),

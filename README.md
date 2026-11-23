@@ -137,5 +137,5 @@ animaciones. El tamaño del texto sigue al del sistema (`-apple-system-body`).
 
 ## Licencias
 
-El diagrama corporal es [body-muscles](assets/licencias/NOTICE-body-muscles.txt) (Apache-2.0). El resto
+La geometría del diagrama corporal viene de dos librerías MIT ([aviso](assets/licencias/NOTICE-cuerpo-muscular.txt)). El resto
 del código, los iconos y las insignias son propios.

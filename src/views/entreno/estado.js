@@ -24,6 +24,12 @@ export function leerMin() { try { return localStorage.getItem(CLAVE_MIN) === "1"
 
 export function marcarMin(v) { try { if (v) localStorage.setItem(CLAVE_MIN, "1"); else localStorage.removeItem(CLAVE_MIN); } catch (e) {} }
 
+/** `{ tipo: "reps" }` si el catálogo dice que el ejercicio solo apunta repeticiones; `{}` en otro caso (peso y repeticiones). */
+export function tipoDeCatalogo(ejercicioId) {
+  const c = E.app.store.estado.catalogo.find((x) => x.id === ejercicioId);
+  return c && c.tipoAncla === "reps" ? { tipo: "reps" } : {};
+}
+
 export function nombreDe(id, porDefecto) { const c = E.app.store.estado.catalogo.find((x) => x.id === id); return c ? c.nombre : porDefecto || id; }
 
 export const contarHechas = (d) => d.ejercicios.reduce((a, e) => a + e.series.filter((s) => s.hecha).length, 0);

@@ -1,0 +1,10 @@
+assets/cuerpo-muscular.svg
+
+La geometría de las piezas procede de:
+  @mjcdev/react-body-highlighter — Copyright (c) 2022 ELABBASSI Hicham (MIT) — LICENSE-react-body-highlighter.txt
+  react-muscle-highlighter — Copyright (c) 2024 My Muscle Contributors (MIT) — LICENSE-react-muscle-highlighter.txt
+Ambas derivan de react-native-body-highlighter (HichamELBSI), también MIT.
+
+Cambios: las piezas se reasignan a los músculos de la app, se partieron unas pocas con un recorte (pectoral,
+deltoides, braquial y romboides) y se unieron las vistas frontal y trasera en un solo SVG. Lo genera
+tools/generar-cuerpo.mjs.

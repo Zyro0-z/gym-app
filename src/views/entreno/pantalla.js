@@ -5,7 +5,7 @@ import { icono } from "../../ui/iconos.js";
 import { barraTeclado } from "../../ui/teclado.js";
 import { atraparFoco } from "../../ui/capas.js";
 import { reloj, fechaCorta, capital } from "../../ui/textos.js";
-import { copiar, aTexto, vacia, leerMin, marcarMin, nombreDe } from "./estado.js";
+import { copiar, aTexto, vacia, leerMin, marcarMin, nombreDe, tipoDeCatalogo } from "./estado.js";
 import { pintarCuerpo } from "./ejercicios.js";
 import { finDescanso, pintarDescanso, elegirDescanso, alVolver, activarBloqueo, refrescarBloqueo } from "./descanso.js";
 import { terminar, cancelarEdicion, guardarEdicion } from "./revision.js";
@@ -64,7 +64,7 @@ export function borradorDeRutina(nombre) {
   return {
     rutina: r ? r.nombre : null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null, gimnasio: gimnasioActivo(E.app.store.estado.ajustes).id,
     ejercicios: r ? r.ejercicios.map((e) => Object.assign({ ejercicioId: e.ejercicioId, nombre: nombreDe(e.ejercicioId), objetivo: e.series || 3,
-      series: Array.from({ length: Math.max(1, e.series || 3) }, vacia) }, e.rpe ? { rpeObjetivo: e.rpe } : {})) : [],
+      series: Array.from({ length: Math.max(1, e.series || 3) }, vacia) }, tipoDeCatalogo(e.ejercicioId), e.rpe ? { rpeObjetivo: e.rpe } : {})) : [],
   };
 }
 

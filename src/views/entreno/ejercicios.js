@@ -8,7 +8,7 @@ import { fmt } from "../../core/formato.js";
 import { esRpe, rpeTxt } from "../../core/rpe.js";
 import { e1rmReciente, cargaParaRpe } from "../../core/prescripcion.js";
 import { elegirEjercicio } from "../selector.js";
-import { vacia, nombreDe, aTexto } from "./estado.js";
+import { vacia, nombreDe, aTexto, tipoDeCatalogo } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
 import { filaSerie, resaltarActual, resumenDe } from "./serie.js";
 import { descartar, notaSesion } from "./revision.js";
@@ -105,7 +105,7 @@ export function bloqueEjercicio(e, i) {
     ultimaNota ? h("div", { class: "ej-nota" }, h("b", null, "Última vez · "), ultimaNota) : null,
     e.nota ? h("div", { class: "ej-nota" }, e.nota) : null,
     h("div", { class: "series" },
-      h("div", { class: "fila-cab", "aria-hidden": "true" }, h("span", null, "Serie"), h("span", null, "Anterior"), h("span", null, "kg"), h("span", null, "Reps"), h("span", null, "RPE"), h("span", { class: "c-check" }, icono("check", { tam: 16, grosor: 2.4 }))),
+      h("div", { class: ["fila-cab", e.tipo === "reps" && "solo-reps"], "aria-hidden": "true" }, h("span", null, "Serie"), h("span", null, "Anterior"), e.tipo === "reps" ? null : h("span", null, "kg"), h("span", null, "Reps"), h("span", null, "RPE"), h("span", { class: "c-check" }, icono("check", { tam: 16, grosor: 2.4 }))),
       filas),
     h("div", { class: "fila-botones-serie" },
       h("button", { class: "btn-anadir-serie", onClick: () => { const ult = e.series[e.series.length - 1]; e.series.push(Object.assign(vacia(), ult ? { peso: ult.peso, tipo: ult.tipo === "calentamiento" ? "normal" : ult.tipo } : {})); seleccion(); guardarPronto(); pintarCuerpo(); } },
@@ -156,7 +156,7 @@ export async function anadirEjercicio() {
   if (!x || !E.M) return;
   const ant = sesionAnterior(x.ejercicioId);
   const n = ant ? Math.min(6, ant.e.series.length) : 3;
-  E.M.d.ejercicios.push({ ejercicioId: x.ejercicioId, nombre: x.nombre, objetivo: n, series: Array.from({ length: n }, vacia) });
+  E.M.d.ejercicios.push(Object.assign({ ejercicioId: x.ejercicioId, nombre: x.nombre, objetivo: n, series: Array.from({ length: n }, vacia) }, tipoDeCatalogo(x.ejercicioId)));
   guardarYa(); pintarCuerpo();
   requestAnimationFrame(() => { const u = E.M && E.M.cuerpo.querySelector(".ej:last-of-type"); if (u) u.scrollIntoView({ behavior: reducirMovimiento() ? "auto" : "smooth", block: "start" }); });
 }

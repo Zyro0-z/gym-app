@@ -179,7 +179,7 @@ el orden en que se guardaron las sesiones, igual que en la versión 1.
   umbrales: [{ rutina, maxDur, maxSerie }],
   objetivos: { seriesSemana: [{ grupo, min, max }], incrementos: [{ tipo, kg }] },
   cuerpo: { sexo: "h" | "m" | null, fases: [{ tipo: "bulk" | "cut" | "mantener", desde }] },
-  grupos: [{ nombre, color: { oscuro, claro } | null, regiones: ["chest-*"] }],
+  grupos: [{ nombre, color: { oscuro, claro } | null, regiones: ["pecho-*"] }],   // «<músculo>-*»: ids de región de assets/cuerpo-muscular.svg (los tokens del mapa antiguo, como «chest-*», se traducen al abrir)
   ligas: { activa, escala: [{ nombre, desde, hasta, ndiv }], puntos, margen, semCarga, semSeries, correccionPolea },
   estandares: { [slug]: [{ pc, niveles: [5] }] },
   copia: { at, sesiones } | null,
