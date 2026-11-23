@@ -24,7 +24,7 @@ document.addEventListener("pointerdown", prepararSonido, { once: true });
 async function arrancar() {
   aplicarApariencia(leerEspejoApariencia());
   let informe = null;
-  try { informe = await store.cargar({ tema: temaAntiguo() }); }
+  try { informe = await store.cargar(); }
   catch (e) {
     console.error(e);
     document.getElementById("app").replaceChildren(h("div", { class: "vacio", style: { paddingTop: "30vh" } },
@@ -46,8 +46,6 @@ async function arrancar() {
   await nav.iniciar(location.hash);
   marcarAvisos(nav);
   iniciarEntreno(ctx);
-  if (informe && informe.tipo === "migracion") toast("Datos actualizados al nuevo formato");
-  if (informe && informe.tipo === "rescate" && informe.sesiones) toast("Recuperadas " + informe.sesiones + " sesiones");
   store.pedirPersistencia();
   registrarSW();
   // Solo bajo Playwright, para las pruebas
@@ -55,7 +53,6 @@ async function arrancar() {
 }
 
 /** Preferencia de tema de la versión anterior, para conservarla al migrar. */
-function temaAntiguo() { try { return localStorage.getItem("gym-tema"); } catch (e) { return null; } }
 
 /** Punto rojo en Ajustes si hay problemas en los datos o toca hacer copia. */
 function marcarAvisos(nav) {

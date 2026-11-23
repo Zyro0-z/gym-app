@@ -1,11 +1,10 @@
 // Modelo grande para medir: las sesiones de la fixture sintética repetidas hacia atrás en el tiempo.
 // modeloGrande(10) ≈ 820 sesiones (la fixture tiene 82).
-import { desdeLegacy } from "../../src/migracion/index.js";
+import { readFileSync } from "node:fs";
 import { masDias } from "../../src/core/fechas.js";
-import { fixture } from "../golden/fixture.mjs";
 
 export function modeloGrande(copias = 10) {
-  const m = desdeLegacy(fixture());
+  const m = JSON.parse(readFileSync(new URL("../golden/modelo-sintetico.json", import.meta.url), "utf8"));
   const base = m.sesiones;
   const sesiones = [];
   for (let k = 0; k < copias; k++)

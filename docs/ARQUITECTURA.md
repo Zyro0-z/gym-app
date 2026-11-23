@@ -16,8 +16,7 @@
 | Capa | Qué hace | Puede importar |
 |---|---|---|
 | `core/` | cálculo **puro**: recibe datos y `hoy`, devuelve datos. Sin DOM, sin almacenamiento | solo `core/` |
-| `migracion/` | lectura del formato de la versión 1 y conversión al modelo (pura) | `core/` |
-| `data/` | modelo, IndexedDB, migraciones de esquema, copias, validación | `core/`, `migracion/` |
+| `data/` | modelo, IndexedDB, migraciones de esquema, copias, validación | `core/` |
 | `worker/` | Web Worker de módulo que ejecuta el análisis | `core/` |
 | `store.js` | estado en memoria, escrituras (primero IndexedDB), análisis vía Worker | `core/`, `data/` (y crea el Worker) |
 | `ui/` | sistema de diseño: tokens, componentes, navegación, gráficas, insignias | `core/` (solo utilidades de formato y fechas) |
@@ -25,7 +24,7 @@
 | `app.js` | arranque | todo |
 
 Las reglas se comprueban leyendo los imports de cada fichero (`tests/core/capas.test.mjs`): `core` no
-importa nada de `migracion` ni de ninguna capa superior; `ui` no conoce `views`, `data` ni el store;
+importa nada de ninguna capa superior; `ui` no conoce `views`, `data` ni el store;
 ningún fichero pasa de ~350 líneas (excepción justificada: `ui/componentes.css`, la hoja de todos los
 componentes; partirla añadiría peticiones sin ganar claridad).
 
@@ -86,7 +85,6 @@ src/
     comparar.js       dos periodos del mismo largo; % solo con base distinta de cero
     csv.js            CSV con BOM, «;» y coma decimal (series, pesajes, medidas)
     medidas.js        medidas corporales: validación, una por fecha, series para la gráfica
-  migracion/          formato de la versión 1: claves.js, lineas.js, config*.js, conversion.js, index.js
   worker/analisis.js  analizar en un Worker de módulo
   data/
     db.js             IndexedDB versionada (onupgradeneeded) y transacciones
@@ -120,11 +118,11 @@ src/
       bloques.js, entrenamiento.js, calidad.js, avanzado.js
 tests/
   core/*.test.mjs     node:test: núcleo, golden master, migración, esquema, capas, service worker…
-  golden/             generador y salida del dashboard anterior (sintético y, en local, seed)
+  golden/             generador y salida del dashboard anterior (sintético; el modelo ya convertido en modelo-sintetico.json)
   bench/              rendimiento del análisis con 820 sesiones
   e2e/*.mjs           Playwright (todas.mjs las lanza todas con un motor)
   webkit.sh           ejecuta una prueba con WebKit en un contenedor Ubuntu (docker)
-tools/                estampar-version.mjs (CI), make-seed.mjs, fixture-v2.mjs
+tools/                estampar-version.mjs (CI), fixture-v2.mjs, generar-cuerpo.mjs, auditoria-a11y.mjs
   auditoria-a11y.mjs  auditoría de accesibilidad con Playwright (npm run a11y; en CI)
   a11y-pagina.mjs     comprobaciones que se ejecutan dentro de la página (contraste, objetivos,
                       nombres, foco, texto grande)
@@ -193,45 +191,23 @@ el orden en que se guardaron las sesiones, igual que en la versión 1.
 
 1. Abre la base. La versión 2 añade el almacén `sesiones`; la versión de los datos va aparte, en
    `kv.schema`.
-2. Si `schema < 3` y existe alguna clave antigua (`sessions`, `templates`, `configs`, `settings`,
-   `library`, `draft`), calcula el plan con `planMigracion()`. Es puro y se prueba en node:
-   - los textos de configuración se leen una sola vez con las mismas reglas que la versión 1
-     (`src/migracion/`);
-   - de ellos salen el catálogo, las rutinas, los pesajes y los ajustes estructurados;
-   - `settings` y el tema de `localStorage` pasan a `ajustes.entreno` y `ajustes.apariencia`;
-   - el borrador antiguo se convierte;
-   - los errores y avisos de la configuración antigua quedan en `ajustes.migracion`.
-3. Todo se escribe en **una sola transacción** sobre `kv` y `sesiones`:
-   - `legacy` y `backup-esquema-v<n>` con el original íntegro;
-   - el modelo nuevo y `schema = 3`;
-   - las claves antiguas se retiran del uso (su contenido queda en `legacy`).
-
-   Si algo falla, IndexedDB deshace la transacción y la base queda exactamente como estaba.
-4. **Rescate.** Si después de migrar vuelve a aparecer `sessions` (lo escribió una pestaña con la
-   versión antigua), se añaden las sesiones que falten por su ruta y se guarda todo en
-   `rescate-<t>`.
+2. Si `schema === 3` (versión 2.0), `migrar3a4()` copia íntegro lo que había en `backup-esquema-v3` y en la
+   rotación de copias internas, completa los ajustes (las regiones del mapa antiguo pasan a las del mapa por
+   músculos) y fija `schema = 4`, todo en **una sola transacción**: si algo falla, IndexedDB la deshace y la base queda
+   como estaba.
+3. Los datos del formato anterior a la 2.0 (claves `sessions`, `templates`, `configs`…) ya no se convierten: el
+   convertidor se retiró y esas claves se dejan sin tocar.
 
 Pruebas:
 
-- `tests/core/migracion.test.mjs` (node), sobre el plan puro:
-  - `legacy` contiene el original byte a byte;
-  - el análisis tras migrar es igual al del golden master;
-  - se conservan ajustes, tema y borrador;
-  - instalación vacía;
-  - copias v1, v2 y seed.json; las copias más nuevas se rechazan;
-  - recordatorio de copia;
-  - rescate.
-- `tests/e2e/migracion-idb.mjs` (navegador), sobre IndexedDB real:
-  - de una base v1 al modelo nuevo;
-  - segunda apertura sin cambios;
-  - rescate;
-  - importar guardando antes lo que había.
+- `tests/core/copias.test.mjs` (node): copias nuevas y de la 2.0, rechazo de las más nuevas y de las de la
+  versión 1, recordatorio de copia, ajustes incompletos.
+- `tests/e2e/migracion-v2.mjs` (navegador): base IndexedDB real de la 2.0 → esquema 4, sin perder nada.
 
 **Copias.**
 
 - Exportar crea `{app:"gym", version:2, esquema:3, exportado, sesiones, catalogo, rutinas, pesajes, ajustes}`.
-- Importar acepta la versión 2, las copias antiguas (`version: 1`, que pasan por el mismo migrador) y
-  `seed.json`.
+- Importar acepta las versiones 2 y 3; las de la versión 1 se rechazan con un aviso.
 - Una copia de una versión más nueva se rechaza con un motivo claro.
 - Importar guarda antes los datos actuales en `respaldo-importacion`.
 
@@ -252,12 +228,11 @@ sin cambios en `tests/golden/legacy/` junto con su capa de compatibilidad y sus 
   toca;
 - guarda un JSON por conjunto y fecha.
 
-Hay dos conjuntos de datos:
+Hay un conjunto de datos:
 
 | Conjunto | Origen | Se publica | Fechas |
 |---|---|---|---|
-| `sintetico` | `tests/golden/fixture.mjs` | sí, no tiene datos personales | 7, de mayo de 2026 a enero de 2027 |
-| `seed` | `seed.json` | no (`.gitignore`) | 6, alrededor de los datos reales |
+| `sintetico` | `tests/golden/fixture.mjs` (formato antiguo, el que pasó por el dashboard original) y su conversión `modelo-sintetico.json` | sí, no tiene datos personales | 7, de mayo de 2026 a enero de 2027 |
 
 `sintetico` cubre lo que los datos reales aún no tienen: estancado, retroceso, inactivo, lb,
 calentamiento/drop/fallo, duración y temporizador, suma de lados, erratas, duraciones raras,

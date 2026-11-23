@@ -1,23 +1,18 @@
 // Repositorios: cargar y guardar el modelo. Toda escritura de varias partes es atómica.
 import { abrir, tx, leerKV, todasSesiones, escribirKV, ponerSesion, quitarSesion, plano } from "./db.js";
-import { ESQUEMA, CLAVES_ANTIGUAS, CLAVES_RESPALDO, planMigracion, rescatarSesiones, completarAjustes, convertirBorrador, instantanea } from "./modelo.js";
+import { ESQUEMA, CLAVES_RESPALDO, completarAjustes, instantanea } from "./modelo.js";
 import { guardarEspejo, leerEspejo } from "./espejo.js";
 
 /**
- * Abre la base, migra si hace falta (sin perder nada) y devuelve el estado completo.
- * `tema`: preferencia de tema antigua (localStorage), para conservarla al migrar.
+ * Abre la base, migra del esquema 3 al 4 si hace falta (sin perder nada) y devuelve el estado completo.
+ * Los datos del formato anterior a la 2.0 (claves «sessions», «templates»…) ya no se convierten: se dejan sin tocar.
  */
-export async function cargar({ tema = null } = {}) {
+export async function cargar() {
   await abrir();
   const schema = (await leerKV("schema")) || 1;
-  const viejo = {};
-  for (const k of CLAVES_ANTIGUAS) { const v = await leerKV(k); if (v !== undefined && v !== null) viejo[k] = v; }
-  const hayViejo = Object.keys(viejo).length > 0;
   let informe = null;
-  if (schema < 3 && hayViejo) informe = await migrar(Object.assign({ schema }, viejo), tema);
-  else if (schema === 3) informe = await migrar3a4();
+  if (schema === 3) informe = await migrar3a4();
   else if (schema < ESQUEMA) await escribirKV("schema", ESQUEMA);
-  else if (viejo.sessions && viejo.sessions.length) informe = await rescatar(viejo);
 
   const [sesiones, catalogo, rutinas, pesajes, medidas, ajustes, borrador] = await Promise.all([
     todasSesiones(), leerKV("catalogo"), leerKV("rutinas"), leerKV("pesajes"), leerKV("medidas"), leerKV("ajustes"), leerKV("borrador")]);
@@ -58,38 +53,6 @@ export async function migrar3a4(ahora = new Date().toISOString()) {
     const q = s.sesiones.getAll(); q.onsuccess = () => { datos.sesiones = q.result; listo(); };
   }).catch((e) => { throw error || e; });
   return { tipo: "esquema4", sesiones: n };
-}
-
-/** Migración de los datos antiguos en UNA transacción: o se escribe todo o nada. */
-async function migrar(viejo, tema) {
-  const p = planMigracion(viejo, { tema });
-  await tx(["kv", "sesiones"], "readwrite", (s) => {
-    s.kv.put(plano(p.legacy), "legacy");
-    s.kv.put(plano(p.legacy), "backup-esquema-v" + (viejo.schema || 1));
-    for (const ses of p.sesiones) s.sesiones.put(plano(ses));
-    s.kv.put(plano(p.catalogo), "catalogo");
-    s.kv.put(plano(p.rutinas), "rutinas");
-    s.kv.put(plano(p.pesajes), "pesajes");
-    s.kv.put(plano(p.ajustes), "ajustes");
-    s.kv.put(plano(p.borrador), "borrador");
-    for (const k of CLAVES_ANTIGUAS) s.kv.delete(k);
-    s.kv.put(ESQUEMA, "schema");
-  });
-  return { tipo: "migracion", sesiones: p.sesiones.length, errores: p.ajustes.migracion.errores.length };
-}
-
-/** Datos escritos por una versión antigua DESPUÉS de migrar: se añaden las sesiones que falten. */
-async function rescatar(viejo) {
-  const existentes = await todasSesiones();
-  const nuevas = rescatarSesiones(viejo.sessions, existentes);
-  const borradorViejo = convertirBorrador(viejo.draft);
-  await tx(["kv", "sesiones"], "readwrite", (s) => {
-    s.kv.put(plano({ fecha: new Date().toISOString(), datos: viejo }), "rescate-" + Date.now());
-    for (const ses of nuevas) s.sesiones.put(plano(ses));
-    if (borradorViejo) s.kv.put(plano(borradorViejo), "borrador");
-    for (const k of CLAVES_ANTIGUAS) s.kv.delete(k);
-  });
-  return { tipo: "rescate", sesiones: nuevas.length };
 }
 
 export const guardarSesion = (s) => ponerSesion(plano(s));

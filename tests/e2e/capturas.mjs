@@ -1,19 +1,17 @@
-// Recorre todas las pantallas con datos (seed.json si existe; si no, el conjunto sintético), hace
+// Recorre todas las pantallas con datos (el conjunto sintético), hace
 // capturas para el bucle visual y falla si hay errores de consola o textos rotos. Uso:
 //   node e2e/capturas.mjs <carpeta> [chromium|webkit] [pantallas separadas por comas] [solo390]
 import { chromium, webkit } from "playwright";
 import { mkdirSync, existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { servir } from "../serve.mjs";
-import { fixture } from "../golden/fixture.mjs";
+import { crearCopia } from "../../src/data/modelo.js";
 
 const dir = process.argv[2] || "shots", motor = process.argv[3] || "chromium", nav = { chromium, webkit }[motor];
 const solo = process.argv[4] && process.argv[4] !== "-" ? process.argv[4].split(",") : null;
 const tamanos = process.argv[5] ? [[390, 844]] : [[390, 844], [430, 932]];
 mkdirSync(dir, { recursive: true });
-const SEED = fileURLToPath(new URL("../../seed.json", import.meta.url));
-// Sin seed.json (CI, clones nuevos) usa los datos sintéticos del golden master
-const datos = existsSync(SEED) ? readFileSync(SEED, "utf8") : JSON.stringify(fixture());
+const datos = JSON.stringify(crearCopia(JSON.parse(readFileSync(new URL("../../tests/golden/modelo-sintetico.json", import.meta.url), "utf8")), "2026-11-15T12:00:00.000Z"));
 const srv = await servir(8767);
 const b = await nav.launch();
 let fallos = 0;

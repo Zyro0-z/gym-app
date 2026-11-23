@@ -33,7 +33,6 @@ contenido. Todo fichero nuevo va en `FICHEROS` (un test sigue los imports desde 
   pueden restaurar desde Ajustes › Datos. Viven en el mismo iPhone, así que no sustituyen a la copia
   en Archivos.
 - **Importar** valida el archivo entero (tipos, rangos, fechas, ids repetidos) antes de tocar nada.
-- `seed.json` es personal y no se publica (`.gitignore`).
 
 **Límites de la plataforma.** En iPhone, una web no puede escribir sola en iCloud Drive ni en Archivos,
 y sin servidor no hay sincronización entre dispositivos. La app no sincroniza: el camino soportado es

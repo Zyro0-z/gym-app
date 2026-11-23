@@ -1,11 +1,8 @@
 // Modelo de datos (esquema 4, docs/ESQUEMA.md) y conversiones puras (sin IndexedDB): se prueban en node.
-import { desdeLegacy, convertirSesiones } from "../migracion/index.js";
-import { canon } from "../core/nombres.js";
 import { validarCopia, textoProblemas } from "./esquema.js";
 
 export const ESQUEMA = 4;          // versión de los datos (1-2: formato antiguo; 3: modelo estructurado; 4: RPE, superseries, medidas…)
-export const VERSION_COPIA = 3;    // versión del fichero de copia de seguridad (acepta 1, 2 y 3)
-export const CLAVES_ANTIGUAS = ["sessions", "templates", "configs", "settings", "library", "draft"];
+export const VERSION_COPIA = 3;    // versión del fichero de copia de seguridad (acepta 2 y 3)
 
 export const GRUPOS_BASE = ["Pecho", "Espalda", "Pierna", "Hombro", "Bíceps", "Tríceps", "Core", "Antebrazo"];
 export const REGIONES_BASE = {
@@ -88,61 +85,6 @@ export function completarAjustes(a) {
   return out;
 }
 
-const TIPO_SERIE = { working: "normal", failure: "fallo", warmup: "calentamiento", drop: "descendente" };
-
-/** Borrador de la versión 1 (entrenamiento a medias) → borrador nuevo. */
-export function convertirBorrador(d) {
-  if (!d || d.editPath || !Array.isArray(d.exercises)) return null;
-  return {
-    rutina: d.template && d.template !== "Workout" ? d.template : null,
-    fecha: d.date || null,
-    inicio: Number(d.start) || Date.now(),
-    ejercicios: d.exercises.map((e) => ({
-      ejercicioId: canon(e.name), nombre: e.name, objetivo: Number(e.target) || 3,
-      series: (e.sets || []).map((s) => ({ peso: String(s.weight ?? ""), reps: String(s.reps ?? ""), tipo: TIPO_SERIE[s.setType] || "normal", hecha: !!s.done })),
-    })),
-    descanso: d.rest ? { fin: d.rest.fin, total: d.rest.total, avisado: !!d.rest.avisado } : null,
-  };
-}
-
-/** Ajustes de la versión 1 (settings + tema) sobre los ajustes convertidos de la configuración. */
-function mezclarSettings(ajustes, settings, tema) {
-  const a = completarAjustes(ajustes);
-  const s = settings || {};
-  if (Number(s.defaultRestDuration) > 0) a.entreno.descanso = Number(s.defaultRestDuration);
-  if (Array.isArray(s.restTimerPresets) && s.restTimerPresets.length) a.entreno.presets = s.restTimerPresets.map(Number).filter((n) => n > 0);
-  if (Number(s.weightStep) > 0) a.entreno.pasoPeso = Number(s.weightStep);
-  if (s.keepScreenAwake === false) a.entreno.pantallaEncendida = false;
-  if (s.backup && s.backup.at) a.copia = { at: s.backup.at, sesiones: Number(s.backup.sessions) || 0 };
-  if (tema === "oscuro" || tema === "claro" || tema === "auto") a.apariencia.tema = tema;
-  return a;
-}
-
-/**
- * Plan de migración del formato antiguo (claves de kv) al modelo nuevo. Puro.
- * Devuelve lo que hay que escribir; `legacy` es la copia íntegra que se conserva.
- */
-export function planMigracion(viejo, { ahora = new Date().toISOString(), tema = null } = {}) {
-  const datos = {};
-  for (const k of CLAVES_ANTIGUAS) datos[k] = viejo[k] === undefined ? null : viejo[k];
-  const m = desdeLegacy({ sessions: datos.sessions || [], templates: datos.templates || [], configs: datos.configs || {},
-    settings: datos.settings || {}, library: datos.library || [] });
-  const ajustes = mezclarSettings(m.ajustes, datos.settings, tema);
-  ajustes.migracion = { fecha: ahora, desde: viejo.schema || 1, sesiones: m.sesiones.length, errores: m.informe.errores, avisos: m.informe.avisos };
-  return {
-    legacy: { fecha: ahora, schema: viejo.schema || 1, datos },
-    sesiones: m.sesiones, catalogo: m.catalogo, rutinas: m.rutinas, pesajes: m.pesajes, ajustes,
-    borrador: convertirBorrador(datos.draft),
-  };
-}
-
-/** Sesiones antiguas que aparecieron después de migrar (otra versión abierta) → las que faltan. */
-export function rescatarSesiones(sessionsViejas, existentes) {
-  const rutas = new Set(existentes.map((s) => s.origen && s.origen.ruta).filter(Boolean));
-  const nuevas = (sessionsViejas || []).filter((s) => s && s.path && !rutas.has(s.path));
-  return convertirSesiones(nuevas).map((s, i) => Object.assign(s, { id: s.fecha + "-r" + Date.now().toString(36) + "-" + i }));
-}
-
 // ─────────── copias de seguridad ───────────
 
 export function crearCopia(estado, ahora = new Date().toISOString()) {
@@ -161,11 +103,7 @@ export function leerCopia(texto, { ahora = new Date().toISOString() } = {}) {
     if (problemas.length) throw new Error(textoProblemas(problemas));
     return { sesiones: o.sesiones, catalogo: o.catalogo, rutinas: o.rutinas, pesajes: o.pesajes, medidas: o.medidas || [], ajustes: completarAjustes(o.ajustes), borrador: null, origen: "v" + o.version };
   }
-  if (Array.isArray(o.sessions)) {
-    if (o.schema > 2) throw new Error("La copia es de una versión más nueva de la app.");
-    const p = planMigracion(o, { ahora });
-    return { sesiones: p.sesiones, catalogo: p.catalogo, rutinas: p.rutinas, pesajes: p.pesajes, medidas: [], ajustes: p.ajustes, borrador: null, origen: "v1" };
-  }
+  if (Array.isArray(o.sessions)) throw new Error("La copia es de una versión muy antigua de la app (anterior a la 2.0) y ya no se puede importar.");
   throw new Error("El archivo no contiene sesiones: no parece una copia de esta app.");
 }
 

@@ -7,13 +7,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile, readdir, access } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { desdeLegacy } from "../../src/migracion/index.js";
 import { analizar } from "../../src/core/analisis.js";
 import { canon } from "../../src/core/nombres.js";
 import { fmt, conSigno } from "../../src/core/formato.js";
 import { ddmm, numDia } from "../../src/core/fechas.js";
 import { rangoTxt } from "../../src/core/progresion.js";
-import { fixture } from "../golden/fixture.mjs";
 
 const RAIZ = fileURLToPath(new URL("../..", import.meta.url));
 const GOLDEN = RAIZ + "tests/golden/";
@@ -206,14 +204,14 @@ function normalizarGolden(G) {
   return R;
 }
 
-const conjuntos = [["sintetico", async () => fixture()]];
-if (await existe(RAIZ + "seed.json")) conjuntos.push(["seed", async () => JSON.parse(await readFile(RAIZ + "seed.json", "utf8"))]);
+// El modelo viene ya convertido del conjunto sintético (tests/golden/fixture.mjs, formato de la versión 1), que es el que
+// se pasó por el dashboard original para obtener el golden master. El convertidor del formato antiguo ya no está en la app.
+const conjuntos = [["sintetico", async () => JSON.parse(await readFile(GOLDEN + "modelo-sintetico.json", "utf8"))]];
 
 for (const [nombre, cargar] of conjuntos) {
   const dir = GOLDEN + nombre + "/";
   if (!(await existe(dir))) continue;
-  const datos = await cargar();
-  const modelo = desdeLegacy(datos);
+  const modelo = await cargar();
   for (const f of (await readdir(dir)).filter((x) => x.endsWith(".json")).sort()) {
     const fecha = f.slice(0, 10);
     test(`golden ${nombre} ${fecha}`, async () => {

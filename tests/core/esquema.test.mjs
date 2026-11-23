@@ -5,15 +5,13 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { validarCopia } from "../../src/data/esquema.js";
-import { crearCopia, leerCopia, planMigracion } from "../../src/data/modelo.js";
-import { fixture } from "../golden/fixture.mjs";
+import { crearCopia, leerCopia } from "../../src/data/modelo.js";
 
 const RAIZ = fileURLToPath(new URL("../..", import.meta.url));
-const buena = () => JSON.parse(JSON.stringify(crearCopia(planMigracion(fixture()), "2026-11-15T12:00:00.000Z")));
+const buena = () => JSON.parse(JSON.stringify(crearCopia(JSON.parse(readFileSync(new URL("../golden/modelo-sintetico.json", import.meta.url), "utf8")), "2026-11-15T12:00:00.000Z")));
 
-test("copias válidas: sintética y la real (seed.json) migradas y exportadas", () => {
+test("copia válida: la sintética exportada", () => {
   assert.deepEqual(validarCopia(buena()), []);
-  if (existsSync(RAIZ + "seed.json")) assert.deepEqual(validarCopia(crearCopia(planMigracion(JSON.parse(readFileSync(RAIZ + "seed.json", "utf8"))))), []);
 });
 
 const CASOS = [

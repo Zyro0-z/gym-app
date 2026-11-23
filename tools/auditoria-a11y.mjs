@@ -9,12 +9,12 @@
 // y, con texto grande (Dynamic Type de accesibilidad, 28 px de cuerpo), que nada se corta, se
 // solapa ni desborda en horizontal.
 // Uso: node tools/auditoria-a11y.mjs [chromium|webkit] [--fotos carpeta] [--solo grande|normal]
-// Sale con código 1 si hay incumplimientos. Datos: seed.json si existe; si no, los sintéticos.
+// Sale con código 1 si hay incumplimientos. Datos: los sintéticos del golden master.
 import { chromium, webkit } from "playwright";
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { servir } from "../tests/serve.mjs";
-import { fixture } from "../tests/golden/fixture.mjs";
+import { crearCopia } from "../src/data/modelo.js";
 import { instalar, auditarVista, auditarGrande, focoActual, focoAlPrincipio, ROLES_CON_NOMBRE } from "./a11y-pagina.mjs";
 
 const args = process.argv.slice(2);
@@ -22,8 +22,7 @@ const motor = args.find((a) => a === "chromium" || a === "webkit") || "chromium"
 const opt = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null; };
 const fotos = opt("--fotos"), solo = opt("--solo");
 if (fotos) mkdirSync(fotos, { recursive: true });
-const SEED = fileURLToPath(new URL("../seed.json", import.meta.url));
-const datos = existsSync(SEED) ? readFileSync(SEED, "utf8") : JSON.stringify(fixture());
+const datos = JSON.stringify(crearCopia(JSON.parse(readFileSync(new URL("../tests/golden/modelo-sintetico.json", import.meta.url), "utf8")), "2026-11-15T12:00:00.000Z"));
 const PUERTO = 8791;
 const srv = await servir(PUERTO);
 const nav = { chromium, webkit }[motor];

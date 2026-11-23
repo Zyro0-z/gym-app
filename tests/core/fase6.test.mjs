@@ -46,9 +46,8 @@ test("gráficas: resumen textual con extremos, último y tendencia", () => {
 test("ultimasSemanasRapido da lo mismo que ultimasSemanas", async () => {
   const { ultimasSemanas, ultimasSemanasRapido } = await import("../../src/core/semanal.js");
   const { analizar } = await import("../../src/core/analisis.js");
-  const { fixture } = await import("../golden/fixture.mjs");
-  const { desdeLegacy } = await import("../../src/migracion/index.js");
-  const A = analizar(desdeLegacy(fixture()), "2026-11-16");
+  const { readFileSync } = await import("node:fs");
+  const A = analizar(JSON.parse(readFileSync(new URL("../golden/modelo-sintetico.json", import.meta.url), "utf8")), "2026-11-16");
   for (const n of [8, 26, 52]) assert.deepEqual(ultimasSemanasRapido(A.C, A.sesiones, n), ultimasSemanas(A.C, A.sesiones, n));
   assert.ok(ultimasSemanasRapido(A.C, A.sesiones, 52).some((x) => x.vol > 0));
 });

@@ -1,16 +1,13 @@
 // El análisis que llega del Worker (aPlano → structuredClone → rehidratar) es igual al directo.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { analizar } from "../../src/core/analisis.js";
 import { aPlano, rehidratar } from "../../src/core/rehidratar.js";
-import { desdeLegacy } from "../../src/migracion/index.js";
-import { fixture } from "../golden/fixture.mjs";
 
 const RAIZ = fileURLToPath(new URL("../..", import.meta.url));
-const conjuntos = [["sintetico", desdeLegacy(fixture()), ["2026-07-08", "2026-11-15", "2027-01-10"]]];
-if (existsSync(RAIZ + "seed.json")) conjuntos.push(["seed", desdeLegacy(JSON.parse(readFileSync(RAIZ + "seed.json", "utf8"))), ["2026-10-28", "2026-11-15"]]);
+const conjuntos = [["sintetico", JSON.parse(readFileSync(RAIZ + "tests/golden/modelo-sintetico.json", "utf8")), ["2026-07-08", "2026-11-15", "2027-01-10"]]];
 
 // Comparación profunda que ignora funciones y la referencia `ref` (se restaura aparte)
 function igual(a, b, ruta, vistos = new Map()) {

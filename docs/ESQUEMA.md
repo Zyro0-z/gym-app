@@ -14,7 +14,7 @@ base sin error (`VersionError`) y nada se bloquea durante la actualización.
 
 | Datos (`kv.schema`) | Qué cambia |
 |---|---|
-| 1-2 | formato antiguo (textos «clave:: valor»); se migra con `src/migracion/` |
+| 1-2 | formato antiguo (textos «clave:: valor»); ya no se convierte |
 | 3 | modelo estructurado (versión 2.0 de la app) |
 | 4 | campos opcionales nuevos (RPE, superseries, nota de sesión, recuperación, RPE objetivo), medidas corporales y ajustes nuevos (versión 3.0) |
 
@@ -145,7 +145,7 @@ de una versión anterior siempre se leen bien.
 
 | Versión de copia | Esquema | Se acepta |
 |---|---|---|
-| 1 (y `seed.json`) | 1-2 | sí: pasa por el migrador de la versión 1 |
+| 1 (y `seed.json`) | 1-2 | no: «versión muy antigua» |
 | 2 | 3 | sí: los campos nuevos quedan vacíos |
 | 3 | 4 | sí |
 | > 3 | > 4 | no: «La copia es de una versión más nueva de la app» |
