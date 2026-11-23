@@ -34,6 +34,7 @@ base sin error (`VersionError`) y nada se bloquea durante la actualización.
   origen: { ruta, ... },                 // opcional: solo en sesiones migradas de la versión 1
   // esquema 4 (opcionales)
   nota: "Hombro molesto en el press",    // nota de la sesión entera
+  gimnasio: "principal",                 // opcional: id de ajustes.gimnasios donde se entrenó
   recuperacion: { sueno: 7.5, estres: 2, energia: 4 },   // sueño en horas (pasos de 0,5); estrés y energía de 1 a 5
 }
 ```
@@ -71,7 +72,7 @@ Cuentan para series, volumen y récords las de tipo `normal` y `fallo` (igual qu
 | Clave | Contenido |
 |---|---|
 | `schema` | número de esquema de los datos (4) |
-| `catalogo` | `[{id, nombre, grupo, unilateral, tipoAncla, tipoMaterial, incremento, rangoReps:{min,max}, top, estandar}]` |
+| `catalogo` | `[{id, nombre, grupo, unilateral, tipoAncla, tipoMaterial, incremento, rangoReps:{min,max}, top, estandar, modoCarga?, musculos?, notaFija?}]` — `modoCarga`: `"total"` (por defecto), `"lastre"` (carga = peso corporal + lo apuntado) o `"asistido"` (peso corporal − lo apuntado); `musculos`: `{p:[id], s:[id]}` con ids de `src/core/musculos.js` (principales y secundarios); `notaFija`: texto que sale en cada sesión |
 | `rutinas` | `[{id, nombre, ejercicios:[{ejercicioId, series, rpe?}]}]`; `rpe` (esquema 4) es el RPE objetivo |
 | `pesajes` | `[{fecha, kg}]` |
 | `medidas` | `[{fecha, cintura, …}]` (esquema 4, ver abajo) |
@@ -116,6 +117,7 @@ Todas las medidas son opcionales, en cm (número > 0). Una entrada por fecha.
   horario: { 1: "Torso A", 2: "Descanso", ..., 7: null },   // 1 = lunes
   bloques: [{ id, inicio, fin, tipo: "deload" | texto, grupos: [] }],
   umbrales: [{ rutina, maxDur, maxSerie }],
+  gimnasios: [{ id, nombre, barra, discos: [kg] }], gimnasioActivo: "id",   // vacío = un gimnasio implícito con entreno.barra/discos
   objetivos: { seriesSemana: [{ grupo, min, max }], incrementos: [{ tipo, kg }] },
   cuerpo: { sexo: "h" | "m" | null, fases: [{ tipo: "bulk" | "cut" | "mantener", desde }] },
   grupos: [{ nombre, color: { oscuro, claro } | null, regiones: ["chest-*"] }],

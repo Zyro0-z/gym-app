@@ -1,4 +1,5 @@
 // Modal a pantalla completa, barra minimizada, Wake Lock, guardado del borrador y cabecera.
+import { gimnasioActivo } from "../../core/gimnasios.js";
 import { h, poner, animar, reducirMovimiento } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
 import { barraTeclado } from "../../ui/teclado.js";
@@ -61,7 +62,7 @@ export function pintarBarraMin() {
 export function borradorDeRutina(nombre) {
   const r = nombre ? E.app.store.estado.rutinas.find((x) => x.nombre === nombre) : null;
   return {
-    rutina: r ? r.nombre : null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null,
+    rutina: r ? r.nombre : null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null, gimnasio: gimnasioActivo(E.app.store.estado.ajustes).id,
     ejercicios: r ? r.ejercicios.map((e) => Object.assign({ ejercicioId: e.ejercicioId, nombre: nombreDe(e.ejercicioId), objetivo: e.series || 3,
       series: Array.from({ length: Math.max(1, e.series || 3) }, vacia) }, e.rpe ? { rpeObjetivo: e.rpe } : {})) : [],
   };
@@ -70,7 +71,7 @@ export function borradorDeRutina(nombre) {
 /** Borrador que repite una sesión guardada: mismos ejercicios, series, cargas y RPE, sin marcar. */
 export function borradorDeSesion(s) {
   return {
-    rutina: s.rutina || null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null,
+    rutina: s.rutina || null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null, gimnasio: gimnasioActivo(E.app.store.estado.ajustes).id,
     ejercicios: s.ejercicios.map((e) => Object.assign({ ejercicioId: e.ejercicioId, nombre: e.nombre || nombreDe(e.ejercicioId), objetivo: e.series.length },
       e.tipo ? { tipo: e.tipo } : {}, e.grupoId ? { grupoId: e.grupoId } : {}, {
         series: e.series.filter((x) => x.hecha !== false).map((x) => Object.assign({ peso: aTexto(x.peso), reps: aTexto(x.reps), tipo: x.tipo || "normal", hecha: false },
@@ -108,7 +109,7 @@ export function editarSesion(s) {
   E.M = {
     modo: "edicion", id: s.id, original: s, abiertos: new WeakSet(),
     d: { rutina: s.rutina, fecha: s.fecha, inicioTxt: s.inicio || "", finTxt: s.fin || "", descanso: null,
-      nota: s.nota || "", recuperacion: s.recuperacion || null,
+      nota: s.nota || "", recuperacion: s.recuperacion || null, gimnasio: s.gimnasio,
       ejercicios: s.ejercicios.map((e) => ({ ejercicioId: e.ejercicioId, nombre: e.nombre || nombreDe(e.ejercicioId), tipo: e.tipo, nota: e.nota, grupoId: e.grupoId,
         series: e.series.map((x) => Object.assign({}, x, { peso: aTexto(x.peso), reps: aTexto(x.reps), hecha: x.hecha !== false })) })) },
   };

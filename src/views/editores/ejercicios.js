@@ -8,6 +8,7 @@ import { canon, sinTildes } from "../../core/nombres.js";
 import { capital } from "../../ui/textos.js";
 import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
 import { kgTxt, usosEjercicio, renombrarEjercicio } from "./comun.js";
+import { MUSCULOS, nombreMusculo, baseQueFalta } from "../../core/musculos.js";
 
 /* ---------- Catálogo de ejercicios ---------- */
 
@@ -37,7 +38,17 @@ export function vistaEjercicios(_p, app) {
   return {
     titulo: "Ejercicios",
     derecha: () => [h("button", { class: "btn-barra", "aria-label": "Nuevo ejercicio", onClick: crear }, icono("mas"))],
-    render(c) { poner(c, h("div", { class: "seccion" }, buscador), resultados); pintar(); },
+    render(c) {
+      const faltan = baseQueFalta(store.estado.catalogo).length;
+      poner(c, h("div", { class: "seccion" }, buscador), resultados,
+        faltan ? seccion({ pie: "Añade ejercicios habituales con su grupo, material y músculos (principales y secundarios) ya rellenados. No toca los que ya tienes." },
+          lista([celda({ titulo: "Añadir ejercicios comunes", sub: faltan + " disponibles", estilo: "accion", alPulsar: async () => {
+            const nuevos = baseQueFalta(store.estado.catalogo);
+            await store.guardarCatalogo([...store.estado.catalogo, ...nuevos.map((x) => JSON.parse(JSON.stringify(x)))]);
+            app.toast(plural(nuevos.length, "ejercicio añadido", "ejercicios añadidos")); this.render(c); pintar();
+          } })])) : null);
+      pintar();
+    },
   };
 }
 vistaEjercicios.pestana = "ajustes";
@@ -94,6 +105,11 @@ export function vistaEjercicioCat([id], app) {
           celda({ titulo: "Medida", valor: e.tipoAncla === "duracion" ? "Tiempo" : e.tipoAncla === "reps" ? "Solo repeticiones" : "Peso y repeticiones", chevron: true,
             alPulsar: async () => { const v = await opciones("Qué se apunta en cada serie", [{ texto: "Peso y repeticiones", valor: "peso" }, { texto: "Solo repeticiones", valor: "reps" }, { texto: "Tiempo", valor: "duracion" }]); if (v) guardar((x) => { x.tipoAncla = v; }); } }),
         ])),
+        seccion({ cab: "Carga y músculos", pie: "Lastre: lo que apuntas se suma a tu peso corporal (dominadas, fondos). Asistido: se resta (máquina de ayuda). Se usa el último pesaje anterior a la sesión. Los músculos alimentan el volumen por músculo y el mapa corporal." }, lista([
+          ...(e.tipoAncla === "peso" || !e.tipoAncla ? [celda({ titulo: "Carga", valor: e.modoCarga === "lastre" ? "Peso corporal + lastre" : e.modoCarga === "asistido" ? "Peso corporal − ayuda" : "Peso apuntado", chevron: true,
+            alPulsar: async () => { const v = await opciones("Qué significa el peso que apuntas", [{ texto: "Peso apuntado (barra, mancuernas, máquina)", valor: "total" }, { texto: "Peso corporal + lastre", valor: "lastre" }, { texto: "Peso corporal − ayuda", valor: "asistido" }]); if (v) guardar((x) => { if (v === "total") delete x.modoCarga; else x.modoCarga = v; }); } })] : []),
+          celda({ titulo: "Músculos", valor: musculosTxt(e), chevron: true, alPulsar: () => editarMusculos(app, e, guardar, () => this.render(c)) }),
+        ])),
         seccion({ cab: "Progresión", pie: "Con rango, la app te dice cuándo subir el peso: cuando todas las series llegan al máximo. «Solo la primera serie» aplica el rango a la serie más pesada." }, lista([
           celda({ titulo: "Rango de repeticiones", control: interruptor(!!e.rangoReps, (v) => guardar((x) => { x.rangoReps = v ? { min: 8, max: 12 } : null; if (!v) x.top = false; }), "Rango de repeticiones") }),
           ...(e.rangoReps ? [
@@ -124,3 +140,31 @@ export function vistaEjercicioCat([id], app) {
   };
 }
 vistaEjercicioCat.pestana = "ajustes";
+
+const musculosTxt = (e) => {
+  const m = e.musculos;
+  if (!m || (!m.p.length && !m.s.length)) return "Sin asignar";
+  return m.p.map(nombreMusculo).slice(0, 2).join(", ") + (m.p.length > 2 ? " +" + (m.p.length - 2) : "") + (m.s.length ? " · " + m.s.length + " secund." : "");
+};
+
+/** Un toque cambia cada músculo: ninguno → principal → secundario → ninguno. */
+function editarMusculos(app, e, guardar, alCerrar) {
+  const est = new Map();
+  for (const id of (e.musculos && e.musculos.p) || []) est.set(id, "p");
+  for (const id of (e.musculos && e.musculos.s) || []) est.set(id, "s");
+  const ROT = { undefined: "p", p: "s", s: undefined };
+  app.abrirHoja({
+    titulo: "Músculos", alturas: ["grande"], cancelar: "Cancelar",
+    accion: { texto: "Guardar", alPulsar: async () => {
+      const p = MUSCULOS.filter((m) => est.get(m.id) === "p").map((m) => m.id), s = MUSCULOS.filter((m) => est.get(m.id) === "s").map((m) => m.id);
+      await guardar((x) => { if (p.length || s.length) x.musculos = { p, s }; else delete x.musculos; });
+      alCerrar();
+    } },
+    render(c) {
+      const pintar = () => poner(c, seccion({ pie: "Principal: cuenta como una serie completa. Secundario: cuenta una fracción." }, lista(MUSCULOS.map((m) => celda({ titulo: m.nombre, sub: m.grupo,
+        valor: est.get(m.id) === "p" ? "Principal" : est.get(m.id) === "s" ? "Secundario" : "—",
+        alPulsar: () => { const n = ROT[est.get(m.id)]; if (n) est.set(m.id, n); else est.delete(m.id); pintar(); } })))));
+      pintar();
+    },
+  });
+}

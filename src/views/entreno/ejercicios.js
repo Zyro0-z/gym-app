@@ -12,7 +12,7 @@ import { filaSerie, resaltarActual, resumenDe } from "./serie.js";
 import { descartar, notaSesion } from "./revision.js";
 import { celdaRecuperacion } from "./recuperacion.js";
 import { E } from "./estado.js";
-import { sugerenciaDe, aplicarSugerencia, repetirUltima, posicionSuperserie, unirConSiguiente, separarDeSuperserie, limpiarGrupos, calculadoraDiscos } from "./herramientas.js";
+import { sugerenciaDe, aplicarSugerencia, repetirUltima, posicionSuperserie, unirConSiguiente, separarDeSuperserie, limpiarGrupos, calculadoraDiscos, anadirCalentamiento } from "./herramientas.js";
 
 export function sesionAnterior(ejercicioId) {
   const fechaTope = E.M.modo === "edicion" ? E.M.d.fecha : "9999";
@@ -111,6 +111,7 @@ export async function menuEjercicio(i) {
   if (i < ejs.length - 1 && !(e.grupoId && ejs[i + 1].grupoId === e.grupoId)) op.push({ texto: "Unir con el siguiente", valor: "unir" });
   if (posicionSuperserie(ejs, i)) op.push({ texto: "Separar de la superserie", valor: "separar" });
   if (!e.tipo || e.tipo === "peso") op.push({ texto: "Calculadora de discos", valor: "discos" });
+  if (E.M.modo === "entreno" && (!e.tipo || e.tipo === "peso") && !e.series.some((s) => s.tipo === "calentamiento")) op.push({ texto: "Generar calentamiento", valor: "calentar" });
   if (i > 0) op.push({ texto: "Subir", valor: "subir" });
   if (i < E.M.d.ejercicios.length - 1) op.push({ texto: "Bajar", valor: "bajar" });
   op.push({ texto: "Quitar ejercicio", valor: "quitar", peligro: true });
@@ -123,6 +124,7 @@ export async function menuEjercicio(i) {
   else if (r === "nota") return editarNota(e);
   else if (r === "notafija") return editarNotaFija(e);
   else if (r === "discos") return calculadoraDiscos(e);
+  else if (r === "calentar") { if (!anadirCalentamiento(e)) { E.app.toast("Pon antes el peso de la primera serie de trabajo", { icono: null }); return; } }
   else if (r === "unir") unirConSiguiente(E.M.d.ejercicios, i);
   else if (r === "separar") separarDeSuperserie(E.M.d.ejercicios, i);
   else if (r === "subir" || r === "bajar") { const k = r === "subir" ? i - 1 : i + 1; [E.M.d.ejercicios[i], E.M.d.ejercicios[k]] = [E.M.d.ejercicios[k], E.M.d.ejercicios[i]]; }

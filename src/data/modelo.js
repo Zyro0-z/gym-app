@@ -24,6 +24,7 @@ export function ajustesBase() {
       barra: 20, discos: [25, 20, 15, 10, 5, 2.5, 1.25, 0.5],        // calculadora de discos
       controlesBloqueo: false,                                        // Media Session (experimental)
       push: { activo: false, url: "" } },                             // aviso por un servidor propio
+    gimnasios: [], gimnasioActivo: null,                                // perfiles de gimnasio (barra y discos); vacío = uno implícito
     horario: { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null, 7: null },
     bloques: [], umbrales: [],
     objetivos: { seriesSemana: [], incrementos: [{ tipo: "máquina", kg: 2.5 }, { tipo: "polea", kg: 2.5 }, { tipo: "mancuerna", kg: 2 }, { tipo: "barra", kg: 2.5 }] },

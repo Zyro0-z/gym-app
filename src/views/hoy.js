@@ -15,6 +15,7 @@ import { nuevaRutina } from "./editores.js";
 import { programarDescarga, posponerDescarga } from "./fatiga.js";
 import { mostrarInstalar, marcarVisto } from "../ui/instalar.js";
 import { propuestaDescarga } from "../core/descarga.js";
+import { gimnasiosDe, gimnasioActivo } from "../core/gimnasios.js";
 
 export function vistaHoy(_p, app) {
   const { store } = app;
@@ -121,6 +122,11 @@ function tarjetaHoy(A, est, app) {
     h("h2", { class: "t-title1", style: { margin: "2px 0 4px" } }, titulo),
     linea ? h("div", { class: "t-subhead c-2" }, linea) : null,
     extra ? h("div", { style: { marginTop: "8px" } }, extra) : null,
+    gimnasiosDe(est.ajustes).length > 1 ? h("button", { class: "chip-gimnasio", "aria-label": "Gimnasio: " + gimnasioActivo(est.ajustes).nombre + ". Cambiar", onClick: async () => {
+      const l = gimnasiosDe(est.ajustes), act = gimnasioActivo(est.ajustes);
+      const r = await app.hojaAcciones({ mensaje: "¿Dónde entrenas?", opciones: l.map((x) => ({ texto: x.nombre + (x.id === act.id ? " · actual" : ""), valor: x.id })) });
+      if (r) await app.store.guardarAjustes((a) => { a.gimnasioActivo = r; }, { analitico: false });
+    } }, icono("ubicacion", { tam: 14 }), h("span", null, gimnasioActivo(est.ajustes).nombre)) : null,
     accion ? h("div", { style: { marginTop: "14px" } }, accion, otra) : null));
 }
 

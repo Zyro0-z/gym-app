@@ -9,7 +9,7 @@ export const epley = (w, r) => (w <= 0 || r <= 0 ? 0 : r === 1 ? w : w * (1 + r 
 export const pocoFiable = (reps) => Number(reps) > REPS_UMBRAL_FIABILIDAD_1RM;
 
 const CUENTA = { normal: true, fallo: true };
-const TIPO_EJ = { peso: "weight", duracion: "duration", temporizador: "timer" };
+const TIPO_EJ = { peso: "weight", reps: "reps", duracion: "duration", temporizador: "timer" };
 
 function umbralesDe(C, rutina) {
   const u = rutina ? C.umbrales.get(canon(rutina)) : null;
@@ -49,14 +49,20 @@ export function leerSesiones(C) {
       const tipoEj = TIPO_EJ[ex.tipo || (cat && cat.tipoAncla) || "peso"] || ex.tipo;
       const unilateral = C.unilateral(canon(nombre));
       const lados = unilateral ? 2 : 1;
+      // Peso corporal: con «lastre» la carga del sistema es el peso corporal + el lastre; con «asistido», el peso corporal − la ayuda.
+      // Sin ningún pesaje conocido no hay carga calculable y la serie cuenta solo como serie (sin 1RM ni volumen).
+      const modo = (cat && cat.modoCarga) || "total";
+      const bw = modo === "total" ? null : (C.pesoEn(s.fecha) || (C.peso.registros || [])[0] || null);
+      const cargaDe = (peso) => (modo === "lastre" ? (bw ? bw.kg + peso : 0) : modo === "asistido" ? (bw ? Math.max(0, bw.kg - peso) : 0) : peso);
       const sets = [];
       for (const st of ex.series || []) {
         if (st.hecha === false) continue;
         const tipo = st.tipo || "normal";
-        const segundos = Number(st.segundos) || 0, peso = Number(st.peso) || 0, reps = Number(st.reps) || 0;
+        const segundos = Number(st.segundos) || 0, pesoAnotado = Number(st.peso) || 0, reps = Number(st.reps) || 0;
+        const peso = cargaDe(pesoAnotado);
         const paraSeries = !!CUENTA[tipo] && (tipoEj === "duration" ? segundos > 0 : reps > 0);
         const paraPR = paraSeries && tipoEj !== "duration" && peso > 0 && reps > 0;
-        sets.push({ peso, reps, segundos, tipo, tipoEj, paraSeries, paraPR, unilateral,
+        sets.push({ peso, reps, segundos, tipo, tipoEj, paraSeries, paraPR, unilateral, ...(modo === "total" ? {} : { modoCarga: modo, anotado: pesoAnotado }),
           volumen: paraPR ? peso * reps * lados : 0, oneRM: paraPR ? epley(peso, reps) : 0 });
         if (paraSeries) { series += 1; volumen += paraPR ? peso * reps * lados : 0; if (!paraPR) sinPeso += 1; }
         else descartadas += 1;

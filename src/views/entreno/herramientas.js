@@ -4,35 +4,14 @@ import { h, poner } from "../../ui/dom.js";
 import { seccion, lista, celda } from "../../ui/controles.js";
 import { seleccion } from "../../ui/haptica.js";
 import { leerNumero, fmt } from "../../core/formato.js";
-import { CHIPS_RPE, esRpe, rpeTxt } from "../../core/rpe.js";
+import { esRpe } from "../../core/rpe.js";
 import { calcularDiscos, agrupar } from "../../core/discos.js";
+import { gimnasioActivo } from "../../core/gimnasios.js";
+import { generarCalentamiento } from "../../core/calentamiento.js";
 import { sugerirCarga } from "../../core/sugerencia.js";
 import { E, aTexto, vacia } from "./estado.js";
 
 const kgTxt = (v) => fmt(v, Number.isInteger(v) ? 0 : v * 10 === Math.round(v * 10) ? 1 : 2);
-
-/* ---------- RPE ---------- */
-
-/** Hoja con los chips de RPE. Resuelve con el número elegido, null para quitarlo o undefined si se cancela. */
-export function elegirRpe(actual, objetivo) {
-  return new Promise((resolver) => {
-    let hecho = false;
-    const fin = (v) => { if (hecho) return; hecho = true; resolver(v); };
-    E.app.abrirHoja({
-      titulo: "RPE", alturas: ["media"], cancelar: "Cancelar", alCerrar: () => fin(undefined),
-      render(c) {
-        const chips = h("div", { class: "chips-rpe", role: "radiogroup", "aria-label": "RPE de la serie" },
-          CHIPS_RPE.map((v) => h("button", { class: ["chip-rpe", v === actual && "activo", v === objetivo && "objetivo"], role: "radio", "aria-checked": String(v === actual),
-            "aria-label": "RPE " + rpeTxt(v) + (v === objetivo ? ", objetivo" : ""), onClick: () => { seleccion(); fin(v); E.app.cerrarHoja(); } }, rpeTxt(v))));
-        poner(c,
-          h("div", { class: "seccion" }, chips,
-            h("p", { class: "seccion-pie" }, "Esfuerzo percibido: 10 es el fallo; cada punto menos es una repetición más en reserva (RPE 8 = te quedaban 2)." +
-              (esRpe(objetivo) ? " Objetivo de la rutina: " + rpeTxt(objetivo) + "." : ""))),
-          esRpe(actual) ? seccion({}, lista([celda({ titulo: "Quitar el RPE", estilo: "destructiva", alPulsar: () => { fin(null); E.app.cerrarHoja(); } })])) : null);
-      },
-    });
-  });
-}
 
 /* ---------- Sugerencia de carga ---------- */
 
@@ -116,7 +95,7 @@ export function limpiarGrupos(ejercicios) {
 /* ---------- Calculadora de discos ---------- */
 
 export function calculadoraDiscos(e) {
-  const aj = E.app.store.estado.ajustes.entreno;
+  const aj = gimnasioActivo(E.app.store.estado.ajustes);
   const ultimo = [...e.series].reverse().find((s) => leerNumero(s.peso) > 0);
   let total = ultimo ? leerNumero(ultimo.peso) : (aj.barra || 20) + 40;
   const campo = h("input", { class: "campo-fila num", type: "text", inputmode: "decimal", autocomplete: "off", value: aTexto(total), "aria-label": "Peso total en kg",
@@ -129,7 +108,7 @@ export function calculadoraDiscos(e) {
     poner(res,
       h("div", { class: "discos-vista", "aria-hidden": "true" },
         h("span", { class: "discos-barra" }), r.porLado.map((d) => h("span", { class: "disco", style: { "--alto": Math.round(28 + 52 * Math.min(1, d / 25)) + "px" } }, kgTxt(d)))),
-      seccion({ cab: "Por lado", pie: r.falta > 0 ? "Con tus discos llegas a " + kgTxt(r.logrado) + " kg; faltan " + kgTxt(r.falta) + " kg." : "Barra de " + kgTxt(aj.barra ?? 20) + " kg. Se cambian en Ajustes › Entrenamiento." },
+      seccion({ cab: "Por lado", pie: r.falta > 0 ? "Con tus discos llegas a " + kgTxt(r.logrado) + " kg; faltan " + kgTxt(r.falta) + " kg." : "Barra de " + kgTxt(aj.barra ?? 20) + " kg en «" + aj.nombre + "». Se cambian en Ajustes › Entrenamiento." },
         lista(grupos.length ? grupos.map((g) => celda({ titulo: kgTxt(g.kg) + " kg", valor: "× " + g.n })) : [celda({ titulo: "Solo la barra" })])));
   };
   campo.addEventListener("input", () => { const v = leerNumero(campo.value); total = Number.isFinite(v) ? v : 0; pintar(); });
@@ -137,4 +116,20 @@ export function calculadoraDiscos(e) {
     titulo: "Discos", alturas: ["grande"], cancelar: "Cerrar",
     render(c) { poner(c, seccion({}, lista([celda({ titulo: "Peso total", control: h("span", { class: "fila", style: { gap: "6px" } }, campo, h("span", { class: "c-2" }, "kg")) })])), res); pintar(); },
   });
+}
+
+/** Inserta las series de aproximación antes de las de trabajo. Devuelve cuántas añadió (0 si no hay peso de trabajo o ya hay calentamiento). */
+export function anadirCalentamiento(e) {
+  if (e.series.some((s) => s.tipo === "calentamiento")) return 0;
+  const cat = E.app.store.estado.catalogo.find((x) => x.id === e.ejercicioId);
+  const primera = e.series.find((s) => leerNumero(s.peso) > 0);
+  const sug = sugerenciaDe(e.ejercicioId);
+  const trabajo = primera ? leerNumero(primera.peso) : sug ? sug.peso : 0;
+  if (!(trabajo > 0)) return 0;
+  const g = gimnasioActivo(E.app.store.estado.ajustes);
+  const barra = cat && String(cat.tipoMaterial || "").toLowerCase() === "barra";
+  const paso = (cat && cat.incremento > 0 ? cat.incremento : 0) || E.app.store.estado.ajustes.entreno.pasoPeso || 2.5;
+  const w = generarCalentamiento(trabajo, barra ? { barra: g.barra, discos: g.discos, paso } : { paso });
+  e.series.unshift(...w.map((x) => ({ peso: aTexto(x.peso), reps: String(x.reps), tipo: "calentamiento", hecha: false })));
+  return w.length;
 }

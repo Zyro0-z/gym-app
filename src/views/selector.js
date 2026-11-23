@@ -4,8 +4,9 @@ import { icono } from "../ui/iconos.js";
 import { seccion, lista, celda } from "../ui/controles.js";
 import { canon, sinTildes } from "../core/nombres.js";
 import { colorGrupo } from "../ui/tema.js";
+import { conBase } from "../core/musculos.js";
 
-export const nuevoEjercicio = (nombre, grupo) => ({ id: canon(nombre), nombre: nombre.trim(), grupo: grupo || null, unilateral: false, tipoAncla: "peso",
+export const nuevoEjercicio = (nombre, grupo) => conBase({ id: canon(nombre), nombre: nombre.trim(), grupo: grupo || null, unilateral: false, tipoAncla: "peso",
   tipoMaterial: null, incremento: null, rangoReps: null, top: false, estandar: null });
 
 /** Devuelve { ejercicioId, nombre } o null si se cierra sin elegir. */

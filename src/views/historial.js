@@ -1,4 +1,5 @@
 // Historial: «¿qué hice?». Mapa de calor del mes y la lista de sesiones por meses.
+import { gimnasiosDe, nombreGimnasio } from "../core/gimnasios.js";
 import { esRpe, rpeTxt } from "../core/rpe.js";
 import { resumenRecuperacion } from "./entreno/recuperacion.js";
 import { h, poner } from "../ui/dom.js";
@@ -83,7 +84,7 @@ export function vistaSesion([id], app) {
         return null;
       };
       const cab = h("div", { class: "seccion" }, h("div", { class: "t-title2" }, capital(fechaCorta(s.fecha, hoy)) + (s.inicio ? " · " + s.inicio : "")),
-        h("div", { class: "t-subhead c-2", style: { marginTop: "2px" } }, lineaSesion(s)));
+        h("div", { class: "t-subhead c-2", style: { marginTop: "2px" } }, lineaSesion(s) + (s.gimnasio && gimnasiosDe(store.estado.ajustes).length > 1 && nombreGimnasio(store.estado.ajustes, s.gimnasio) ? " · " + nombreGimnasio(store.estado.ajustes, s.gimnasio) : "")));
       const ejs = s.ejercicios.map((e) => {
         const p = previa(e.ejercicioId);
         const ss = e.grupoId ? s.ejercicios.filter((x) => x.grupoId === e.grupoId) : [];

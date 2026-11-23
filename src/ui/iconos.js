@@ -52,6 +52,7 @@ const T = {
   "igual": '<path d="M4.5 12h15M14 7l5.5 5-5.5 5"/>',
   opciones: '<g fill="currentColor" stroke="none"><circle cx="5.5" cy="12" r="1.75"/><circle cx="12" cy="12" r="1.75"/><circle cx="18.5" cy="12" r="1.75"/></g>',
   "opciones-circulo": '<circle cx="12" cy="12" r="9"/><g fill="currentColor" stroke="none"><circle cx="7.75" cy="12" r="1.25"/><circle cx="12" cy="12" r="1.25"/><circle cx="16.25" cy="12" r="1.25"/></g>',
+  ubicacion: '<path d="M12 20.5s-6-5.2-6-10.4a6 6 0 0112 0c0 5.2-6 10.4-6 10.4z"/><circle cx="12" cy="10" r="2.2"/>',
   papelera: '<path d="M4.5 6.5h15M9.5 6.5V4.25h5V6.5M6.5 6.5l1 13.25h9l1-13.25M10 10.5v5.75M14 10.5v5.75"/>',
   arrastrar: '<path d="M5 8.5h14M5 12h14M5 15.5h14"/>',
   compartir: '<path d="M12 3.5v11M8 7.25l4-3.75 4 3.75"/><path d="M8.5 10.5H6.75A1.75 1.75 0 0 0 5 12.25v6.5c0 .97.78 1.75 1.75 1.75h10.5c.97 0 1.75-.78 1.75-1.75v-6.5c0-.97-.78-1.75-1.75-1.75H15.5"/>',

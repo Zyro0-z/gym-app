@@ -12,6 +12,7 @@ import { mostrarResumen } from "./resumen.js";
 import { E } from "./estado.js";
 import { esRpe } from "../../core/rpe.js";
 import { posicionSuperserie } from "./herramientas.js";
+import { diffRutina } from "../../core/rutinas.js";
 
 export async function descartar() {
   const ok = await E.app.confirmar("¿Descartar el entrenamiento?", "Se perderán las series de esta sesión.", "Descartar", true);
@@ -40,6 +41,7 @@ export function aSesion(d, { id, fecha, inicio, fin, conSinMarcar = false }) {
   // Una superserie que se queda con un solo ejercicio (los demás sin series) deja de serlo
   for (let i = 0; i < ejercicios.length; i++) if (ejercicios[i].grupoId && !posicionSuperserie(ejercicios, i)) delete ejercicios[i].grupoId;
   const ses = { id, rutina: d.rutina || null, fecha, inicio: inicio || null, fin: fin || null, duracion, ejercicios };
+  if (d.gimnasio) ses.gimnasio = d.gimnasio;
   if (d.nota && d.nota.trim()) ses.nota = d.nota.trim();
   if (d.recuperacion && Object.values(d.recuperacion).some((v) => v != null)) ses.recuperacion = d.recuperacion;
   return ses;
@@ -59,11 +61,16 @@ export async function terminar() {
   const sinMarcar = d.ejercicios.reduce((a, e) => a + e.series.filter((s) => !s.hecha && leerNumero(s.reps) > 0).length, 0);
   const durTxt = () => { const s = aSesion(d, Object.assign({ id: "x" }, r)); return s.duracion != null ? minutos(s.duracion) : "—"; };
   let durEl = null;
+  const rutinaBase = d.rutina ? E.app.store.estado.rutinas.find((x) => x.nombre === d.rutina) : null;
+  const cambioRutina = E.M.modo === "entreno" ? diffRutina(rutinaBase, d.ejercicios.map((e) => ({ ejercicioId: e.ejercicioId, series: e.series })), nombreDe) : null;
+  let actualizarRutina = false;
   E.app.abrirHoja({
     titulo: "Terminar", cancelar: "Seguir", alturas: ["grande"],
     accion: { texto: "Guardar", alPulsar: async () => {
       const ses = aSesion(d, Object.assign({ id: idSesion(r.fecha, d.inicio) }, r));
       await E.app.store.guardarSesion(ses);
+      if (actualizarRutina && cambioRutina && rutinaBase)
+        await E.app.store.guardarRutinas(E.app.store.estado.rutinas.map((x) => (x.id === rutinaBase.id ? Object.assign({}, x, { ejercicios: cambioRutina.ejercicios }) : x)));
       await E.app.store.guardarBorrador(null);
       cerrarModal(true);
       exito();
@@ -85,6 +92,8 @@ export async function terminar() {
           return celda({ titulo: e.nombre, valor: n + " de " + e.series.length });
         }))),
         seccion({ cab: "Nota de la sesión" }, h("div", { class: "celda-area" }, notaSesion(d))),
+        cambioRutina ? seccion({ cab: "Rutina «" + rutinaBase.nombre + "»", pie: cambioRutina.cambios.join(" · ") }, lista([
+          celda({ titulo: "Actualizar la rutina con estos cambios", control: interruptor(false, (v) => { actualizarRutina = v; }, "Actualizar la rutina con estos cambios") })])) : null,
         sinMarcar ? seccion({ pie: "Hay " + plural(sinMarcar, "serie sin marcar", "series sin marcar") + " con repeticiones. Por defecto no se guardan." }, lista([
           celda({ titulo: "Guardar también las sin marcar", control: interruptor(false, (v) => { r.conSinMarcar = v; }, "Guardar también las series sin marcar") })])) : null);
     },

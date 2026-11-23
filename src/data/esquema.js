@@ -42,6 +42,7 @@ export function validarCopia(o, { version = 3, esquema = 4 } = {}) {
     if (!opcional(s.duracion) && !(esNum(s.duracion) && s.duracion >= 0)) return mal(q + ": duración no válida");
     if (!opcional(s.rutina) && typeof s.rutina !== "string") return mal(q + ": rutina no válida");
     if (!opcional(s.nota) && typeof s.nota !== "string") return mal(q + ": la nota no es texto");
+    if (!opcional(s.gimnasio) && !esTexto(s.gimnasio)) return mal(q + ": gimnasio no válido");
     if (!opcional(s.recuperacion)) {
       const r = s.recuperacion;
       if (typeof r !== "object") return mal(q + ": recuperación no válida");
@@ -68,11 +69,19 @@ export function validarCopia(o, { version = 3, esquema = 4 } = {}) {
     });
   });
 
+  const gims = o.ajustes && o.ajustes.gimnasios;
+  if (gims !== undefined && gims !== null) {
+    if (!Array.isArray(gims)) mal("los gimnasios no tienen el formato esperado");
+    else gims.some((g, i) => (!g || !esTexto(g.id) || !esTexto(g.nombre) || !esNum(g.barra) || !Array.isArray(g.discos) || !g.discos.every((d) => esNum(d) && d > 0)) && mal("gimnasio " + (i + 1) + ": incompleto"));
+  }
   const idsCat = new Set();
   o.catalogo.some((c, i) => {
     if (!c || !esTexto(c.id) || !esTexto(c.nombre)) return mal("ejercicio " + (i + 1) + " del catálogo: sin identificador o sin nombre");
     if (idsCat.has(c.id)) return mal("ejercicio «" + c.nombre + "» repetido en el catálogo");
     idsCat.add(c.id);
+    if (!opcional(c.modoCarga) && !["total", "lastre", "asistido"].includes(c.modoCarga)) return mal("ejercicio «" + c.nombre + "»: modo de carga no válido");
+    if (!opcional(c.musculos) && !(c.musculos && Array.isArray(c.musculos.p) && Array.isArray(c.musculos.s) && [...c.musculos.p, ...c.musculos.s].every(esTexto))) return mal("ejercicio «" + c.nombre + "»: músculos no válidos");
+    if (!opcional(c.notaFija) && typeof c.notaFija !== "string") return mal("ejercicio «" + c.nombre + "»: la nota fija no es texto");
     return false;
   });
   const idsRut = new Set();

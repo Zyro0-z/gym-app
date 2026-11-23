@@ -41,8 +41,9 @@ export function filaSerie(e, i, s, j, ant, paso) {
       "aria-label": "RPE " + rpeTxt(v) + (v === obj ? ", objetivo" : ""), onClick: () => {
         if (s.rpe === v) delete s.rpe; else s.rpe = v;
         seleccion(); pintarRpe(); pintarTira(); cerrarTira(); rpeBtn.setAttribute("aria-expanded", "false"); guardarYa(); resaltarActual();
-      } }, rpeTxt(v))));
-  const pintarTira = () => { for (const b of tira.children) { const act = esRpe(s.rpe) && Number(b.dataset.v) === s.rpe; b.classList.toggle("activo", act); b.setAttribute("aria-checked", String(act)); } };
+      } }, rpeTxt(v))),
+    h("p", { class: "tira-pie" }, "10 es el fallo; cada punto menos, una repetición en reserva." + (obj ? " Objetivo: " + rpeTxt(obj) + "." : "")));
+  const pintarTira = () => { for (const b of tira.querySelectorAll(".chip-rpe")) { const act = esRpe(s.rpe) && Number(b.dataset.v) === s.rpe; b.classList.toggle("activo", act); b.setAttribute("aria-checked", String(act)); } };
   const abrirTira = () => { if (tiraAbierta !== tira) cerrarTira(); tira.hidden = false; tiraAbierta = tira; pintarTira(); rpeBtn.setAttribute("aria-expanded", "true"); };
   rpeBtn.setAttribute("aria-expanded", "false");
   rpeBtn.addEventListener("click", () => { if (tira.hidden) abrirTira(); else cerrarTira(); rpeBtn.setAttribute("aria-expanded", String(!tira.hidden)); });
