@@ -47,7 +47,7 @@ export function vistaHistorial(_p, app) {
       const quedan = ses.length - cuantas;
       poner(c, h("div", { class: "seccion" }, calor),
         [...grupos].map(([k, lst]) => seccion({ cab: capital(mesAnio(k)) }, lista(lst.map((s) => celda({
-          titulo: s.rutina || "Entrenamiento libre", sub: lineaSesion(s), valor: DIAS_CORTOS[diaSemana(s.fecha) - 1] + " " + +s.fecha.slice(8), chevron: true,
+          titulo: s.rutina || "Entrenamiento libre", sub: lineaSesion(s), valor: h("span", { class: "t-subhead" }, DIAS_CORTOS[diaSemana(s.fecha) - 1] + " " + +s.fecha.slice(8)), chevron: true,
           alPulsar: () => app.nav.ir("sesion/" + encodeURIComponent(s.id)),
         }))))),
         quedan > 0 ? h("div", { class: "seccion" }, h("button", { class: "btn gris", onClick: () => { cuantas += TANDA; this.render(c); } },
@@ -95,7 +95,7 @@ export function vistaSesion([id], app) {
         return seccion({ cab: (e.nombre || e.ejercicioId) + enSuperserie, pie: e.nota || (p ? "Comparado con el " + fechaCorta(p.x.fecha, hoy) : null) }, lista(e.series.map((x, i) => {
           if (x.tipo !== "calentamiento") n++;
           const etq = x.tipo === "calentamiento" ? "Calentamiento" : "Serie " + n + (x.tipo === "fallo" ? " · al fallo" : x.tipo === "descendente" ? " · descendente" : "");
-          return celda({ titulo: etq, valor: h("span", null, (x.peso > 0 ? kg(x.peso) + " × " + x.reps : x.reps ? x.reps + " reps" : "—") + (esRpe(x.rpe) ? " @" + rpeTxt(x.rpe) : ""), delta(x, p && p.e.series[i])) });
+          return celda({ titulo: etq, estilo: "compacta", valor: h("span", null, (x.peso > 0 ? kg(x.peso) + " × " + x.reps : x.reps ? x.reps + " reps" : "—") + (esRpe(x.rpe) ? " @" + rpeTxt(x.rpe) : ""), delta(x, p && p.e.series[i])) });
         })));
       });
       const rec = resumenRecuperacion(s.recuperacion);
