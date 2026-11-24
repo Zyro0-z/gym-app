@@ -16,6 +16,11 @@ import { finDeRonda, calculadoraDiscos } from "./herramientas.js";
 import { CHIPS_RPE, esRpe, rpeTxt } from "../../core/rpe.js";
 
 let tiraAbierta = null;   // solo hay una tira de RPE desplegada a la vez
+/** Descanso tras una serie de `e`: el propio del ejercicio si lo tiene; el de Ajustes en otro caso. Con «No» en Ajustes (0) no hay descanso automático. */
+export function descansoDe(e) {
+  const g = E.app.store.estado.ajustes.entreno.descanso ?? 90, c = E.app.store.estado.catalogo.find((x) => x.id === e.ejercicioId);
+  return g > 0 && c && c.descanso > 0 ? c.descanso : g;
+}
 const cerrarTira = () => { if (tiraAbierta) { tiraAbierta.hidden = true; tiraAbierta = null; } };
 
 /** Si la serie recién marcada supera un récord (de su rango de repeticiones o de e1RM), lo devuelve; cada récord se avisa una vez por sesión. */
@@ -89,7 +94,7 @@ export function filaSerie(e, i, s, j, ant, paso) {
       }
       if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && !esRpe(s.rpe) && E.app.store.estado.ajustes.entreno.rpeAlMarcar !== false) abrirTira();
       // En una superserie el descanso empieza al acabar la ronda (el último ejercicio del grupo)
-      if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && finDeRonda(E.M.d.ejercicios, i)) empezarDescanso(E.app.store.estado.ajustes.entreno.descanso ?? 90);   // 0 = «No»: sin descanso automático
+      if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && finDeRonda(E.M.d.ejercicios, i)) empezarDescanso(descansoDe(e));   // 0 = «No»: sin descanso automático
     } else { s.hecha = false; fila.classList.remove("pr"); if (tiraAbierta === tira) cerrarTira(); }
     fila.classList.toggle("hecha", s.hecha);
     check.setAttribute("aria-pressed", String(s.hecha));

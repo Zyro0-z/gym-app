@@ -4,13 +4,16 @@ import { icono } from "../ui/iconos.js";
 import { seccion, lista, celda } from "../ui/controles.js";
 import { canon, sinTildes } from "../core/nombres.js";
 import { colorGrupo } from "../ui/tema.js";
-import { conBase } from "../core/musculos.js";
+import { conBase, equivalentes } from "../core/musculos.js";
 
 export const nuevoEjercicio = (nombre, grupo) => conBase({ id: canon(nombre), nombre: nombre.trim(), grupo: grupo || null, unilateral: false, tipoAncla: "peso",
   tipoMaterial: null, incremento: null, rangoReps: null, top: false, estandar: null });
 
-/** Devuelve { ejercicioId, nombre } o null si se cierra sin elegir. */
-export function elegirEjercicio(app, { titulo = "Añadir ejercicio", excluir = [] } = {}) {
+/**
+ * Devuelve { ejercicioId, nombre } o null si se cierra sin elegir.
+ * `parecidosA`: id de un ejercicio; si se da, arriba (sin buscar) aparecen los que trabajan su mismo músculo principal.
+ */
+export function elegirEjercicio(app, { titulo = "Añadir ejercicio", excluir = [], parecidosA = null } = {}) {
   const { store } = app;
   return new Promise((res) => {
     let q = "", elegido = null;
@@ -25,7 +28,10 @@ export function elegirEjercicio(app, { titulo = "Añadir ejercicio", excluir = [
       for (const c of vis) { const g = c.grupo || "Sin grupo"; if (!porGrupo.has(g)) porGrupo.set(g, []); porGrupo.get(g).push(c); }
       const orden = [...grupos.map((g) => g.nombre), "Sin grupo"].filter((g) => porGrupo.has(g)).concat([...porGrupo.keys()].filter((g) => !grupos.some((x) => x.nombre === g) && g !== "Sin grupo"));
       const exacto = cat.some((c) => canon(c.nombre) === canon(q));
+      const parecidos = parecidosA && !t ? equivalentes(cat, parecidosA).filter((c) => !excluir.includes(c.id)).slice(0, 8) : [];
       poner(resultados,
+        parecidos.length ? seccion({ cab: "Mismo músculo principal" }, lista(parecidos.map((c) => celda({ titulo: c.nombre, sub: c.tipoMaterial ? c.tipoMaterial.charAt(0).toUpperCase() + c.tipoMaterial.slice(1) : null,
+          punto: c.grupo ? colorGrupo(grupos, c.grupo) : "var(--fill)", alPulsar: () => { elegido = { ejercicioId: c.id, nombre: c.nombre }; hoja.cerrar(); } })))) : null,
         q.trim() && !exacto ? seccion({}, lista([celda({ titulo: "Crear «" + q.trim() + "»", estilo: "accion", izquierda: h("span", { class: "c-accent", style: { display: "flex" } }, icono("mas", { tam: 22 })), alPulsar: () => crear(q.trim()) })])) : null,
         orden.map((g) => seccion({ cab: g }, lista(porGrupo.get(g).sort((a, b) => a.nombre.localeCompare(b.nombre, "es")).map((c) =>
           celda({ titulo: c.nombre, punto: c.grupo ? colorGrupo(grupos, c.grupo) : "var(--fill)", alPulsar: () => { elegido = { ejercicioId: c.id, nombre: c.nombre }; hoja.cerrar(); } }))))),

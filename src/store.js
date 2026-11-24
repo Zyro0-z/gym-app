@@ -13,7 +13,7 @@ import { crearCopia, leerCopia, estadoCopia } from "./data/modelo.js";
 import { analizar } from "./core/analisis.js";
 import { rehidratar } from "./core/rehidratar.js";
 import { hoyISO } from "./core/fechas.js";
-import { crearNube } from "./data/nube.js";
+import { crearNube, subirSinPisar } from "./data/nube.js";
 
 const copiar = (x) => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
 
@@ -171,14 +171,7 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
       if (!n.url || !frase) throw new Error("Falta la dirección del servidor o la clave.");
       store.nubeEstado = { subiendo: true, error: null }; avisar("nube");
       try {
-        if (!forzar) {
-          const previa = await nube.info(n.url, frase);
-          if (previa && !(n.ultima && previa.at <= Date.parse(n.ultima.at) + 1000)) {
-            const e = new Error("Hay en el servidor una copia más reciente que la de este iPhone. Restáurala o sobrescríbela desde «Subir ahora».");
-            e.conflicto = true; throw e;
-          }
-        }
-        const r = await nube.subir(n.url, frase, store.textoCopia());
+        const r = await subirSinPisar(nube, n, frase, store.textoCopia(), { forzar });
         await store.guardarAjustes((a) => { a.nube.ultima = { at: new Date(r.at).toISOString(), bytes: r.bytes, sesiones: estado.sesiones.length }; }, { analitico: false });
         store.nubeEstado = { subiendo: false, error: null }; avisar("nube");
         return r;

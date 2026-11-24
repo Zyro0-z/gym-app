@@ -72,7 +72,7 @@ Cuentan para series, volumen y récords las de tipo `normal` y `fallo` (igual qu
 | Clave | Contenido |
 |---|---|
 | `schema` | número de esquema de los datos (4) |
-| `catalogo` | `[{id, nombre, grupo, unilateral, tipoAncla, tipoMaterial, incremento, rangoReps:{min,max}, top, estandar, modoCarga?, musculos?, notaFija?}]` — `modoCarga`: `"total"` (por defecto), `"lastre"` (carga = peso corporal + lo apuntado) o `"asistido"` (peso corporal − lo apuntado); `musculos`: `{p:[id], s:[id]}` con ids de `src/core/musculos.js` (principales y secundarios); `notaFija`: texto que sale en cada sesión |
+| `catalogo` | `[{id, nombre, grupo, unilateral, tipoAncla, tipoMaterial, incremento, rangoReps:{min,max}, top, estandar, modoCarga?, musculos?, notaFija?, descanso?}]` — `descanso`: segundos de descanso propios del ejercicio (0-1800; si falta, el de Ajustes); `modoCarga`: `"total"` (por defecto), `"lastre"` (carga = peso corporal + lo apuntado) o `"asistido"` (peso corporal − lo apuntado); `musculos`: `{p:[id], s:[id]}` con ids de `src/core/musculos.js` (principales y secundarios); `notaFija`: texto que sale en cada sesión |
 | `rutinas` | `[{id, nombre, ejercicios:[{ejercicioId, series, rpe?}]}]`; `rpe` (esquema 4) es el RPE objetivo |
 | `pesajes` | `[{fecha, kg}]` |
 | `medidas` | `[{fecha, cintura, …}]` (esquema 4, ver abajo) |

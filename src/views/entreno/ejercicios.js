@@ -133,7 +133,7 @@ export async function menuEjercicio(i) {
   const r = await E.app.hojaAcciones({ mensaje: e.nombre, opciones: op });
   if (!E.M || !r) return;
   if (r === "cambiar") {
-    const x = await elegirEjercicio(E.app, { titulo: "Cambiar ejercicio" });
+    const x = await elegirEjercicio(E.app, { titulo: "Cambiar ejercicio", parecidosA: e.ejercicioId });
     if (x && E.M) { e.ejercicioId = x.ejercicioId; e.nombre = x.nombre; delete e.tipo; Object.assign(e, tipoDeCatalogo(x.ejercicioId)); }
   } else if (r === "historia") return verHistoria(e);
   else if (r === "nota") return editarNota(e);

@@ -115,3 +115,17 @@ export function conBase(ej) {
   return Object.assign({}, ej, { grupo: ej.grupo || b.grupo, unilateral: ej.unilateral || b.unilateral, tipoMaterial: ej.tipoMaterial || b.tipoMaterial,
     musculos: JSON.parse(JSON.stringify(b.musculos)) }, b.modoCarga ? { modoCarga: b.modoCarga } : {});
 }
+
+/**
+ * Ejercicios del catálogo que trabajan el mismo músculo principal que `id` (para sustituirlo cuando la máquina está ocupada).
+ * Primero los que comparten todos sus músculos principales, luego los que comparten alguno; a igualdad, por nombre.
+ * Sin músculos principales declarados devuelve [].
+ */
+export function equivalentes(catalogo, id) {
+  const base = catalogo.find((c) => c.id === id), p = base && base.musculos ? base.musculos.p : [];
+  if (!p.length) return [];
+  return catalogo.filter((c) => c.id !== id && c.musculos && c.musculos.p.some((m) => p.includes(m)))
+    .map((c) => { const comun = c.musculos.p.filter((m) => p.includes(m)).length; return { c, comun, igual: comun === p.length && c.musculos.p.length === p.length }; })
+    .sort((a, b) => (b.igual - a.igual) || (b.comun - a.comun) || a.c.nombre.localeCompare(b.c.nombre, "es"))
+    .map((x) => x.c);
+}

@@ -83,6 +83,7 @@ export function validarCopia(o, { version = 3, esquema = 4 } = {}) {
     idsCat.add(c.id);
     if (!opcional(c.modoCarga) && !["total", "lastre", "asistido"].includes(c.modoCarga)) return mal("ejercicio «" + c.nombre + "»: modo de carga no válido");
     if (!opcional(c.musculos) && !(c.musculos && Array.isArray(c.musculos.p) && Array.isArray(c.musculos.s) && [...c.musculos.p, ...c.musculos.s].every(esTexto))) return mal("ejercicio «" + c.nombre + "»: músculos no válidos");
+    if (!opcional(c.descanso) && !(Number.isInteger(c.descanso) && c.descanso >= 0 && c.descanso <= 1800)) return mal("ejercicio «" + c.nombre + "»: descanso no válido");
     if (!opcional(c.notaFija) && typeof c.notaFija !== "string") return mal("ejercicio «" + c.nombre + "»: la nota fija no es texto");
     return false;
   });

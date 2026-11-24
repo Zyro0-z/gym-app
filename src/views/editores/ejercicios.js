@@ -5,7 +5,7 @@ import { seccion, lista, celda, vacio, interruptor, stepper, pedirTexto } from "
 import { colorGrupo } from "../../ui/tema.js";
 import { fmt, plural } from "../../core/formato.js";
 import { canon, sinTildes } from "../../core/nombres.js";
-import { capital } from "../../ui/textos.js";
+import { capital, reloj } from "../../ui/textos.js";
 import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
 import { kgTxt, usosEjercicio, renombrarEjercicio } from "./comun.js";
 import { MUSCULOS, nombreMusculo, baseQueFalta } from "../../core/musculos.js";
@@ -65,6 +65,7 @@ export function vistaEjercicioCat([id], app) {
     const x = JSON.parse(JSON.stringify(cat[i])); f(x); cat[i] = x;
     await store.guardarCatalogo(cat);
   };
+  const DESCANSOS = [30, 45, 60, 90, 120, 150, 180, 240, 300];
   const opciones = async (mensaje, ops) => app.hojaAcciones({ mensaje, opciones: ops });
   async function renombrar() {
     const e = ej(), nombre = await pedirTexto(app, { titulo: "Nombre del ejercicio", valor: e.nombre });
@@ -104,6 +105,8 @@ export function vistaEjercicioCat([id], app) {
           celda({ titulo: "Por lado", sub: "Mancuerna o máquina a una mano: el volumen cuenta los dos lados", control: interruptor(!!e.unilateral, (v) => guardar((x) => { x.unilateral = v; }), "Por lado") }),
           celda({ titulo: "Medida", valor: e.tipoAncla === "duracion" ? "Tiempo" : e.tipoAncla === "reps" ? "Solo repeticiones" : "Peso y repeticiones", chevron: true,
             alPulsar: async () => { const v = await opciones("Qué se apunta en cada serie", [{ texto: "Peso y repeticiones", valor: "peso" }, { texto: "Solo repeticiones", valor: "reps" }, { texto: "Tiempo", valor: "duracion" }]); if (v) guardar((x) => { x.tipoAncla = v; }); } }),
+          celda({ titulo: "Descanso", sub: "Sustituye al de Ajustes", valor: e.descanso ? reloj(e.descanso) : "Como en Ajustes", chevron: true,
+            alPulsar: async () => { const v = await opciones("Descanso tras cada serie", [...DESCANSOS.map((s) => ({ texto: reloj(s), valor: s })), { texto: "Como en Ajustes", valor: "-" }]); if (v !== null) guardar((x) => { if (v === "-") delete x.descanso; else x.descanso = v; }); } }),
         ])),
         seccion({ cab: "Carga y músculos", pie: "Lastre: lo que apuntas se suma a tu peso corporal (dominadas, fondos). Asistido: se resta (máquina de ayuda). Se usa el último pesaje anterior a la sesión. Los músculos alimentan el volumen por músculo y el mapa corporal." }, lista([
           ...(e.tipoAncla === "peso" || !e.tipoAncla ? [celda({ titulo: "Carga", valor: e.modoCarga === "lastre" ? "Peso corporal + lastre" : e.modoCarga === "asistido" ? "Peso corporal − ayuda" : "Peso apuntado", chevron: true,

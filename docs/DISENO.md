@@ -649,3 +649,5 @@ sesión» en rojo con una confirmación.
 - Progreso › Músculos: selector «Grupos | Músculos». «Músculos» pinta el mapa por músculo concreto (semana, 4 u 8 semanas).
 - Sin zoom por doble toque (`touch-action: manipulation` en `html`); el pellizco se conserva por accesibilidad.
 - Copia en la nube: no pisa una copia del servidor más reciente que la última subida o restaurada de este dispositivo (`subirNube` lanza `conflicto`; «Subir ahora» pide confirmar). La derivación PBKDF2 de id y token se hace una vez por clave.
+- Cambiar ejercicio en sala: arriba, «Mismo músculo principal» (`equivalentes` en `core/musculos.js`) con los del mismo músculo; al elegir se aplica el tipo del catálogo (peso o solo repeticiones).
+- Descanso propio por ejercicio (`catalogo[].descanso`, en la ficha del ejercicio): sustituye al de Ajustes; con «No» en Ajustes no hay descanso automático.

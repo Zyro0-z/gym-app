@@ -61,3 +61,18 @@ export function crearNube({ fetchFn = (...a) => globalThis.fetch(...a), it } = {
     },
   };
 }
+
+/** ¿La copia del servidor (`previa`: { at } en ms, o null) es más reciente que la última que subió o restauró este dispositivo (`ultima`: { at } ISO, o null)? Un segundo de margen. */
+export const hayConflicto = (previa, ultima) => !!previa && !(ultima && previa.at <= Date.parse(ultima.at) + 1000);
+
+/**
+ * Sube sin pisar una copia más reciente del servidor. Con `forzar` la sobrescribe.
+ * Lanza un Error con `conflicto = true` si no se debe subir.
+ */
+export async function subirSinPisar(cliente, n, frase, texto, { forzar = false } = {}) {
+  if (!forzar && hayConflicto(await cliente.info(n.url, frase), n.ultima)) {
+    const e = new Error("Hay en el servidor una copia más reciente que la de este iPhone. Restáurala o sobrescríbela desde «Subir ahora».");
+    e.conflicto = true; throw e;
+  }
+  return cliente.subir(n.url, frase, texto);
+}
