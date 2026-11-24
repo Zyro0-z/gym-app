@@ -5,6 +5,7 @@ import { fmt, plural } from "../../core/formato.js";
 import { canon } from "../../core/nombres.js";
 import { kg } from "../../ui/textos.js";
 import { nuevoEjercicio } from "../selector.js";
+import { duplicadosBase, fusionarAjustes } from "../../core/musculos.js";
 
 export const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 export const fila = (...hijos) => h("div", { class: "celda" }, h("div", { style: { flex: "1", padding: "8px 0" } }, ...hijos));
@@ -61,4 +62,44 @@ export async function renombrarEjercicio(app, id, nuevoNombre) {
     await store.guardarBorrador(b);
   }
   return nid;
+}
+
+/** Une cada ejercicio duplicado del catálogo base con su equivalente: el historial, las rutinas y el entreno en curso pasan al que se conserva. Devuelve cuántos se unieron. */
+export async function unirDuplicados(app) {
+  const { store } = app, grupos = duplicadosBase(store.estado.catalogo), destinoDe = new Map();
+  let cat = store.estado.catalogo.slice(), n = 0;
+  for (const g of grupos) {
+    let dest = g.conservar;
+    for (const d of g.unir) { dest = fusionarAjustes(dest, d); destinoDe.set(d.id, g.conservar); n++; }
+    cat = cat.filter((c) => !g.unir.some((d) => d.id === c.id)).map((c) => (c.id === g.conservar.id ? dest : c));
+  }
+  if (!n) return 0;
+  const destino = (e) => destinoDe.get(e.ejercicioId) || destinoDe.get(canon(e.nombre));
+  await actualizarSesiones(store, (s) => {
+    let c = false;
+    for (const e of s.ejercicios) { const d = destino(e); if (d) { e.ejercicioId = d.id; e.nombre = d.nombre; c = true; } }
+    return c;
+  });
+  await store.guardarCatalogo(cat);
+  await store.guardarRutinas(store.estado.rutinas.map((r) => {
+    const vistos = new Set();
+    return Object.assign({}, r, { ejercicios: r.ejercicios.map((e) => { const d = destinoDe.get(e.ejercicioId); return d ? Object.assign({}, e, { ejercicioId: d.id }) : e; })
+      .filter((e) => (vistos.has(e.ejercicioId) ? false : vistos.add(e.ejercicioId))) });
+  }));
+  const b = store.estado.borrador;
+  if (b && b.ejercicios.some((e) => destino(e))) { for (const e of b.ejercicios) { const d = destino(e); if (d) { e.ejercicioId = d.id; e.nombre = d.nombre; } } await store.guardarBorrador(b); }
+  return n;
+}
+
+/** Quita un ejercicio de todas las sesiones; las que se quedan sin ejercicios se borran. Devuelve cuántas sesiones se tocaron. */
+export async function quitarDeHistorial(store, id) {
+  let n = 0;
+  for (const s of store.estado.sesiones) {
+    if (!s.ejercicios.some((e) => e.ejercicioId === id || canon(e.nombre) === id)) continue;
+    const resto = s.ejercicios.filter((e) => !(e.ejercicioId === id || canon(e.nombre) === id));
+    if (resto.length) await store.guardarSesion(Object.assign(JSON.parse(JSON.stringify(s)), { ejercicios: JSON.parse(JSON.stringify(resto)) }));
+    else await store.borrarSesion(s.id);
+    n++;
+  }
+  return n;
 }

@@ -7,8 +7,8 @@ import { fmt, plural } from "../../core/formato.js";
 import { canon, sinTildes } from "../../core/nombres.js";
 import { capital, reloj } from "../../ui/textos.js";
 import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
-import { kgTxt, usosEjercicio, renombrarEjercicio } from "./comun.js";
-import { MUSCULOS, nombreMusculo, baseQueFalta, estandarDe } from "../../core/musculos.js";
+import { kgTxt, usosEjercicio, renombrarEjercicio, unirDuplicados, quitarDeHistorial } from "./comun.js";
+import { MUSCULOS, nombreMusculo, baseQueFalta, estandarDe, duplicadosBase } from "../../core/musculos.js";
 import { seccionAsignarMusculos } from "../musculos.js";
 
 /* ---------- Catálogo de ejercicios ---------- */
@@ -49,6 +49,12 @@ export function vistaEjercicios(_p, app) {
             await store.guardarCatalogo([...store.estado.catalogo, ...nuevos.map((x) => Object.assign(JSON.parse(JSON.stringify(x)), { estandar: estandarDe(x.nombre, tablas) }))]);
             app.toast(plural(nuevos.length, "ejercicio añadido", "ejercicios añadidos")); this.render(c); pintar();
           } })])) : null,
+        duplicadosBase(store.estado.catalogo).length ? seccion({ pie: "Une los ejercicios repetidos («Press Banca (Barra)» y «Press banca») en el que lleva el nombre del catálogo base. El historial y las rutinas pasan al que se conserva." },
+          lista([celda({ titulo: "Unir ejercicios duplicados", sub: duplicadosBase(store.estado.catalogo).reduce((a, g) => a + g.unir.length, 0) + " se unen", estilo: "accion", alPulsar: async () => {
+            const n = duplicadosBase(store.estado.catalogo).reduce((a, g) => a + g.unir.length, 0);
+            if (!(await app.confirmar("¿Unir " + n + " ejercicios duplicados?", "Se conserva el nombre del catálogo base y todo el historial.", "Unir"))) return;
+            await unirDuplicados(app); app.toast(plural(n, "ejercicio unido", "ejercicios unidos")); this.render(c); pintar();
+          } })])) : null,
         seccionAsignarMusculos(app, () => { this.render(c); }));
       pintar();
     },
@@ -78,8 +84,9 @@ export function vistaEjercicioCat([id], app) {
     if (nid) app.nav.atras().then(() => app.nav.ir("ejercicioCat/" + encodeURIComponent(nid)));
   }
   async function borrar() {
-    const e = ej();
-    if (!(await app.confirmar("¿Borrar «" + e.nombre + "»?", "Se quita del catálogo y de las rutinas.", "Borrar", true))) return;
+    const e = ej(), usos = usosEjercicio(store, id);
+    if (!(await app.confirmar("¿Borrar «" + e.nombre + "»?", usos ? "Se quita del catálogo, de las rutinas y de " + plural(usos, "sesión", "sesiones") + " del historial (las que se queden sin ejercicios se borran). No se puede deshacer." : "Se quita del catálogo y de las rutinas.", usos ? "Borrar con su historial" : "Borrar", true))) return;
+    if (usos) await quitarDeHistorial(store, id);
     await store.guardarRutinas(store.estado.rutinas.map((r) => Object.assign({}, r, { ejercicios: r.ejercicios.filter((x) => x.ejercicioId !== id) })));
     await store.guardarCatalogo(store.estado.catalogo.filter((x) => x.id !== id));
     app.toast("Ejercicio borrado");
@@ -140,8 +147,8 @@ export function vistaEjercicioCat([id], app) {
             celda({ titulo: "Polea", sub: "Aplica la corrección de polea de Avanzado", control: interruptor(!!est.polea, (v) => guardar((x) => { x.estandar.polea = v; }), "Polea") }),
           ] : []),
         ])),
-        seccion({ pie: usos ? "Aparece en " + plural(usos, "sesión", "sesiones") + (enRutinas.length ? " y en " + enRutinas.join(", ") : "") + ". Para borrarlo, primero cámbiale el nombre a otro ejercicio y se unirán." : enRutinas.length ? "Está en " + enRutinas.join(", ") + "." : null },
-          usos ? null : lista([celda({ titulo: "Borrar ejercicio", estilo: "peligro", alPulsar: borrar })])));
+        seccion({ pie: usos ? "Aparece en " + plural(usos, "sesión", "sesiones") + (enRutinas.length ? " y en " + enRutinas.join(", ") : "") + ". Para unirlo con otro, cámbiale el nombre al de ese ejercicio." : enRutinas.length ? "Está en " + enRutinas.join(", ") + "." : null },
+          lista([celda({ titulo: usos ? "Borrar ejercicio y su historial" : "Borrar ejercicio", estilo: "peligro", alPulsar: borrar })])));
     },
   };
 }

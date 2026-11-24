@@ -131,3 +131,28 @@ export function asignarMusculos(catalogo, tablas) {
   });
   return { catalogo: salida, cambiados, sinCoincidencia, conLiga };
 }
+
+/**
+ * Entradas del catálogo que son el mismo ejercicio del catálogo base con otro nombre («Press banca» y «Press Banca (Barra)»).
+ * Se conserva la que lleva el nombre del catálogo base (o, si no está, la primera) y las demás se unen a ella.
+ * @returns {{conservar:object, unir:object[]}[]}
+ */
+export function duplicadosBase(catalogo) {
+  const grupos = new Map();
+  for (const c of catalogo) { const b = baseDe(c.nombre) || baseDe(c.id); if (b) { const g = grupos.get(b.id) || []; g.push(c); grupos.set(b.id, g); } }
+  const salida = [];
+  for (const [id, g] of grupos) {
+    if (g.length < 2) continue;
+    const conservar = g.find((c) => c.id === id) || g[0];
+    salida.push({ conservar, unir: g.filter((c) => c !== conservar) });
+  }
+  return salida;
+}
+
+/** La entrada conservada completa lo que le falta (rango de repeticiones, top set, descanso, incremento, estándar, nota) con lo de la descartada. */
+export function fusionarAjustes(conservada, descartada) {
+  const r = Object.assign({}, conservada);
+  for (const k of ["rangoReps", "incremento", "estandar", "notaFija", "descanso"]) if (r[k] == null && descartada[k] != null) r[k] = descartada[k];
+  if (descartada.top) r.top = true;
+  return r;
+}

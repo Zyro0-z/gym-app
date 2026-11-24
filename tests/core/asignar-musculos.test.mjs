@@ -52,3 +52,15 @@ test("liga: la referencia solo se asigna si la tabla existe y respeta lo que ya 
   assert.equal(r.catalogo[0].estandar.slug, "bench-press"); assert.deepEqual(r.catalogo[1].estandar, { sin: true }); assert.equal(r.catalogo[2].estandar.slug, "x");
   assert.equal(conBase({ nombre: "Press banca", estandar: null }, tablas).estandar.slug, "bench-press");
 });
+
+test("duplicadosBase conserva el nombre del catálogo base y fusionarAjustes no pierde el rango ni el top set", async () => {
+  const { duplicadosBase, fusionarAjustes } = await import("../../src/core/musculos.js");
+  const cat = [{ id: "pressbanca", nombre: "Press banca", rangoReps: null, top: false }, { id: "pressbanca(barra)", nombre: "Press Banca (Barra)", rangoReps: { min: 4, max: 4 }, top: true, descanso: 180 },
+    { id: "otro", nombre: "Ejercicio raro" }, { id: "dominadas", nombre: "Dominadas" }];
+  const d = duplicadosBase(cat);
+  assert.equal(d.length, 1);
+  assert.equal(d[0].conservar.id, "pressbanca");
+  assert.deepEqual(d[0].unir.map((c) => c.id), ["pressbanca(barra)"]);
+  const f = fusionarAjustes(d[0].conservar, d[0].unir[0]);
+  assert.deepEqual(f.rangoReps, { min: 4, max: 4 }); assert.equal(f.top, true); assert.equal(f.descanso, 180);
+});
