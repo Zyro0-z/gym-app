@@ -27,10 +27,11 @@ export function calcularLigas(C, SESIONES, TODAS) {
     return f[f.length - 1].niveles;
   };
   const puntuacion = (carga, niv) => {
+    if (!(niv[4] > 0)) return 0;
     if (carga >= niv[4]) return 95 + ((carga / niv[4] - 1) / 0.1) * cfg.puntos;
     let x0 = 0, y0 = 0;
     for (let i = 0; i < 5; i++) {
-      if (carga <= niv[i]) return y0 + ((PCT[i] - y0) * (carga - x0)) / (niv[i] - x0);
+      if (carga <= niv[i]) return niv[i] > x0 ? y0 + ((PCT[i] - y0) * (carga - x0)) / (niv[i] - x0) : PCT[i];
       x0 = niv[i]; y0 = PCT[i];
     }
     return 95;

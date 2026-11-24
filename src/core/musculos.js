@@ -152,7 +152,7 @@ export function duplicadosBase(catalogo) {
 /** La entrada conservada completa lo que le falta (rango de repeticiones, top set, descanso, incremento, estándar, nota) con lo de la descartada. */
 export function fusionarAjustes(conservada, descartada) {
   const r = Object.assign({}, conservada);
-  for (const k of ["rangoReps", "incremento", "estandar", "notaFija", "descanso"]) if (r[k] == null && descartada[k] != null) r[k] = descartada[k];
+  for (const k of ["rangoReps", "incremento", "estandar", "notaFija", "descanso", "tipoAncla", "unilateral", "modoCarga"]) if (r[k] == null && descartada[k] != null) r[k] = descartada[k];
   if (descartada.top) r.top = true;
   return r;
 }

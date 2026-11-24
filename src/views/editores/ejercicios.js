@@ -7,7 +7,7 @@ import { fmt, plural } from "../../core/formato.js";
 import { canon, sinTildes } from "../../core/nombres.js";
 import { capital, reloj } from "../../ui/textos.js";
 import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
-import { kgTxt, usosEjercicio, renombrarEjercicio, unirDuplicados, quitarDeHistorial } from "./comun.js";
+import { kgTxt, usosEjercicio, renombrarEjercicio, unirDuplicados } from "./comun.js";
 import { MUSCULOS, nombreMusculo, baseQueFalta, estandarDe, duplicadosBase } from "../../core/musculos.js";
 import { seccionAsignarMusculos } from "../musculos.js";
 
@@ -86,9 +86,7 @@ export function vistaEjercicioCat([id], app) {
   async function borrar() {
     const e = ej(), usos = usosEjercicio(store, id);
     if (!(await app.confirmar("¿Borrar «" + e.nombre + "»?", usos ? "Se quita del catálogo, de las rutinas y de " + plural(usos, "sesión", "sesiones") + " del historial (las que se queden sin ejercicios se borran). No se puede deshacer." : "Se quita del catálogo y de las rutinas.", usos ? "Borrar con su historial" : "Borrar", true))) return;
-    if (usos) await quitarDeHistorial(store, id);
-    await store.guardarRutinas(store.estado.rutinas.map((r) => Object.assign({}, r, { ejercicios: r.ejercicios.filter((x) => x.ejercicioId !== id) })));
-    await store.guardarCatalogo(store.estado.catalogo.filter((x) => x.id !== id));
+    await store.borrarEjercicio(id);
     app.toast("Ejercicio borrado");
     app.nav.atras();
   }

@@ -88,9 +88,9 @@ export function filaSerie(e, i, s, j, ant, paso) {
       const pr = prEnVivo(e, s);
       if (pr) {
         record(); fila.classList.add("pr");
-        const kgT = (v) => fmt(v, Number.isInteger(v) ? 0 : 1);
+        const kgT = (v) => fmt(v, Number.isInteger(v) ? 0 : 1), cat = E.app.store.estado.catalogo.find((x) => x.id === e.ejercicioId), enTotal = !!(cat && cat.modoCarga && cat.modoCarga !== "total");
         E.app.toast(pr.tipo === "e1rm" ? "Récord de e1RM: " + kgT(pr.e1rm) + " kg" + (pr.dentroDelRuido ? " (dentro de tu ruido)" : "")
-          : "Récord en " + pr.rango.txt + " reps: " + kgT(pr.peso) + " × " + pr.reps + (pr.previo ? " (antes " + kgT(pr.previo.peso) + ")" : ""), { icono: "trofeo" });
+          : "Récord en " + pr.rango.txt + " reps: " + kgT(pr.peso) + (enTotal ? " kg en total" : "") + " × " + pr.reps + (pr.previo ? " (antes " + kgT(pr.previo.peso) + ")" : ""), { icono: "trofeo" });
       }
       if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && !esRpe(s.rpe) && E.app.store.estado.ajustes.entreno.rpeAlMarcar !== false) abrirTira();
       // En una superserie el descanso empieza al acabar la ronda (el último ejercicio del grupo)

@@ -90,16 +90,3 @@ export async function unirDuplicados(app) {
   if (b && b.ejercicios.some((e) => destino(e))) { for (const e of b.ejercicios) { const d = destino(e); if (d) { e.ejercicioId = d.id; e.nombre = d.nombre; } } await store.guardarBorrador(b); }
   return n;
 }
-
-/** Quita un ejercicio de todas las sesiones; las que se quedan sin ejercicios se borran. Devuelve cuántas sesiones se tocaron. */
-export async function quitarDeHistorial(store, id) {
-  let n = 0;
-  for (const s of store.estado.sesiones) {
-    if (!s.ejercicios.some((e) => e.ejercicioId === id || canon(e.nombre) === id)) continue;
-    const resto = s.ejercicios.filter((e) => !(e.ejercicioId === id || canon(e.nombre) === id));
-    if (resto.length) await store.guardarSesion(Object.assign(JSON.parse(JSON.stringify(s)), { ejercicios: JSON.parse(JSON.stringify(resto)) }));
-    else await store.borrarSesion(s.id);
-    n++;
-  }
-  return n;
-}

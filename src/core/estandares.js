@@ -13,7 +13,7 @@ export function leerTablas(texto) {
     if (!Array.isArray(filas) || !filas.length) throw new Error("La tabla «" + slug + "» está vacía.");
     const ok = filas.map((f) => {
       const n = f && Array.isArray(f.niveles) ? f.niveles : null;
-      if (!f || !Number.isFinite(f.pc) || f.pc <= 0 || !n || n.length !== 5 || n.some((x) => !Number.isFinite(x) || x < 0) || n.some((x, i) => i && x < n[i - 1]))
+      if (!f || !Number.isFinite(f.pc) || f.pc <= 0 || !n || n.length !== 5 || n.some((x) => !Number.isFinite(x) || x < 0) || !(n[4] > 0) || n.some((x, i) => i && x < n[i - 1]))
         throw new Error("La tabla «" + slug + "» tiene una fila con formato incorrecto.");
       return { pc: f.pc, niveles: n.slice() };
     }).sort((a, b) => a.pc - b.pc);

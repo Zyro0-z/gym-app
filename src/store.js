@@ -10,6 +10,7 @@
 //  · Sin Worker, o si falla, se calcula en el hilo principal sin error visible.
 import * as repos from "./data/repos.js";
 import { crearCopia, leerCopia, estadoCopia } from "./data/modelo.js";
+import { modeloSinEjercicio, borradorSin } from "./core/borrado.js";
 import { analizar } from "./core/analisis.js";
 import { rehidratar } from "./core/rehidratar.js";
 import { hoyISO } from "./core/fechas.js";
@@ -150,6 +151,12 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     async borrarTodo() {
       await store.importar({ sesiones: [], catalogo: estado.catalogo, rutinas: [], pesajes: [], medidas: [], molestias: [], ajustes: estado.ajustes }, "borrar");
       await store.guardarBorrador(null);
+    },
+    /** Borra un ejercicio de sesiones, rutinas, catálogo y entreno en curso en una sola operación; antes guarda una copia interna. */
+    async borrarEjercicio(id) {
+      const b = borradorSin(estado.borrador, id), cambia = estado.borrador && JSON.stringify(b) !== JSON.stringify(estado.borrador);
+      await store.importar(modeloSinEjercicio(estado, id), "borrar");
+      if (cambia) await store.guardarBorrador(b);
     },
     /** Quita sesiones, pesajes, medidas, molestias y borrador. Conserva rutinas, catálogo y ajustes (tablas de estándares incluidas); antes guarda una copia interna. */
     async borrarHistorial() {

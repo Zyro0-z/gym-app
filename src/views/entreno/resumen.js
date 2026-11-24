@@ -74,11 +74,13 @@ export async function mostrarResumen(ses) {
           lista(deriva.map(({ nombre, d }) => celda({ titulo: nombre, sub: d.personal ? "Tu mediana " + fmt(d.personal.mediana, 1) + " % · umbral " + fmt(d.umbral, 1) + " %" : "Umbral genérico " + d.umbral + " %",
             valor: chip((d.caida > 0 ? "−" : "+") + fmt(Math.abs(d.caida), 1) + " %", d.alta ? "warn" : "ok") })))) : null,
         seccion({ cab: "Por ejercicio" }, lista(ses.ejercicios.map((e) => {
-          const mejor = e.series.filter(cuenta).reduce((m, s) => (!m || epley(s.peso, s.reps) > epley(m.peso, m.reps) ? s : m), null);
+          const carga = cargaDe(e.ejercicioId, ses.fecha), cat = store.estado.catalogo.find((x) => x.id === e.ejercicioId), modo = (cat && cat.modoCarga) || "total";
+          const mejor = e.series.filter(cuenta).reduce((m, s) => (!m || epley(carga(s.peso), s.reps) > epley(carga(m.peso), m.reps) ? s : m), null);
+          const txtMejor = !mejor ? "" : " · mejor " + (mejor.peso > 0 ? (modo === "lastre" ? "+" : modo === "asistido" ? "−" : "") + fmt(mejor.peso, Number.isInteger(mejor.peso) ? 0 : 1) : modo === "total" ? "" : "peso corporal") + (mejor.peso > 0 || modo !== "total" ? " × " + mejor.reps : "");
           const ant = anteriorDe(e.ejercicioId);
           const a = ant ? mejorRM(ant.e.series, cargaDe(e.ejercicioId, ant.s.fecha)) : 0, b = mejorRM(e.series, cargaDe(e.ejercicioId, ses.fecha));
           const dir = !ant || !a || !b ? null : b > a * 1.005 ? "sube" : b < a * 0.995 ? "baja" : "igual";
-          return celda({ titulo: e.nombre, sub: plural(e.series.length, "serie", "series") + (mejor && mejor.peso > 0 ? " · mejor " + fmt(mejor.peso, Number.isInteger(mejor.peso) ? 0 : 1) + " × " + mejor.reps : ""),
+          return celda({ titulo: e.nombre, sub: plural(e.series.length, "serie", "series") + txtMejor,
             valor: dir ? chip(dir === "sube" ? "Mejor" : dir === "baja" ? "Peor" : "Igual", dir === "sube" ? "ok" : dir === "baja" ? "bad" : null, { icono: dir }) : null });
         }))),
         seccion({ pie: "Una imagen con lo esencial de la sesión para enviar o publicar." }, lista([celda({ icono: "compartir", colorIcono: "var(--g-azul)", titulo: "Compartir tarjeta", estilo: "accion",

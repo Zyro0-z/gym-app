@@ -67,11 +67,12 @@ export function vistaNube(_p, app) {
           celda({ titulo: "Restaurar desde la nube", estilo: "accion", deshabilitada: !listo, alPulsar: async () => {
             if (!listo) return;
             let m;
+            const t0 = Date.now();
             let inf = null;
-            try { m = await store.bajarNube(); inf = await store.infoNube().catch(() => null); } catch (e) { await app.alerta({ titulo: "No se pudo restaurar", mensaje: e.message }); return; }
+            try { inf = await store.infoNube().catch(() => null); m = await store.bajarNube(); } catch (e) { await app.alerta({ titulo: "No se pudo restaurar", mensaje: e.message }); return; }
             const hay = store.estado.sesiones.length;
             if (hay && !(await app.confirmar("¿Reemplazar los datos?", "La copia de la nube tiene " + plural(m.sesiones.length, "sesión", "sesiones") + "; sustituirá " + plural(hay, "sesión", "sesiones") + " de este iPhone. Los datos actuales se guardan aparte.", "Reemplazar", true))) return;
-            await store.importar(m); if (inf) await store.marcarNubeAlDia(inf, m.sesiones.length); exito(); app.toast("Copia restaurada");
+            await store.importar(m); await store.marcarNubeAlDia(inf || { at: t0, bytes: 0 }, m.sesiones.length); exito(); app.toast("Copia restaurada");
           } }),
         ])),
         seccion({ cab: "Borrar", pie: "Borra la copia del servidor. Tus datos en este iPhone no se tocan." }, lista([

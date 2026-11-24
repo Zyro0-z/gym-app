@@ -4,6 +4,7 @@ import { VERSION } from "../ajustes.js";
 import { h, poner } from "../../ui/dom.js";
 import { exito } from "../../ui/haptica.js";
 import { leerTablas, fusionarTablas } from "../../core/estandares.js";
+import { asignarMusculos } from "../../core/musculos.js";
 import { seccion, lista, celda, interruptor } from "../../ui/controles.js";
 import { fmt, plural } from "../../core/formato.js";
 import { fila } from "./comun.js";
@@ -24,7 +25,9 @@ function importarTablas(app) {
     const ok = await app.confirmar("¿Importar tablas?", plural(k.length, "tabla", "tablas") + (ya ? "; " + plural(ya, "sustituye a una existente", "sustituyen a las existentes") + " con el mismo nombre." : "."), "Importar", false);
     if (!ok) return;
     await app.store.guardarAjustes((a) => { a.estandares = fusionarTablas(a.estandares, t); });
-    exito(); app.toast("Tablas importadas");
+    const r = asignarMusculos(app.store.estado.catalogo, app.store.estado.ajustes.estandares);
+    if (r.cambiados || r.conLiga) await app.store.guardarCatalogo(r.catalogo);
+    exito(); app.toast("Tablas importadas" + (r.conLiga ? " · " + plural(r.conLiga, "ejercicio enlazado", "ejercicios enlazados") : ""));
   }, { once: true });
   input.click();
 }

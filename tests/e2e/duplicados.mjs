@@ -43,6 +43,7 @@ assert.equal(e.rutinas[0].ejercicios[0].ejercicioId, "pressbanca");
 assert.doesNotMatch(await p.locator("#app").innerText(), /Unir ejercicios duplicados/);
 
 paso("un ejercicio con historial se puede borrar con su historial");
+await p.evaluate(() => window.__gym.store.guardarBorrador({ ejercicios: [{ ejercicioId: "raro", nombre: "raro", series: [] }] }));
 await p.evaluate(() => window.__gym.nav.ir("ejercicioCat/raro")); await espera(700);
 await p.getByText("Borrar ejercicio y su historial").click(); await espera(500);
 await p.getByRole("button", { name: "Borrar con su historial" }).click(); await espera(900);
@@ -51,6 +52,7 @@ assert.deepEqual(e.catalogo.map((c) => c.id), ["pressbanca"]);
 assert.equal(e.sesiones.length, 1, "la sesión que se quedó sin ejercicios se borra");
 assert.deepEqual(e.sesiones[0].ejercicios.map((x) => x.ejercicioId), ["pressbanca"]);
 assert.deepEqual(e.rutinas[0].ejercicios.map((x) => x.ejercicioId), ["pressbanca"]);
+assert.equal(e.borrador, null, "el entreno en curso se queda sin el ejercicio y vacío desaparece");
 
 assert.deepEqual(errores, [], "sin errores en consola");
 console.log("OK duplicados (" + motor + ")");
