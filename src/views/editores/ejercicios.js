@@ -8,7 +8,7 @@ import { canon, sinTildes } from "../../core/nombres.js";
 import { capital, reloj } from "../../ui/textos.js";
 import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
 import { kgTxt, usosEjercicio, renombrarEjercicio } from "./comun.js";
-import { MUSCULOS, nombreMusculo, baseQueFalta } from "../../core/musculos.js";
+import { MUSCULOS, nombreMusculo, baseQueFalta, estandarDe } from "../../core/musculos.js";
 import { seccionAsignarMusculos } from "../musculos.js";
 
 /* ---------- Catálogo de ejercicios ---------- */
@@ -45,7 +45,8 @@ export function vistaEjercicios(_p, app) {
         faltan ? seccion({ pie: "Añade ejercicios habituales con su grupo, material y músculos (principales y secundarios) ya rellenados. No toca los que ya tienes." },
           lista([celda({ titulo: "Añadir ejercicios comunes", sub: faltan + " disponibles", estilo: "accion", alPulsar: async () => {
             const nuevos = baseQueFalta(store.estado.catalogo);
-            await store.guardarCatalogo([...store.estado.catalogo, ...nuevos.map((x) => JSON.parse(JSON.stringify(x)))]);
+            const tablas = store.estado.ajustes.estandares;
+            await store.guardarCatalogo([...store.estado.catalogo, ...nuevos.map((x) => Object.assign(JSON.parse(JSON.stringify(x)), { estandar: estandarDe(x.nombre, tablas) }))]);
             app.toast(plural(nuevos.length, "ejercicio añadido", "ejercicios añadidos")); this.render(c); pintar();
           } })])) : null,
         seccionAsignarMusculos(app, () => { this.render(c); }));
@@ -63,7 +64,7 @@ export function vistaEjercicioCat([id], app) {
   const guardar = async (f) => {
     const cat = store.estado.catalogo.slice();
     let i = cat.findIndex((x) => x.id === id);
-    if (i < 0) { const n = store.estado.sesiones.flatMap((s) => s.ejercicios).find((e) => e.ejercicioId === id || canon(e.nombre) === id); cat.push(nuevoEjercicio(n ? n.nombre : id, null)); i = cat.length - 1; }
+    if (i < 0) { const n = store.estado.sesiones.flatMap((s) => s.ejercicios).find((e) => e.ejercicioId === id || canon(e.nombre) === id); cat.push(nuevoEjercicio(n ? n.nombre : id, null, store.estado.ajustes.estandares)); i = cat.length - 1; }
     const x = JSON.parse(JSON.stringify(cat[i])); f(x); cat[i] = x;
     await store.guardarCatalogo(cat);
   };

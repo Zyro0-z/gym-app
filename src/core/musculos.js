@@ -3,7 +3,7 @@
 // El reparto principal/secundario del catálogo base es cualitativo (revisiones de EMG y biomecánica);
 // se puede corregir ejercicio a ejercicio en Ajustes › Ejercicios.
 import { canon } from "./nombres.js";
-import { B } from "./catalogo-base-datos.js";
+import { B, LIGA } from "./catalogo-base-datos.js";
 
 export const MUSCULOS = [
   { id: "pecho-clavicular", nombre: "Pecho superior (clavicular)", grupo: "Pecho" },
@@ -68,6 +68,17 @@ export function baseDe(nombre) {
   return sinParentesis !== k && POR_ID.has(sinParentesis) ? POR_ID.get(sinParentesis) : null;
 }
 
+/**
+ * Referencia de liga (`estandar`) del catálogo base para un ejercicio, solo si su tabla existe en `tablas` (ajustes.estandares).
+ * Factor 1: misma barra/máquina/mancuerna que la tabla. Sin tabla o sin correspondencia devuelve null.
+ */
+export function estandarDe(nombre, tablas) {
+  const b = baseDe(nombre), slug = b && LIGA[b.nombre];
+  if (!slug || !tablas) return null;
+  const real = Object.keys(tablas).find((k) => canon(k) === canon(slug));
+  return real ? { slug: real, factor: 1, revisado: false, aproximado: false, polea: b.tipoMaterial === "polea" } : null;
+}
+
 /** Ejercicios del catálogo base que aún no están en `catalogo`. */
 export const baseQueFalta = (catalogo) => {
   const ya = new Set(catalogo.map((c) => c.id));
@@ -76,10 +87,11 @@ export const baseQueFalta = (catalogo) => {
 };
 
 /** Lleva los campos de músculos y carga del catálogo base a un ejercicio nuevo. */
-export function conBase(ej) {
+export function conBase(ej, tablas) {
   const b = baseDe(ej.nombre);
   if (!b) return ej;
-  return Object.assign({}, ej, { grupo: ej.grupo || b.grupo, unilateral: ej.unilateral || b.unilateral, tipoMaterial: ej.tipoMaterial || b.tipoMaterial,
+  const est = ej.estandar ? null : estandarDe(ej.nombre, tablas);
+  return Object.assign({}, ej, est ? { estandar: est } : {}, { grupo: ej.grupo || b.grupo, unilateral: ej.unilateral || b.unilateral, tipoMaterial: ej.tipoMaterial || b.tipoMaterial,
     musculos: JSON.parse(JSON.stringify(b.musculos)) }, b.modoCarga ? { modoCarga: b.modoCarga } : {});
 }
 
@@ -98,20 +110,24 @@ export function equivalentes(catalogo, id) {
 }
 
 /**
- * Rellena los músculos (y grupo, material y modo de carga si faltan) de los ejercicios del catálogo que aún no tienen
- * ninguno, a partir del catálogo base. No toca los que ya tienen músculos. `sinCoincidencia` lista los que no están en la base.
- * @returns {{catalogo:object[], cambiados:number, sinCoincidencia:object[]}}
+ * Completa desde el catálogo base los ejercicios que no tienen músculos (junto con grupo, material y modo de carga si faltan) y los que
+ * no tienen referencia de liga (si su tabla existe en `tablas`). No toca lo que ya está asignado ni los marcados «sin estándar».
+ * `sinCoincidencia` lista los ejercicios sin músculos que el catálogo base no conoce.
+ * @returns {{catalogo:object[], cambiados:number, sinCoincidencia:object[], conLiga:number}}
  */
-export function asignarMusculos(catalogo) {
+export function asignarMusculos(catalogo, tablas) {
   const sinCoincidencia = [];
-  let cambiados = 0;
+  let cambiados = 0, conLiga = 0;
   const salida = catalogo.map((ej) => {
-    if (ej.musculos && (ej.musculos.p.length || ej.musculos.s.length)) return ej;
-    const b = baseDe(ej.nombre) || baseDe(ej.id);
-    if (!b) { sinCoincidencia.push(ej); return ej; }
-    cambiados++;
-    return Object.assign({}, ej, { grupo: ej.grupo || b.grupo, tipoMaterial: ej.tipoMaterial || b.tipoMaterial, musculos: JSON.parse(JSON.stringify(b.musculos)) },
-      b.modoCarga && !ej.modoCarga ? { modoCarga: b.modoCarga } : {});
+    const b = baseDe(ej.nombre) || baseDe(ej.id), faltanMus = !(ej.musculos && (ej.musculos.p.length || ej.musculos.s.length));
+    if (!b) { if (faltanMus) sinCoincidencia.push(ej); return ej; }
+    const est = ej.estandar ? null : estandarDe(b.nombre, tablas);
+    if (!faltanMus && !est) return ej;
+    cambiados++; if (est) conLiga++;
+    const r = Object.assign({}, ej);
+    if (faltanMus) Object.assign(r, { grupo: ej.grupo || b.grupo, tipoMaterial: ej.tipoMaterial || b.tipoMaterial, musculos: JSON.parse(JSON.stringify(b.musculos)) }, b.modoCarga && !ej.modoCarga ? { modoCarga: b.modoCarga } : {});
+    if (est) r.estandar = est;
+    return r;
   });
-  return { catalogo: salida, cambiados, sinCoincidencia };
+  return { catalogo: salida, cambiados, sinCoincidencia, conLiga };
 }

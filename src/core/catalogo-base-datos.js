@@ -129,3 +129,21 @@ export const B = [
   ["Plancha lateral", "Core", ["oblicuos"], ["recto-abdominal", "gluteo-medio"], { unilateral: true }],
   ["Pallof press", "Core", ["oblicuos"], ["recto-abdominal"], { material: "polea", unilateral: true }],
 ];
+
+// Tabla de estándares de fuerza (Strength Level) que corresponde a cada ejercicio: solo el nombre de la tabla, no los datos.
+// Se asigna al ejercicio únicamente si esa tabla existe en `ajustes.estandares`; si no, el ejercicio queda sin liga.
+export const LIGA = {
+  "Press banca": "bench-press", "Press plano con mancuernas": "dumbbell-bench-press", "Press inclinado con mancuernas": "incline-dumbbell-bench-press",
+  "Press inclinado con barra": "incline-bench-press", "Press declinado con barra": "decline-bench-press", "Aperturas con mancuernas": "dumbbell-fly",
+  "Aperturas en polea": "cable-crossover", "Press en máquina": "chest-press", "Press banca agarre cerrado": "close-grip-bench-press",
+  "Press militar con mancuernas": "dumbbell-shoulder-press", "Press militar en máquina": "machine-shoulder-press", "Press Arnold": "arnold-press",
+  "Elevaciones laterales con mancuernas": "dumbbell-lateral-raise", "Elevaciones laterales en polea": "cable-lateral-raise",
+  "Elevaciones frontales con mancuernas": "dumbbell-front-raise", "Remo al mentón": "upright-row", "Face pull": "face-pull",
+  "Jalón al pecho": "lat-pulldown", "Dominadas": "pull-ups", "Dominadas supinas": "chin-ups", "Remo con barra": "bent-over-row", "Remo con mancuerna": "dumbbell-row",
+  "Remo en polea baja": "seated-cable-row", "Remo en T": "t-bar-row", "Encogimientos": "dumbbell-shrug", "Encogimientos con barra": "barbell-shrug",
+  "Peso muerto": "deadlift", "Peso muerto sumo": "sumo-deadlift", "Peso muerto rumano": "romanian-deadlift", "Sentadilla": "squat", "Sentadilla frontal": "front-squat",
+  "Sentadilla hack": "hack-squat", "Prensa de piernas": "leg-press", "Zancadas": "dumbbell-lunge", "Hip thrust": "hip-thrust", "Extensión de cuádriceps": "leg-extension",
+  "Curl femoral tumbado": "lying-leg-curl", "Curl femoral sentado": "seated-leg-curl", "Gemelos de pie": "standing-calf-raise", "Gemelos sentado": "seated-calf-raise",
+  "Curl con barra": "barbell-curl", "Curl con barra Z": "ez-bar-curl", "Curl con mancuernas": "dumbbell-curl", "Curl martillo": "hammer-curl", "Curl predicador": "preacher-curl",
+  "Curl en polea baja": "cable-curl", "Extensión de tríceps en polea": "tricep-pushdown", "Crunch en polea alta": "cable-crunch", "Elevación de piernas colgado": "hanging-leg-raise",
+};

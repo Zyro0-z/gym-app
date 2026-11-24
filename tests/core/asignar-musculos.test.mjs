@@ -37,3 +37,18 @@ test("baseQueFalta no repite un ejercicio que ya tienes con otro nombre", async 
   assert.ok(!f.includes("Press banca") && !f.includes("Press plano con mancuernas"));
   assert.ok(f.includes("Press inclinado con mancuernas"));
 });
+
+test("liga: la referencia solo se asigna si la tabla existe y respeta lo que ya hay", async () => {
+  const { estandarDe, asignarMusculos: asig, conBase } = await import("../../src/core/musculos.js");
+  const tablas = { "bench-press": [], "tricep-pushdown": [] };
+  assert.deepEqual(estandarDe("Press Banca (Barra)", tablas), { slug: "bench-press", factor: 1, revisado: false, aproximado: false, polea: false });
+  assert.equal(estandarDe("Tríceps Polea Alta (Cuerda)", tablas).polea, true);
+  assert.equal(estandarDe("Press Inclinado (Manc)", tablas), null, "sin la tabla incline-dumbbell-bench-press no hay liga");
+  assert.equal(estandarDe("Press Banca (Barra)", {}), null);
+  const cat = [{ id: "a", nombre: "Press Banca (Barra)", musculos: { p: ["pecho-esternal"], s: [] }, estandar: null }, { id: "b", nombre: "Press banca", musculos: { p: ["pecho-esternal"], s: [] }, estandar: { sin: true } },
+    { id: "c", nombre: "Press banca", musculos: { p: ["pecho-esternal"], s: [] }, estandar: { slug: "x", factor: 2 } }];
+  const r = asig(cat, tablas);
+  assert.equal(r.cambiados, 1); assert.equal(r.conLiga, 1);
+  assert.equal(r.catalogo[0].estandar.slug, "bench-press"); assert.deepEqual(r.catalogo[1].estandar, { sin: true }); assert.equal(r.catalogo[2].estandar.slug, "x");
+  assert.equal(conBase({ nombre: "Press banca", estandar: null }, tablas).estandar.slug, "bench-press");
+});

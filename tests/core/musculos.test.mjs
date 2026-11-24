@@ -37,3 +37,9 @@ test("catálogo base: sin ids repetidos, con músculo principal y solo músculos
     assert.ok(!c.musculos.s.some((m) => c.musculos.p.includes(m)), c.nombre + ": músculo a la vez principal y secundario");
   }
 });
+
+test("liga: todas las entradas de LIGA corresponden a un ejercicio del catálogo base", async () => {
+  const { LIGA } = await import("../../src/core/catalogo-base-datos.js");
+  const nombres = new Set(CATALOGO_BASE.map((c) => c.nombre));
+  for (const n of Object.keys(LIGA)) assert.ok(nombres.has(n), "no está en el catálogo base: " + n);
+});

@@ -16,23 +16,23 @@ function mapaMusculosSemana(V) {
 export { n1 };
 
 /** Ejercicios del catálogo sin músculos asignados que el catálogo base sí conoce / que no conoce. */
-export const sinMusculosCat = (catalogo) => { const r = asignarMusculos(catalogo); return { resolubles: r.cambiados, sin: r.sinCoincidencia }; };
+export const sinMusculosCat = (catalogo, tablas) => { const r = asignarMusculos(catalogo, tablas); return { resolubles: r.cambiados, sin: r.sinCoincidencia, liga: r.conLiga }; };
 
 /**
  * Sección «Asignar músculos automáticamente» (o null si no hace falta): rellena desde el catálogo base los ejercicios que no tienen
  * músculos, para que cuenten en el mapa por músculos. Los que el catálogo base no conoce se listan para asignarlos a mano.
  */
 export function seccionAsignarMusculos(app, repintar) {
-  const { store } = app, { resolubles, sin } = sinMusculosCat(store.estado.catalogo);
+  const { store } = app, tablas = store.estado.ajustes.estandares, { resolubles, sin, liga } = sinMusculosCat(store.estado.catalogo, tablas);
   if (!resolubles && !sin.length) return null;
   const celdas = [];
-  if (resolubles) celdas.push(celda({ titulo: "Asignar músculos automáticamente", sub: plural(resolubles, "ejercicio", "ejercicios") + " con coincidencia en el catálogo base", estilo: "accion", alPulsar: async () => {
-    const r = asignarMusculos(store.estado.catalogo);
+  if (resolubles) celdas.push(celda({ titulo: "Asignar músculos automáticamente", sub: plural(resolubles, "ejercicio", "ejercicios") + " con coincidencia en el catálogo base" + (liga ? " · " + plural(liga, "referencia de liga", "referencias de liga") : ""), estilo: "accion", alPulsar: async () => {
+    const r = asignarMusculos(store.estado.catalogo, tablas);
     await store.guardarCatalogo(r.catalogo);
     app.toast(plural(r.cambiados, "ejercicio actualizado", "ejercicios actualizados")); repintar();
   } }));
   for (const ej of sin) celdas.push(celda({ titulo: ej.nombre, sub: "No está en el catálogo base: asigna sus músculos a mano", chevron: true, alPulsar: () => app.nav.ir("ejercicioCat/" + encodeURIComponent(ej.id)) }));
-  return seccion({ cab: "Músculos por asignar", pie: "Sin músculos, un ejercicio no cuenta en el mapa por músculos (pecho superior, dorsal, cabezas del deltoides…). Solo se rellenan los que no tienen ninguno; los que ya editaste no se tocan." }, lista(celdas));
+  return seccion({ cab: "Músculos por asignar", pie: "Sin músculos, un ejercicio no cuenta en el mapa por músculos (pecho superior, dorsal, cabezas del deltoides…). También asigna la tabla de liga a los que no la tienen, si esa tabla está en Avanzado. Lo que ya editaste no se toca." }, lista(celdas));
 }
 
 export function vistaMusculos(_p, app) {
