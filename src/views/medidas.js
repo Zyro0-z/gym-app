@@ -48,9 +48,28 @@ export function editarMedidas(app, original = null) {
   });
 }
 
+let sel = null;   // medida elegida en el selector (se recuerda entre Cuerpo y Medidas)
+
+/** Tarjeta con el selector de medida y su gráfica; null si aún no hay medidas. `repintar` se llama al cambiar de medida. */
+export function tarjetaMedidas(app, repintar) {
+  const l = app.store.estado.medidas || [], hoy = app.store.hoy();
+  if (!l.length) return null;
+  const conDatos = MEDIDAS.filter((m) => serieMedida(l, m.k).length);
+  if (!sel || !conDatos.some((m) => m.k === sel)) sel = conDatos[0].k;
+  const pts = serieMedida(l, sel);
+  const nombre = MEDIDAS.find((m) => m.k === sel).texto;
+  const grafica = pts.length >= 2
+    ? graficaLinea({ puntos: pts.map((p) => ({ x: numDia(p.fecha), y: p.valor, detalle: capital(fechaCorta(p.fecha, hoy)) })), formato: cm, ejeX: (n) => fechaCorta(deNum(n)), area: false, etiqueta: nombre + " a lo largo del tiempo" })
+    : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Con dos mediciones verás la evolución.");
+  const elegir = async () => { const v = await app.hojaAcciones({ mensaje: "Medida", opciones: conDatos.map((m) => ({ texto: m.texto + (m.k === sel ? " · actual" : ""), valor: m.k })) }); if (v) { sel = v; repintar(); } };
+  const selector = conDatos.length < 2 ? h("div", { class: "t-headline" }, nombre)
+    : conDatos.length <= 3 ? segmentado(conDatos.map((m) => ({ valor: m.k, texto: m.texto })), sel, (v) => { sel = v; repintar(); }, { etiqueta: "Medida" })
+    : h("button", { class: "btn gris peq tap", onClick: elegir, "aria-label": "Medida: " + nombre + ". Cambiar" }, h("span", null, nombre), icono("chevron-abajo", { tam: 16 }));
+  return h("div", { class: "tarjeta" }, h("div", { style: { marginBottom: "8px", display: "flex" } }, selector), grafica);
+}
+
 export function vistaMedidas(_p, app) {
   const { store } = app;
-  let sel = null;
   return {
     titulo: "Medidas",
     derecha: () => [h("button", { class: "btn-barra", onClick: () => editarMedidas(app) }, "Añadir")],
@@ -61,18 +80,9 @@ export function vistaMedidas(_p, app) {
         return;
       }
       const conDatos = MEDIDAS.filter((m) => serieMedida(l, m.k).length);
-      if (!sel || !conDatos.some((m) => m.k === sel)) sel = conDatos[0].k;
-      const pts = serieMedida(l, sel);
-      const nombre = MEDIDAS.find((m) => m.k === sel).texto;
-      const grafica = pts.length >= 2
-        ? graficaLinea({ puntos: pts.map((p) => ({ x: numDia(p.fecha), y: p.valor, detalle: capital(fechaCorta(p.fecha, hoy)) })), formato: cm, ejeX: (n) => fechaCorta(deNum(n)), area: false, etiqueta: nombre + " a lo largo del tiempo" })
-        : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Con dos mediciones verás la evolución.");
-      const elegir = async () => { const v = await app.hojaAcciones({ mensaje: "Medida", opciones: conDatos.map((m) => ({ texto: m.texto + (m.k === sel ? " · actual" : ""), valor: m.k })) }); if (v) { sel = v; this.render(c); } };
-      const selector = conDatos.length < 2 ? h("div", { class: "t-headline" }, nombre)
-        : conDatos.length <= 3 ? segmentado(conDatos.map((m) => ({ valor: m.k, texto: m.texto })), sel, (v) => { sel = v; this.render(c); }, { etiqueta: "Medida" })
-        : h("button", { class: "btn gris peq tap", onClick: elegir, "aria-label": "Medida: " + nombre + ". Cambiar" }, h("span", null, nombre), icono("chevron-abajo", { tam: 16 }));
+      const tarjeta = tarjetaMedidas(app, () => this.render(c));
       poner(c,
-        seccion({}, h("div", { class: "tarjeta" }, h("div", { style: { marginBottom: "8px", display: "flex" } }, selector), grafica)),
+        seccion({}, tarjeta),
         seccion({ cab: "Últimas" }, lista(conDatos.map((m) => {
           const u = ultimaMedida(l, m.k);
           return celda({ titulo: m.texto, sub: u.cambio != null ? conSigno(u.cambio) + " desde el " + fechaCorta(u.desde, hoy) : capital(fechaCorta(u.fecha, hoy)),

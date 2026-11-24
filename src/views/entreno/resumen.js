@@ -5,13 +5,15 @@ import { icono } from "../../ui/iconos.js";
 import { seccion, lista, celda, chip } from "../../ui/controles.js";
 import { kg, kgTotal, minutos } from "../../ui/textos.js";
 import { fmt, plural } from "../../core/formato.js";
-import { epley } from "../../core/sesiones.js";
+import { epley, cargaTotal, pesoCorporalEn } from "../../core/sesiones.js";
 import { E } from "./estado.js";
 import { datosTarjeta } from "../../core/tarjeta.js";
 import { compartirTarjeta } from "../../ui/tarjeta.js";
 import { derivaEjercicio, UMBRAL_GENERICO_PCT } from "../../core/deriva.js";
 
-export function mejorRM(series) { let m = 0; for (const s of series) if (s.peso > 0 && s.reps > 0) m = Math.max(m, epley(s.peso, s.reps)); return m; }
+const cuenta = (s) => s.hecha !== false && s.tipo !== "calentamiento";
+/** Mejor e1RM de unas series; `carga` convierte el peso apuntado en carga del sistema (lastre, asistido). */
+export function mejorRM(series, carga = (p) => p) { let m = 0; for (const s of series) { const w = carga(s.peso); if (cuenta(s) && w > 0 && s.reps > 0) m = Math.max(m, epley(w, s.reps)); } return m; }
 
 /** Sube de 0 al valor final en ~600 ms (ease-out); con movimiento reducido pone el valor directamente. */
 function contar(el, hasta, formato) {
@@ -49,8 +51,9 @@ export async function mostrarResumen(ses) {
     }
     return mejor;
   };
+  const cargaDe = (id, dia) => { const c = store.estado.catalogo.find((x) => x.id === id), modo = (c && c.modoCarga) || "total", bw = modo === "total" ? null : pesoCorporalEn(store.estado.pesajes, dia); return (p) => cargaTotal(modo, p, bw); };
   let series = 0, vol = 0;
-  for (const e of ses.ejercicios) for (const s of e.series) { series++; if (s.peso > 0) vol += s.peso * s.reps; }
+  for (const e of ses.ejercicios) { const carga = cargaDe(e.ejercicioId, ses.fecha); for (const s of e.series) { if (!cuenta(s)) continue; series++; const w = carga(s.peso); if (w > 0) vol += w * (s.reps || 0); } }
   const nSeries = h("span"), nVol = vol ? h("span") : null;
   if (prs.length) record();
   E.app.abrirHoja({
@@ -71,9 +74,9 @@ export async function mostrarResumen(ses) {
           lista(deriva.map(({ nombre, d }) => celda({ titulo: nombre, sub: d.personal ? "Tu mediana " + fmt(d.personal.mediana, 1) + " % · umbral " + fmt(d.umbral, 1) + " %" : "Umbral genérico " + d.umbral + " %",
             valor: chip((d.caida > 0 ? "−" : "+") + fmt(Math.abs(d.caida), 1) + " %", d.alta ? "warn" : "ok") })))) : null,
         seccion({ cab: "Por ejercicio" }, lista(ses.ejercicios.map((e) => {
-          const mejor = e.series.reduce((m, s) => (!m || epley(s.peso, s.reps) > epley(m.peso, m.reps) ? s : m), null);
+          const mejor = e.series.filter(cuenta).reduce((m, s) => (!m || epley(s.peso, s.reps) > epley(m.peso, m.reps) ? s : m), null);
           const ant = anteriorDe(e.ejercicioId);
-          const a = ant ? mejorRM(ant.e.series) : 0, b = mejorRM(e.series);
+          const a = ant ? mejorRM(ant.e.series, cargaDe(e.ejercicioId, ant.s.fecha)) : 0, b = mejorRM(e.series, cargaDe(e.ejercicioId, ses.fecha));
           const dir = !ant || !a || !b ? null : b > a * 1.005 ? "sube" : b < a * 0.995 ? "baja" : "igual";
           return celda({ titulo: e.nombre, sub: plural(e.series.length, "serie", "series") + (mejor && mejor.peso > 0 ? " · mejor " + fmt(mejor.peso, Number.isInteger(mejor.peso) ? 0 : 1) + " × " + mejor.reps : ""),
             valor: dir ? chip(dir === "sube" ? "Mejor" : dir === "baja" ? "Peor" : "Igual", dir === "sube" ? "ok" : dir === "baja" ? "bad" : null, { icono: dir }) : null });

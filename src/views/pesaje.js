@@ -1,6 +1,7 @@
 // Hoja para añadir o editar un pesaje (peso corporal).
 import { h, poner } from "../ui/dom.js";
-import { seccion, lista, celda } from "../ui/controles.js";
+import { seccion, lista, celda, vacio } from "../ui/controles.js";
+import { kg, fechaCorta, capital } from "../ui/textos.js";
 import { leerNumero } from "../core/formato.js";
 import { exito } from "../ui/haptica.js";
 
@@ -38,3 +39,20 @@ export function abrirPesaje(app, existente = null) {
   });
   return hoja;
 }
+
+/** Progreso › Cuerpo › Todos los pesajes: la lista completa, para editar o borrar. */
+export function vistaPesajes(_p, app) {
+  const { store } = app;
+  return {
+    titulo: "Pesajes",
+    derecha: () => [h("button", { class: "btn-barra", onClick: () => abrirPesaje(app) }, "Añadir")],
+    render(c) {
+      const pes = store.estado.pesajes.slice().sort((a, b) => (a.fecha < b.fecha ? 1 : -1)), hoy = store.hoy();
+      if (!pes.length) { poner(c, vacio({ icono: "bascula", titulo: "Sin pesajes", texto: "Apunta tu peso para ver la tendencia.", acciones: [{ texto: "Añadir pesaje", alPulsar: () => abrirPesaje(app) }] })); return; }
+      poner(c, seccion({ pie: "Toca uno para editarlo; desliza para borrarlo." }, lista(pes.map((p) => celda({ titulo: capital(fechaCorta(p.fecha, hoy)), valor: kg(p.kg), chevron: true,
+        alPulsar: () => abrirPesaje(app, p),
+        alBorrar: async () => { await store.guardarPesajes(store.estado.pesajes.filter((x) => !(x.fecha === p.fecha && x.kg === p.kg))); app.toast("Pesaje borrado", { icono: "papelera" }); } })))));
+    },
+  };
+}
+vistaPesajes.pestana = "progreso";

@@ -14,6 +14,7 @@ import { vistaMusculos } from "./musculos.js";
 import { vistaComparar } from "./comparar.js";
 import { vistaPorGimnasio } from "./porgimnasio.js";
 import { vistaMedidas } from "./medidas.js";
+import { vistaPesajes } from "./pesaje.js";
 import { vistaRendimiento } from "./rendimiento.js";
 import { vistaMolestias } from "./molestias.js";
 import { vistaMesociclos, vistaMesociclo } from "./mesociclos.js";
@@ -45,7 +46,7 @@ export const VISTAS = {
   rutinas: vistaRutinas, rutina: vistaRutina, horario: vistaHorario, ejercicios: vistaEjercicios, ejercicioCat: vistaEjercicioCat,
   grupos: vistaGrupos, objetivos: vistaObjetivos, cuerpo: vistaCuerpo, bloques: vistaBloques, bloque: vistaBloque,
   entrenamiento: vistaEntrenamiento, calidad: vistaCalidad, avanzado: vistaAvanzado,
-  fatiga: vistaFatiga, musculos: vistaMusculos, porGimnasio: vistaPorGimnasio, comparar: vistaComparar, medidas: vistaMedidas,
+  fatiga: vistaFatiga, musculos: vistaMusculos, porGimnasio: vistaPorGimnasio, comparar: vistaComparar, medidas: vistaMedidas, pesajes: vistaPesajes,
   rendimiento: vistaRendimiento, molestias: vistaMolestias, mesociclos: vistaMesociclos, mesociclo: vistaMesociclo, nube: vistaNube,
   noEncontrada: vistaNoEncontrada,
 };

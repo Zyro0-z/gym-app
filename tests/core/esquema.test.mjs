@@ -59,3 +59,12 @@ test("muchos errores: se informa de unos pocos, no de todos", () => {
   for (const s of o.sesiones) s.fecha = "x";
   assert.equal(validarCopia(o).length, 3);
 });
+
+test("una sesión con un ejercicio «solo repeticiones» se valida y hace ida y vuelta", () => {
+  const o = buena();
+  o.sesiones[0].ejercicios[0].tipo = "reps";
+  assert.deepEqual(validarCopia(o), []);
+  const m = leerCopia(JSON.stringify(o), {});
+  assert.ok(m, "la copia con tipo «reps» se lee");
+  assert.equal(m.sesiones.find((s) => s.id === o.sesiones[0].id).ejercicios[0].tipo, "reps");
+});

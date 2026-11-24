@@ -134,7 +134,7 @@ export async function menuEjercicio(i) {
   if (!E.M || !r) return;
   if (r === "cambiar") {
     const x = await elegirEjercicio(E.app, { titulo: "Cambiar ejercicio" });
-    if (x && E.M) { e.ejercicioId = x.ejercicioId; e.nombre = x.nombre; }
+    if (x && E.M) { e.ejercicioId = x.ejercicioId; e.nombre = x.nombre; delete e.tipo; Object.assign(e, tipoDeCatalogo(x.ejercicioId)); }
   } else if (r === "historia") return verHistoria(e);
   else if (r === "nota") return editarNota(e);
   else if (r === "notafija") return editarNotaFija(e);

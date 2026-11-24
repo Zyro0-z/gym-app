@@ -52,15 +52,26 @@ export function vistaNube(_p, app) {
             h("div", { class: "fila", style: { marginTop: "10px", gap: "8px" } }, boton(verClave ? "Ocultar" : "Mostrar", () => { verClave = !verClave; app.nav.repintarActual(); }, { estilo: "gris", peq: true }), boton("Copiar", async () => { try { await navigator.clipboard.writeText(clave); app.toast("Clave copiada"); } catch (e) { app.toast("No se pudo copiar"); } }, { estilo: "gris", peq: true })))) : null,
         seccion({ cab: "Copia", pie: st.error ? "Último intento fallido: " + st.error : (n.ultima ? "Última subida desde este iPhone: " + capital(fechaCorta(n.ultima.at.slice(0, 10), hoy)) + " " + n.ultima.at.slice(11, 16) + ", " + plural(n.ultima.sesiones, "sesión", "sesiones") + "." : "Aún no has subido ninguna.") }, lista([
           celda({ titulo: st.subiendo ? "Subiendo…" : "Subir ahora", sub: info ? "Copia en el servidor: " + tamano(info.bytes) + ", " + fechaCorta(new Date(info.at).toISOString().slice(0, 10), hoy) : null, estilo: "accion", deshabilitada: !listo || st.subiendo,
-            alPulsar: async () => { if (!listo || st.subiendo) return; try { await store.subirNube(); exito(); app.toast("Copia subida"); cargar(); } catch (e) { await app.alerta({ titulo: "No se pudo subir", mensaje: e.message }); app.nav.repintarActual(); } } }),
-          celda({ titulo: "Subir sola tras cada sesión", control: interruptor(n.activa && n.auto, (v) => guardarNube((x) => { x.activa = v; x.auto = v; }).then(() => (v && listo ? store.subirNube().catch(() => {}) : null)), "Subir sola tras cada sesión") }),
+            alPulsar: async () => {
+              if (!listo || st.subiendo) return;
+              try {
+                try { await store.subirNube(); }
+                catch (e) {
+                  if (!e.conflicto || !(await app.confirmar("¿Sobrescribir la copia del servidor?", "El servidor tiene una copia más reciente que la de este iPhone. Si sigues, se pierde.", "Sobrescribir", true))) throw e;
+                  await store.subirNube({ forzar: true });
+                }
+                exito(); app.toast("Copia subida"); cargar();
+              } catch (e) { if (!e.conflicto) await app.alerta({ titulo: "No se pudo subir", mensaje: e.message }); app.nav.repintarActual(); }
+            } }),
+          celda({ titulo: "Subir sola tras cada sesión", control: interruptor(n.activa && n.auto, (v) => guardarNube((x) => { x.activa = v; x.auto = v; }).then(() => (v && listo ? store.subirNube().catch((e) => { if (e.conflicto) app.toast("Hay una copia más reciente en el servidor: restáurala antes", { icono: null }); }) : null)), "Subir sola tras cada sesión") }),
           celda({ titulo: "Restaurar desde la nube", estilo: "accion", deshabilitada: !listo, alPulsar: async () => {
             if (!listo) return;
             let m;
-            try { m = await store.bajarNube(); } catch (e) { await app.alerta({ titulo: "No se pudo restaurar", mensaje: e.message }); return; }
+            let inf = null;
+            try { m = await store.bajarNube(); inf = await store.infoNube().catch(() => null); } catch (e) { await app.alerta({ titulo: "No se pudo restaurar", mensaje: e.message }); return; }
             const hay = store.estado.sesiones.length;
             if (hay && !(await app.confirmar("¿Reemplazar los datos?", "La copia de la nube tiene " + plural(m.sesiones.length, "sesión", "sesiones") + "; sustituirá " + plural(hay, "sesión", "sesiones") + " de este iPhone. Los datos actuales se guardan aparte.", "Reemplazar", true))) return;
-            await store.importar(m); exito(); app.toast("Copia restaurada");
+            await store.importar(m); if (inf) await store.marcarNubeAlDia(inf, m.sesiones.length); exito(); app.toast("Copia restaurada");
           } }),
         ])),
         seccion({ cab: "Borrar", pie: "Borra la copia del servidor. Tus datos en este iPhone no se tocan." }, lista([

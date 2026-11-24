@@ -15,7 +15,7 @@ export const MUSCULOS = [
   { id: "triceps-lateral-medial", nombre: "Tríceps (lateral y medial)", grupo: "Tríceps" },
   { id: "biceps", nombre: "Bíceps", grupo: "Bíceps" },
   { id: "braquial", nombre: "Braquial y braquiorradial", grupo: "Bíceps" },
-  { id: "antebrazo", nombre: "Antebrazo", grupo: "Bíceps" },
+  { id: "antebrazo", nombre: "Antebrazo", grupo: "Antebrazo" },
   { id: "dorsal", nombre: "Dorsal ancho", grupo: "Espalda" },
   { id: "redondo", nombre: "Redondo mayor", grupo: "Espalda" },
   { id: "trapecio-superior", nombre: "Trapecio superior", grupo: "Espalda" },

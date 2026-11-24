@@ -1,6 +1,6 @@
 /* Base: reinicio, tipografía y estructura de la app (pestañas, pantallas, barras). */
 
-html { font-size: 17px; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html { font-size: 17px; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation; }   /* sin zoom por doble toque; el pellizco sigue */
 @supports (font: -apple-system-body) { html { font: -apple-system-body; } }
 
 *, *::before, *::after { box-sizing: border-box; }

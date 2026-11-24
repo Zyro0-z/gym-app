@@ -19,10 +19,16 @@ const MOTIVOS = { 401: "El servidor no acepta el acceso.", 403: "La clave no coi
 /** Cliente con `fetch` e iteraciones inyectables (para probarlo sin red). */
 export function crearNube({ fetchFn = (...a) => globalThis.fetch(...a), it } = {}) {
   const opts = it ? { it } : {};
+  // La derivación de id y token (PBKDF2) es lenta: se hace una vez por clave y se recuerda mientras la app está abierta.
+  const memoria = new Map();
+  const identidadDe = (frase) => {
+    if (!memoria.has(frase)) memoria.set(frase, identidad(frase, it).catch((e) => { memoria.delete(frase); throw e; }));
+    return memoria.get(frase);
+  };
   async function llamar(url, frase, metodo, cuerpo) {
     const base = normalizarUrl(url);
     if (!base) throw new Error("La dirección del servidor no es válida (tiene que empezar por https://).");
-    const { id, token } = await identidad(frase, it);
+    const { id, token } = await identidadDe(frase);
     let r;
     try { r = await fetchFn(base + "/v1/copia/" + id + (metodo === "INFO" ? "/info" : ""), { method: metodo === "INFO" ? "GET" : metodo, headers: Object.assign({ Authorization: "Bearer " + token }, cuerpo ? { "Content-Type": "application/json" } : {}), body: cuerpo }); }
     catch (e) { throw new Error("No se pudo conectar con el servidor. Comprueba la conexión y la dirección."); }

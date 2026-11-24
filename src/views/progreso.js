@@ -14,8 +14,10 @@ import { ESTADOS } from "../core/estancamiento.js";
 import { compararPeriodo, estadoObjetivoSemana, fraccionSemana } from "../core/presentacion.js";
 import { kgTotal, kg, minutos, fechaCorta, capital } from "../ui/textos.js";
 import { abrirPesaje } from "./pesaje.js";
+import { tarjetaMedidas, editarMedidas } from "./medidas.js";
 import { ligaVigente } from "./ligas.js";
 import { elegirRutina } from "./hoy.js";
+import { n1 } from "./musculos.js";
 
 const SEGMENTOS = [{ valor: "resumen", texto: "Resumen" }, { valor: "ejercicios", texto: "Ejercicios" }, { valor: "musculos", texto: "Músculos" }, { valor: "cuerpo", texto: "Cuerpo" }];
 /** Sin preferencia guardada y sin series esta semana, Músculos abre en el primer periodo con series (semana, 30 días o todo) para no enseñar un mapa vacío. */
@@ -39,7 +41,7 @@ export const pctTxt = (p) => conSigno(p, Math.abs(p) < 10 ? 1 : 0) + " %";
 export function vistaProgreso(_p, app) {
   const { store } = app;
   const periodoMusculos = (A) => periodoGuardado() || ["sem", "30d"].find((x) => A.balance(x).total) || "all";
-  let seg = leerPref("progreso", "resumen"), q = "", semVol = leerPref("periodo-volumen", null), periodo = leerPref("periodo-musculos", "sem"), rango = leerPref("rango-cuerpo", "3M");
+  let seg = leerPref("progreso", "resumen"), q = "", semVol = leerPref("periodo-volumen", null), periodo = leerPref("periodo-musculos", "sem"), rango = leerPref("rango-cuerpo", "3M"), modoM = leerPref("modo-musculos", "grupos");
   const def = {
     titulo: "Progreso",
     bajoTitulo: () => segmentado(SEGMENTOS, seg, (v) => { seg = v; ponerPref("progreso", v); pintarCuerpo(); }, { etiqueta: "Sección" }),
@@ -54,7 +56,7 @@ export function vistaProgreso(_p, app) {
     }
     if (seg === "resumen") poner(c, resumen(A, app, semVol, (v) => { semVol = v; ponerPref("periodo-volumen", v); pintarCuerpo(); }));
     else if (seg === "ejercicios") poner(c, ejercicios(A, app, q, (v) => { q = v; }));
-    else if (seg === "musculos") poner(c, musculos(A, app, periodoMusculos(A), (v) => { periodo = v; ponerPref("periodo-musculos", v); pintarCuerpo(); }));
+    else if (seg === "musculos") poner(c, musculos(A, app, periodoMusculos(A), (v) => { periodo = v; ponerPref("periodo-musculos", v); pintarCuerpo(); }, modoM, (v) => { modoM = v; ponerPref("modo-musculos", v); pintarCuerpo(); }));
     else poner(c, cuerpo(A, app, rango, (v) => { rango = v; ponerPref("rango-cuerpo", v); pintarCuerpo(); }));
   }
   return def;
@@ -168,7 +170,27 @@ function ejercicios(A, app, q, guardarQ) {
 
 const PERIODOS_M = [{ valor: "sem", texto: "Semana" }, { valor: "30d", texto: "30 días" }, { valor: "all", texto: "Todo" }];
 
-function musculos(A, app, periodo, cambiar) {
+const MODOS_M = [{ valor: "grupos", texto: "Grupos" }, { valor: "musculos", texto: "Músculos" }];
+
+const PERIODOS_MM = [{ valor: "sem", texto: "Semana" }, { valor: "30d", texto: "4 semanas" }, { valor: "all", texto: "8 semanas" }];
+
+/** Vista por músculo concreto (clavicular, esternal, cabezas del deltoides y del tríceps, trapecio alto y medio, erectores…): series efectivas por periodo. */
+function porMusculo(A, app, periodo, cambiar, modo, cambiarModo) {
+  const V = A.volumenMusculos(), k = periodo === "sem" ? 1 : periodo === "30d" ? 4 : V.semanas.length;
+  const filas = V.filas.map((f) => ({ ...f, v: Math.round(f.porSemana.slice(-k).reduce((a, b) => a + b, 0) * 100) / 100 })).filter((f) => f.v > 0).sort((a, z) => z.v - a.v);
+  const txt = (v) => n1(v) + (v === 1 ? " serie" : " series");
+  const cab = [h("div", { class: "seccion junta" }, segmentado(MODOS_M, modo, cambiarModo, { etiqueta: "Detalle del mapa" })),
+    h("div", { class: "seccion junta" }, segmentado(PERIODOS_MM, periodo, cambiar, { etiqueta: "Periodo" }))];
+  if (!filas.length) return [...cab, vacio({ icono: "pesa", titulo: "Sin series en este periodo", texto: "Cuando entrenes aparecerá aquí cada músculo." })];
+  return [...cab,
+    seccion({ pie: "Series efectivas por músculo: principal = 1 serie, secundario = " + n1(V.fraccion) + ". Toca una zona para ver su valor." },
+      h("div", { class: "tarjeta" }, diagramaCuerpo(filas.map((f) => ({ nombre: f.nombre, tokens: [f.id + "-*"], valor: f.v })), { etiqueta: "Series efectivas por músculo", unidad: txt }))),
+    seccion({ cab: "Músculos, de más a menos series" }, lista(filas.map((f) => celda({ titulo: f.nombre, sub: f.grupo, valor: h("span", { class: "num" }, txt(f.v)) })))),
+    seccion({}, lista([celda({ titulo: "Comparar con semanas anteriores", sub: "Pasada, media de 4 semanas y peso del secundario", chevron: true, alPulsar: () => app.nav.ir("musculos") })]))];
+}
+
+function musculos(A, app, periodo, cambiar, modo, cambiarModo) {
+  if (modo === "musculos") return porMusculo(A, app, periodo, cambiar, modo, cambiarModo);
   const grupos = app.store.estado.ajustes.grupos;
   const b = A.balance(periodo);
   const okDia = periodo === "sem" ? (d) => claveSemana(d) === claveSemana(A.hoy) : periodo === "30d" ? (d) => d >= masDias(A.hoy, -29) : () => true;
@@ -181,6 +203,7 @@ function musculos(A, app, periodo, cambiar) {
   const vpg = A.volumenPorGrupo;
   const datos = semanas.map((s, i) => ({ etiqueta: s.etiqueta, partes: vpg.map((g) => ({ valor: g.semanas[g.semanas.length - semanas.length + i] || 0, color: colorGrupo(grupos, g.grupo) })) }));
   return [
+    h("div", { class: "seccion junta" }, segmentado(MODOS_M, modo, cambiarModo, { etiqueta: "Detalle del mapa" })),
     h("div", { class: "seccion junta" }, segmentado(PERIODOS_M, periodo, cambiar, { etiqueta: "Periodo" })),
     seccion({ pie: plural(b.total, "serie", "series") + " en el periodo. Más intensidad, más series." }, h("div", { class: "tarjeta" }, diagrama)),
     seccion({ cab: "Grupos, de más a menos series" }, lista(filas.sort((a, z) => z.ser - a.ser).map((f) => celda({ punto: colorGrupo(grupos, f.nombre), titulo: f.nombre, sub: f.vol ? kgTotal(f.vol) : null,
@@ -200,7 +223,9 @@ function cuerpo(A, app, rango, cambiar) {
   const { store } = app;
   const pes = store.estado.pesajes.slice().sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
   const nMed = (store.estado.medidas || []).length;
-  const medidas = seccion({}, lista([celda({ titulo: "Medidas corporales", valor: nMed ? String(nMed) : "Ninguna", chevron: true, alPulsar: () => app.nav.ir("medidas") })]));
+  const tarjeta = tarjetaMedidas(app, () => app.nav.repintarActual());
+  const medidas = seccion({ cab: "Medidas corporales", accion: { texto: "Añadir", alPulsar: () => editarMedidas(app) } },
+    tarjeta, lista([celda({ titulo: nMed ? "Todas las medidas" : "Medidas corporales", valor: nMed ? String(nMed) : "Ninguna", chevron: true, alPulsar: () => app.nav.ir("medidas") })]));
   if (!pes.length) return [vacio({ icono: "bascula", titulo: "Apunta tu peso", texto: "Con dos pesajes verás la tendencia. Las ligas también lo necesitan.", acciones: [{ texto: "Añadir pesaje", alPulsar: () => abrirPesaje(app) }] }), medidas];
   const rp = A.resumenPeso, ult = rp && rp.ultimo;
   const desde = rango === "Todo" ? "0000" : menosMeses(A.hoy, { "1M": 1, "3M": 3, "6M": 6 }[rango]);
@@ -224,9 +249,7 @@ function cuerpo(A, app, rango, cambiar) {
         : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Sin pesajes en este periodo."))),
     medidas,
     rp && rp.cambio ? h("p", { class: "seccion t-subhead" }, (rp.cambio.dif >= 0 ? "Has ganado " : "Has perdido ") + fmt(Math.abs(rp.cambio.dif), 1) + " kg desde el " + fechaCorta(rp.inicio, A.hoy) + ".") : null,
-    seccion({ cab: "Pesajes", accion: { texto: "Añadir", alPulsar: () => abrirPesaje(app) } }, lista(pes.slice(0, 60).map((p) => celda({ titulo: capital(fechaCorta(p.fecha, A.hoy)), valor: kg(p.kg), chevron: true,
-      alPulsar: () => abrirPesaje(app, p),
-      alBorrar: async () => { await store.guardarPesajes(store.estado.pesajes.filter((x) => !(x.fecha === p.fecha && x.kg === p.kg))); app.toast("Pesaje borrado", { icono: "papelera" }); } })))),
+    seccion({ cab: "Pesajes", accion: { texto: "Añadir", alPulsar: () => abrirPesaje(app) } }, lista([celda({ titulo: "Todos los pesajes", sub: "Último: " + capital(fechaCorta(pes[0].fecha, A.hoy)), valor: String(pes.length), chevron: true, alPulsar: () => app.nav.ir("pesajes") })])),
   ];
 }
 

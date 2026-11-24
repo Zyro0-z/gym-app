@@ -5,7 +5,7 @@ import { fechaISO } from "../core/fechas.js";
 import { validarMolestia } from "../core/molestias.js";
 
 export const TIPOS_SERIE = ["normal", "calentamiento", "fallo", "descendente"];
-export const TIPOS_EJERCICIO = ["peso", "duracion", "temporizador"];
+export const TIPOS_EJERCICIO = ["peso", "duracion", "temporizador", "reps"];
 export const MEDIDAS = ["cintura", "pecho", "brazo", "muslo", "cadera", "cuello"];
 const MAX_PROBLEMAS = 3;
 

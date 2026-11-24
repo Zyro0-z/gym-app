@@ -45,7 +45,7 @@ base sin error (`VersionError`) y nada se bloquea durante la actualización.
 {
   ejercicioId: "pressbancabarra",   // id del catálogo (canon del nombre al crearlo)
   nombre: "Press banca barra",      // nombre en el momento de guardar
-  tipo: "peso" | "duracion" | "temporizador",
+  tipo: "peso" | "duracion" | "temporizador" | "reps",
   series: [Serie],
   nota: "Agarre más cerrado",       // opcional
   grupoId: "g1"                     // esquema 4, opcional: ejercicios con el mismo grupoId forman una superserie

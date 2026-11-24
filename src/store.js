@@ -161,18 +161,31 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     // ── copia cifrada en la nube (la clave vive aparte de los datos y no se exporta) ──
     async claveNube() { const n = await repos.leerNube(); return n && n.frase ? n.frase : null; },
     guardarClaveNube: (frase) => repos.guardarNube(frase ? { frase } : null),
-    /** Cifra y sube la copia actual. Lanza Error con el motivo si no se puede. */
-    async subirNube() {
+    /**
+     * Cifra y sube la copia actual. Lanza Error con el motivo si no se puede.
+     * Si el servidor tiene una copia más reciente que la última que subió o restauró este dispositivo, no la pisa:
+     * lanza un Error con `conflicto = true` (con `{ forzar: true }` la sobrescribe).
+     */
+    async subirNube({ forzar = false } = {}) {
       const n = estado.ajustes.nube, frase = await store.claveNube();
       if (!n.url || !frase) throw new Error("Falta la dirección del servidor o la clave.");
       store.nubeEstado = { subiendo: true, error: null }; avisar("nube");
       try {
+        if (!forzar) {
+          const previa = await nube.info(n.url, frase);
+          if (previa && !(n.ultima && previa.at <= Date.parse(n.ultima.at) + 1000)) {
+            const e = new Error("Hay en el servidor una copia más reciente que la de este iPhone. Restáurala o sobrescríbela desde «Subir ahora».");
+            e.conflicto = true; throw e;
+          }
+        }
         const r = await nube.subir(n.url, frase, store.textoCopia());
         await store.guardarAjustes((a) => { a.nube.ultima = { at: new Date(r.at).toISOString(), bytes: r.bytes, sesiones: estado.sesiones.length }; }, { analitico: false });
         store.nubeEstado = { subiendo: false, error: null }; avisar("nube");
         return r;
       } catch (e) { store.nubeEstado = { subiendo: false, error: e.message }; avisar("nube"); throw e; }
     },
+    /** Anota que este dispositivo está al día con la copia del servidor (tras restaurarla). */
+    marcarNubeAlDia: (info, sesiones) => store.guardarAjustes((a) => { a.nube.ultima = { at: new Date(info.at).toISOString(), bytes: info.bytes, sesiones }; }, { analitico: false }),
     /** Baja y descifra la copia de la nube: devuelve el modelo ya validado (no lo aplica). */
     async bajarNube() {
       const n = estado.ajustes.nube, frase = await store.claveNube();

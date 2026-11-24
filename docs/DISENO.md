@@ -645,3 +645,7 @@ sesión» en rojo con una confirmación.
 - Filas no pulsables de detalle: `estilo: "compacta"` (36 px). Las pulsables mantienen 44 pt.
 - Iconos de Ajustes en neutro; título grande a 30 pt; borde de 0,5 px en tarjetas en modo oscuro.
 - Insignias de liga rediseñadas: medallas con material propio (madera, cobre, hierro, bronce, plata, oro, platino), gemas facetadas (zafiro, esmeralda, rubí), diamante de talla brillante, medallón con laurel (Maestro) y medallones alados (Gran Maestro, Élite, Leyenda con anillo espectral). Bisel, brillo superior y glifo en relieve; versión simplificada hasta 48 px. Ninguna variante sale del lienzo de 128×128 (el recorte de Leyenda venía de sus rayos).
+- Progreso › Cuerpo: gráfica de peso y, debajo, la gráfica de medidas con su selector; la lista completa de pesajes vive en «Todos los pesajes» (`pesajes`).
+- Progreso › Músculos: selector «Grupos | Músculos». «Músculos» pinta el mapa por músculo concreto (semana, 4 u 8 semanas).
+- Sin zoom por doble toque (`touch-action: manipulation` en `html`); el pellizco se conserva por accesibilidad.
+- Copia en la nube: no pisa una copia del servidor más reciente que la última subida o restaurada de este dispositivo (`subirNube` lanza `conflicto`; «Subir ahora» pide confirmar). La derivación PBKDF2 de id y token se hace una vez por clave.

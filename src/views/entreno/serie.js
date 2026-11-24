@@ -6,6 +6,7 @@ import { impacto, seleccion, record } from "../../ui/haptica.js";
 import { superaRecord, ruidoE1rm } from "../../core/prescripcion.js";
 import { canon } from "../../core/nombres.js";
 import { leerNumero, fmt } from "../../core/formato.js";
+import { cargaTotal, pesoCorporalEn } from "../../core/sesiones.js";
 import { TIPOS, letraTipo, aTexto } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
 import { pintarCuerpo } from "./ejercicios.js";
@@ -20,7 +21,8 @@ const cerrarTira = () => { if (tiraAbierta) { tiraAbierta.hidden = true; tiraAbi
 /** Si la serie recién marcada supera un récord (de su rango de repeticiones o de e1RM), lo devuelve; cada récord se avisa una vez por sesión. */
 function prEnVivo(e, s) {
   if (E.M.modo !== "entreno" || s.tipo === "calentamiento" || (e.tipo && e.tipo !== "peso")) return null;
-  const peso = leerNumero(s.peso), reps = leerNumero(s.reps);
+  const { store } = E.app, cat = store.estado.catalogo.find((x) => x.id === e.ejercicioId), modo = (cat && cat.modoCarga) || "total";
+  const peso = cargaTotal(modo, leerNumero(s.peso), modo === "total" ? null : pesoCorporalEn(store.estado.pesajes, E.M.d.fecha || store.hoy())), reps = leerNumero(s.reps);
   let ej = null;
   try { const A = E.app.store.analisis(); ej = A && A.ejercicios.find((x) => x.k === e.ejercicioId || x.k === canon(e.nombre || "")); } catch (_) { return null; }
   if (!ej) return null;

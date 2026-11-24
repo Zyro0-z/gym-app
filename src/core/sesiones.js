@@ -37,6 +37,20 @@ export function evaluarDuracion(C, s, seriesContadas) {
 }
 
 /** Sesiones normalizadas, de la más reciente a la más antigua. */
+/** Carga del sistema: con «lastre» el peso corporal + lo apuntado; con «asistido», el peso corporal − la ayuda; en otro caso, lo apuntado. Sin peso corporal conocido, 0. */
+export function cargaTotal(modo, anotado, kgCorporal) {
+  if (modo === "lastre") return kgCorporal ? kgCorporal + anotado : 0;
+  if (modo === "asistido") return kgCorporal ? Math.max(0, kgCorporal - anotado) : 0;
+  return anotado;
+}
+/** Peso corporal (kg) vigente el `dia`: el último pesaje de ese día o anterior, o el más antiguo si todos son posteriores. null si no hay pesajes. */
+export function pesoCorporalEn(pesajes, dia) {
+  const l = (pesajes || []).slice().sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
+  let r = null;
+  for (const x of l) { if (x.fecha <= dia) r = x; else break; }
+  return (r || l[0] || { kg: null }).kg;
+}
+
 export function leerSesiones(C) {
   const orden = (C.modelo.sesiones || []).slice().sort((a, b) =>
     (b.fecha ? Date.parse(b.fecha) : 0) - (a.fecha ? Date.parse(a.fecha) : 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
@@ -53,7 +67,7 @@ export function leerSesiones(C) {
       // Sin ningún pesaje conocido no hay carga calculable y la serie cuenta solo como serie (sin 1RM ni volumen).
       const modo = (cat && cat.modoCarga) || "total";
       const bw = modo === "total" ? null : (C.pesoEn(s.fecha) || (C.peso.registros || [])[0] || null);
-      const cargaDe = (peso) => (modo === "lastre" ? (bw ? bw.kg + peso : 0) : modo === "asistido" ? (bw ? Math.max(0, bw.kg - peso) : 0) : peso);
+      const cargaDe = (peso) => cargaTotal(modo, peso, bw ? bw.kg : null);
       const sets = [];
       for (const st of ex.series || []) {
         if (st.hecha === false) continue;
