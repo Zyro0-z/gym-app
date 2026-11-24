@@ -2,7 +2,7 @@
 import { numDia } from "./fechas.js";
 import { pocoFiable } from "./sesiones.js";
 import { MIN_SESIONES_VEREDICTO, VENTANA_SESIONES, DIAS_ESTANCADO, DIAS_INACTIVO, UMBRAL_RETROCESO,
-  FLECHA_PLANA_PCT, FLECHA_FUERTE_PCT, CHISPA_REGISTROS } from "./constantes.js";
+  FLECHA_PLANA_PCT, FLECHA_FUERTE_PCT } from "./constantes.js";
 
 /** Estados del semáforo, de más a menos urgente. */
 export const ESTADOS = {
@@ -36,12 +36,6 @@ export function tendencia(hist) {
   return { flecha, dir, pct };
 }
 
-/** Últimos CHISPA_REGISTROS 1RM de sesión (con null a la izquierda si faltan). */
-export function ultimosRM(e) {
-  const v = e.hist.slice(-CHISPA_REGISTROS).map((h) => h.mejorRM);
-  while (v.length < CHISPA_REGISTROS) v.unshift(null);
-  return v;
-}
 
 /**
  * Diagnóstico de un ejercicio. Las sesiones hechas mientras un bloque protegía a su grupo

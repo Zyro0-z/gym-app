@@ -76,15 +76,21 @@ export function vistaEjercicioCat([id], app) {
   };
   const DESCANSOS = [30, 45, 60, 90, 120, 150, 180, 240, 300];
   const opciones = async (mensaje, ops) => app.hojaAcciones({ mensaje, opciones: ops });
+  const ejOSint = () => {
+    const e = ej(); if (e) return e;
+    const n = store.estado.sesiones.flatMap((s) => s.ejercicios).find((x) => x.ejercicioId === id || canon(x.nombre) === id);
+    return n ? nuevoEjercicio(n.nombre, null) : null;
+  };
   async function renombrar() {
-    const e = ej(), nombre = await pedirTexto(app, { titulo: "Nombre del ejercicio", valor: e.nombre });
+    const e = ejOSint(); if (!e) return;
+    const nombre = await pedirTexto(app, { titulo: "Nombre del ejercicio", valor: e.nombre });
     if (!nombre || nombre === e.nombre) return;
     if (canon(nombre) === id) { await guardar((x) => { x.nombre = nombre; }); return; }
     const nid = await renombrarEjercicio(app, id, nombre);
     if (nid) app.nav.atras().then(() => app.nav.ir("ejercicioCat/" + encodeURIComponent(nid)));
   }
   async function borrar() {
-    const e = ej(), usos = usosEjercicio(store, id);
+    const e = ejOSint(), usos = usosEjercicio(store, id); if (!e) return;
     if (!(await app.confirmar("¿Borrar «" + e.nombre + "»?", usos ? "Se quita del catálogo, de las rutinas y de " + plural(usos, "sesión", "sesiones") + " del historial (las que se queden sin ejercicios se borran). No se puede deshacer." : "Se quita del catálogo y de las rutinas.", usos ? "Borrar con su historial" : "Borrar", true))) return;
     await store.borrarEjercicio(id);
     app.toast("Ejercicio borrado");

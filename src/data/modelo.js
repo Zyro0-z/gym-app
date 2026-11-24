@@ -64,7 +64,6 @@ export function ajustesBase() {
     ligas: { activa: false, escala: [], puntos: 5, margen: 1, semCarga: 8, semSeries: 4, correccionPolea: 1 },
     estandares: {},
     copia: null,
-    migracion: null,
     // Propuesta de descarga (docs/ESQUEMA.md): caída de e1RM ≥ caidaPct % en ≥ `ejercicios` ejercicios,
     // RPE medio que sube ≥ rpeSube, o sueño medio < `sueno` h; solo tras ≥ semanasMin semanas sin descarga
     descarga: { caidaPct: 3, ejercicios: 2, rpeSube: 1, sueno: 7, semanasMin: 6, pospuestaHasta: null, descartadaEn: null },

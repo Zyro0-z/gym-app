@@ -28,7 +28,6 @@
   --ok-ink: #1E7133;
   --warn-ink: #915500;
   --bad-ink: #BD2C24;
-  --yellow: #FFCC00;
   --on-accent: #FFFFFF;
   --tab-off: #6E6E73;   /* 4,5:1 sobre la barra (iOS usa #8E8E93) */
   --seg-pill: #FFFFFF;
@@ -49,7 +48,6 @@
      Reglas: una sola serie principal por gráfica, el color nunca es la única señal (hay texto y forma) y
      las miniaturas de un mismo grupo comparten escala. */
   --graf-banda: color-mix(in srgb, var(--accent) 17%, transparent);
-  --graf-2: var(--g-indigo); --graf-3: var(--g-naranja); --graf-4: var(--g-verde); --graf-5: var(--g-rosa);
 
   /* tipografía (rem sobre el tamaño de texto del sistema; 1rem = 17 pt por defecto) */
   --f-large: 1.8rem;        /* 30 */
@@ -86,7 +84,6 @@
   --dur-1: 150ms;
   --dur-2: 250ms;
   --dur-3: 380ms;
-  --t-push: 350ms;
   --t-fast: 250ms;
 }
 
@@ -123,7 +120,6 @@
   --ok-ink: #30D158;
   --warn-ink: #FF9F0A;
   --bad-ink: #FF7F77;
-  --yellow: #FFD60A;
   --accent: #0974E0;
   --accent-ink: #56AAFF;
   --g-rosa: #FF375F; --g-azul: #0A84FF; --g-verde: #30D158; --g-naranja: #FF9F0A;
@@ -149,7 +145,7 @@
 :root[data-theme="dark"][data-accent="grafito"]  { --accent: #757579; --accent-ink: #A5A5AA; }
 
 @media (prefers-reduced-motion: reduce) {
-  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; --t-push: 0ms; --t-fast: 0ms; --spring: linear; --muelle: linear; }
+  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; --t-fast: 0ms; --spring: linear; --muelle: linear; }
 }
 
 @supports (transition-timing-function: linear(0, 1)) {

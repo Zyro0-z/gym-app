@@ -1,5 +1,5 @@
 // IndexedDB «gymapp». Versión 1 de la base: almacén «kv». Versión 2: añade «sesiones» (clave id).
-// La versión de los DATOS va aparte, en kv.schema (ver modelo.js y migraciones.js).
+// La versión de los DATOS va aparte, en kv.schema (ver modelo.js y repos.js).
 const NOMBRE = "gymapp", VERSION = 2;
 let db = null;
 
@@ -40,7 +40,6 @@ export async function tx(almacenes, modo, fn) {
 const req = (r) => new Promise((ok, ko) => { r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); });
 
 export async function leerKV(clave) { const d = await abrir(); return req(d.transaction("kv").objectStore("kv").get(clave)); }
-export async function clavesKV() { const d = await abrir(); return req(d.transaction("kv").objectStore("kv").getAllKeys()); }
 export async function todasSesiones() { const d = await abrir(); return req(d.transaction("sesiones").objectStore("sesiones").getAll()); }
 export const escribirKV = (clave, valor) => tx("kv", "readwrite", (s) => { s.kv.put(valor, clave); });
 export const borrarKV = (clave) => tx("kv", "readwrite", (s) => { s.kv.delete(clave); });

@@ -1,9 +1,8 @@
 // Insignias de liga · montaje: apila silueta, bisel, cara, brillo y glifo, y añade la división (I, II, III) en una píldora.
-import { f, mezcla, lin, rad, poli, redondea, circulo, glifo, laurel, ala, paleta, facetas, defsBase, sombraSuelo, estrella, marcas } from "./graficos.js";
+import { f, mezcla, lin, rad, poli, redondea, glifo, laurel, ala, paleta, facetas, defsBase, sombraSuelo } from "./graficos.js";
 import { L, CINTA, DIAMANTE } from "./registro.js";
 
 const PRISMA = ["#ff9aa8", "#ffd48a", "#fff7a0", "#a9f2b4", "#9fd8ff", "#c7a9ff"];
-const centro = (pts) => { const n = pts.length; return pts.reduce((a, p) => [a[0] + p[0] / n, a[1] + p[1] / n], [0, 0]); };
 
 function estiloAnim(c) {
   return `<style>.${c}-b{animation:${c}-s 6.5s ease-in-out infinite}.${c}-r{transform-box:fill-box;transform-origin:center;animation:${c}-g 90s linear infinite}` +

@@ -136,7 +136,6 @@ opcionales; `id` único. Campo opcional de la copia (`molestias`): una copia sin
   copia: { at, sesiones } | null,       // última copia EXPORTADA (fecha ISO y nº de sesiones entonces)
   avisoCopia: { pospuestoHasta },       // la tarjeta de Hoy calla hasta esa fecha
   copiasInternas: { cada: 5 },
-  migracion: { fecha, desde, sesiones, errores, avisos } | null,
   // esquema 4
   descarga: { caidaPct: 3, ejercicios: 2, rpeSube: 1, sueno: 7, semanasMin: 6, pospuestaHasta: null, descartadaEn: null },
   csv: { separador: ";", decimal: "," },

@@ -1,7 +1,7 @@
 // Insignias de liga · registro de las 15 ligas. Cada una es una medalla con su material, su silueta,
 // un glifo en relieve y detalles propios. Estética de premios de Salud/Fitness: degradados suaves,
 // bisel, brillo superior y glifos redondeados.
-import { f, rad2, mezcla, lin, rad, poli, redondea, regular, circulo, ondulada, elipse, estrella, cuentas, marcas, facetas, G, glifo, laurel, ala, paleta } from "./graficos.js";
+import { f, rad2, rad, poli, redondea, regular, circulo, ondulada, estrella, cuentas, marcas, facetas, G, glifo, laurel } from "./graficos.js";
 
 export const CINTA = { completa: { y: 99, alto: 19 }, simple: { y: 92, alto: 28 } };
 export const L = [];
@@ -83,5 +83,4 @@ L.push({ nombre: "Élite", base: "#f1b800", forma: circulo(34), ext: 34, k: 0.78
 L.push({ nombre: "Leyenda", base: "#7a56f0", forma: circulo(31), ext: 31, k: 0.8, kSolo: 0.86, disco: 18, gl: G.corona, gk: 0.54, gy: 0, anim: true, alas: { R: 31, esc: 0.95 }, espectro: true,
   cara: (P, p, simple) => cuentas(simple ? 0 : 24, 27.2, 0.75, p.brillo, 0.9) });
 
-export { paleta, mezcla, lin, rad, laurel, ala, glifo, facetas, estrella, elipse };
 export const DIAMANTE = DIA;

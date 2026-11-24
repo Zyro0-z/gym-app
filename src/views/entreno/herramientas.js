@@ -2,7 +2,6 @@
 // última serie, superseries y calculadora de discos.
 import { h, poner } from "../../ui/dom.js";
 import { seccion, lista, celda } from "../../ui/controles.js";
-import { seleccion } from "../../ui/haptica.js";
 import { leerNumero, fmt } from "../../core/formato.js";
 import { esRpe } from "../../core/rpe.js";
 import { calcularDiscos, agrupar } from "../../core/discos.js";

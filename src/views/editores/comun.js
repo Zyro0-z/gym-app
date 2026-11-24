@@ -1,9 +1,7 @@
 // Piezas compartidas por los editores de Ajustes.
 import { h } from "../../ui/dom.js";
-import { celda } from "../../ui/controles.js";
 import { fmt, plural } from "../../core/formato.js";
 import { canon } from "../../core/nombres.js";
-import { kg } from "../../ui/textos.js";
 import { nuevoEjercicio } from "../selector.js";
 import { duplicadosBase, fusionarAjustes } from "../../core/musculos.js";
 

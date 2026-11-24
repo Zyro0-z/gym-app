@@ -159,7 +159,7 @@ export function cerrarModal(inmediato) {
 }
 
 export async function pedirWake() {
-  try { if (E.app.store.estado.ajustes.entreno.pantallaEncendida && navigator.wakeLock && !E.wake) { E.wake = await navigator.wakeLock.request("screen"); E.wake.addEventListener("release", () => { E.wake = null; }); } } catch (e) { E.wake = null; }
+  try { if (E.app.store.estado.ajustes.entreno.pantallaEncendida && navigator.wakeLock && !E.wake) { const lock = await navigator.wakeLock.request("screen"); if (!E.M || E.M.modo !== "entreno") { lock.release().catch(() => {}); return; } E.wake = lock; lock.addEventListener("release", () => { if (E.wake === lock) E.wake = null; }); } } catch (e) { E.wake = null; }
 }
 
 export function soltarWake() { try { if (E.wake) E.wake.release(); } catch (e) {} E.wake = null; }

@@ -191,7 +191,6 @@ el orden en que se guardaron las sesiones, igual que en la versión 1.
   ligas: { activa, escala: [{ nombre, desde, hasta, ndiv }], puntos, margen, semCarga, semSeries, correccionPolea },
   estandares: { [slug]: [{ pc, niveles: [5] }] },
   copia: { at, sesiones } | null,
-  migracion: { fecha, desde, sesiones, errores, avisos } | null
 }
 ```
 

@@ -38,8 +38,6 @@ export function s(tag, props, ...hijos) { return anadir(aplicar(document.createE
 /** Vacía un nodo y le pone hijos nuevos. */
 export function poner(el, ...hijos) { el.replaceChildren(); return anadir(el, hijos); }
 
-/** Espera al siguiente fotograma (útil antes de una transición CSS). */
-export const fotograma = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
 export const reducirMovimiento = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 

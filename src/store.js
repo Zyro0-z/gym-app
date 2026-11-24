@@ -142,26 +142,23 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     /** Lee una copia (lanza Error con el motivo) sin aplicarla. */
     leerCopia(texto) { return leerCopia(texto, { ahora: reloj().toISOString() }); },
     /** Sustituye todo por la copia `m`; los datos actuales quedan en «respaldo-importacion» y en las copias internas. */
-    async importar(m, motivo = "importar") {
+    async importar(m, motivo = "importar", borrador = null) {
       await repos.reemplazarTodo(m, estado, motivo);
+      await store.guardarBorrador(borrador);
       estado = Object.assign({}, estado, { sesiones: copiar(m.sesiones), catalogo: copiar(m.catalogo), rutinas: copiar(m.rutinas), pesajes: copiar(m.pesajes), medidas: copiar(m.medidas || []), molestias: copiar(m.molestias || []), ajustes: copiar(m.ajustes) });
       cambio("todo");
     },
     /** Deja la app sin sesiones, pesajes, medidas, rutinas ni borrador. Conserva ajustes y catálogo; antes guarda una copia interna. */
     async borrarTodo() {
       await store.importar({ sesiones: [], catalogo: estado.catalogo, rutinas: [], pesajes: [], medidas: [], molestias: [], ajustes: estado.ajustes }, "borrar");
-      await store.guardarBorrador(null);
     },
     /** Borra un ejercicio de sesiones, rutinas, catálogo y entreno en curso en una sola operación; antes guarda una copia interna. */
     async borrarEjercicio(id) {
-      const b = borradorSin(estado.borrador, id), cambia = estado.borrador && JSON.stringify(b) !== JSON.stringify(estado.borrador);
-      await store.importar(modeloSinEjercicio(estado, id), "borrar");
-      if (cambia) await store.guardarBorrador(b);
+      await store.importar(modeloSinEjercicio(estado, id), "borrar", borradorSin(estado.borrador, id));
     },
     /** Quita sesiones, pesajes, medidas, molestias y borrador. Conserva rutinas, catálogo y ajustes (tablas de estándares incluidas); antes guarda una copia interna. */
     async borrarHistorial() {
       await store.importar({ sesiones: [], catalogo: estado.catalogo, rutinas: estado.rutinas, pesajes: [], medidas: [], molestias: [], ajustes: estado.ajustes }, "borrar");
-      await store.guardarBorrador(null);
     },
     listarRespaldos: () => repos.listarRespaldos(),
     /** Restaura una copia interna: se valida igual que un archivo y los datos actuales se guardan antes. */

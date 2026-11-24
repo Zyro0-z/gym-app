@@ -7,7 +7,6 @@ import { fmt, plural } from "../core/formato.js";
 import { fechaCorta, capital } from "../ui/textos.js";
 import { csvSeries, csvPesajes } from "../core/csv.js";
 
-/** Exporta la copia (hoja de compartir del sistema o descarga). true si se hizo. */
 /** Guarda un archivo: hoja Compartir (en iPhone, «Guardar en Archivos») o descarga. false si se cancela o falla. */
 export async function guardarArchivo(app, texto, nombre, tipo) {
   const f = new File([texto], nombre, { type: tipo });

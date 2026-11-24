@@ -3,7 +3,7 @@ import { h, poner, reducirMovimiento } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
 import { seccion, lista, celda } from "../../ui/controles.js";
 import { seleccion } from "../../ui/haptica.js";
-import { kg, fechaCorta, capital } from "../../ui/textos.js";
+import { fechaCorta, capital } from "../../ui/textos.js";
 import { fmt } from "../../core/formato.js";
 import { esRpe, rpeTxt } from "../../core/rpe.js";
 import { e1rmReciente, cargaParaRpe } from "../../core/prescripcion.js";

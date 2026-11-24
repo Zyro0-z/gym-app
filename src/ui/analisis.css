@@ -35,8 +35,6 @@
 .banda-fila.pocos .pista i.media { background: var(--cell); border: 2px solid var(--accent); box-sizing: border-box; }
 .banda-fila .n { color: var(--label-2); font-size: var(--f-footnote); white-space: nowrap; text-align: right; }
 
-/* ── tarjeta de sesión para compartir ── */
-.vista-tarjeta { display: block; width: 100%; max-width: 360px; margin: 0 auto; border-radius: 16px; }
 
 /* ── copia en la nube ── */
 .clave-nube { display: block; padding: 12px; border-radius: var(--r-control); background: var(--cell-2); font: 600 var(--f-callout)/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; word-break: break-all; user-select: all; -webkit-user-select: all; text-align: center; }

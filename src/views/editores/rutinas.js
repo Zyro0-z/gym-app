@@ -7,7 +7,7 @@ import { colorGrupo } from "../../ui/tema.js";
 import { plural } from "../../core/formato.js";
 import { canon } from "../../core/nombres.js";
 import { elegirEjercicio } from "../selector.js";
-import { DIAS, fila, compacto, actualizarSesiones } from "./comun.js";
+import { DIAS, compacto, actualizarSesiones } from "./comun.js";
 
 /* ---------- Rutinas ---------- */
 

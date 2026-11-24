@@ -1,7 +1,7 @@
 // Peso corporal: medias de 21 días, ritmo semanal y tendencia frente a la fase (bulk, cut, mantener).
 // Nunca se comparan dos pesajes sueltos: el peso diario oscila por agua, sal y digestión.
 import { numDia } from "./fechas.js";
-import { PESO_VENTANA_DIAS, PESO_MIN_REGISTROS, PESO_UMBRAL_PCT_SEMANA, PESO_BANDA_MANTENER_KG, IPF_GL } from "./constantes.js";
+import { PESO_VENTANA_DIAS, PESO_MIN_REGISTROS, PESO_UMBRAL_PCT_SEMANA, PESO_BANDA_MANTENER_KG } from "./constantes.js";
 
 export function faseEn(C, iso) {
   let f = null;
@@ -91,12 +91,3 @@ export function resumenPeso(C, A) {
   return r;
 }
 
-/** Puntos IPF GL de un 1RM con el peso corporal de ese día (null si no hay pesaje previo o sexo). */
-export function glDe(C, rm, dia) {
-  if (!C.peso.registros.length || !C.peso.sexo || !(rm > 0) || !dia) return null;
-  const p = C.pesoEn(dia);
-  if (!p) return null;
-  const c = IPF_GL[C.peso.sexo];
-  const den = c[0] - c[1] * Math.exp(-c[2] * p.kg);
-  return den > 0 ? (rm * 100) / den : null;
-}

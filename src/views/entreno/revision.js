@@ -9,6 +9,7 @@ import { idSesion } from "../../data/modelo.js";
 import { hhmm, fechaLocal, nombreDe, contarHechas } from "./estado.js";
 import { cerrarModal, guardarYa } from "./pantalla.js";
 import { mostrarResumen } from "./resumen.js";
+import { cancelarAviso } from "./descanso.js";
 import { E } from "./estado.js";
 import { esRpe } from "../../core/rpe.js";
 import { posicionSuperserie } from "./herramientas.js";
@@ -17,6 +18,7 @@ import { diffRutina } from "../../core/rutinas.js";
 export async function descartar() {
   const ok = await E.app.confirmar("¿Descartar el entrenamiento?", "Se perderán las series de esta sesión.", "Descartar", true);
   if (!ok) return;
+  cancelarAviso();
   await E.app.store.guardarBorrador(null);
   cerrarModal();
 }
@@ -53,7 +55,7 @@ export async function terminar() {
   if (!contarHechas(d)) {
     const r = await E.app.alerta({ titulo: "No hay series hechas", mensaje: "Marca al menos una serie para guardar el entrenamiento.",
       botones: [{ texto: "Descartar entrenamiento", valor: "d", estilo: "peligro" }, { texto: "Seguir entrenando", valor: null, estilo: "fuerte" }] });
-    if (r === "d") { await E.app.store.guardarBorrador(null); cerrarModal(); }
+    if (r === "d") { cancelarAviso(); await E.app.store.guardarBorrador(null); cerrarModal(); }
     return;
   }
   const ahora = Date.now();
@@ -71,6 +73,7 @@ export async function terminar() {
       await E.app.store.guardarSesion(ses);
       if (actualizarRutina && cambioRutina && rutinaBase)
         await E.app.store.guardarRutinas(E.app.store.estado.rutinas.map((x) => (x.id === rutinaBase.id ? Object.assign({}, x, { ejercicios: cambioRutina.ejercicios }) : x)));
+      cancelarAviso();
       await E.app.store.guardarBorrador(null);
       cerrarModal(true);
       exito();

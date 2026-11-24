@@ -119,6 +119,13 @@ function sincronizarAviso(d) {
   }, 500);
 }
 
+/** Anula el aviso del servidor (al terminar o descartar el entreno). */
+export function cancelarAviso() {
+  clearTimeout(avisoT);
+  const p = ajustes().push;
+  if (p && p.activo && p.url) avisos.cancelar(p.url);
+}
+
 /* ---------- Pantalla bloqueada (experimental) ---------- */
 
 /** Activa los controles si están en Ajustes. Llamar desde un toque (iOS solo deja sonar así). */
@@ -148,4 +155,3 @@ export function refrescarBloqueo() {
   else bloqueo.actualizar({ titulo: textoSiguiente(sig), subtitulo: (sig && sig.carga ? sig.carga + " · " : "") + contarHechas(d) + " series hechas", descanso: null });
 }
 
-export const desactivarBloqueo = () => bloqueo.desactivar();

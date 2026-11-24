@@ -7,7 +7,6 @@ import { leerTablas, fusionarTablas } from "../../core/estandares.js";
 import { asignarMusculos } from "../../core/musculos.js";
 import { seccion, lista, celda, interruptor } from "../../ui/controles.js";
 import { fmt, plural } from "../../core/formato.js";
-import { fila } from "./comun.js";
 
 /* ---------- Avanzado ---------- */
 

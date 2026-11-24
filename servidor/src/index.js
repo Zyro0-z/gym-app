@@ -40,7 +40,7 @@ export default {
     if (req.method === "GET" && ruta === "/v1/clave") return json({ clave: env.VAPID_PUBLICA }, 200, c);
     if (req.method !== "POST") return json({ error: "no encontrado" }, 404, c);
     let d;
-    try { if ((req.headers.get("Content-Length") | 0) > 4096) throw 0; d = await req.json(); } catch { return json({ error: "cuerpo no válido" }, 400, c); }
+    try { const txt = await req.text(); if (txt.length > 4096) throw 0; d = JSON.parse(txt); } catch { return json({ error: "cuerpo no válido" }, 400, c); }
     if (ruta === "/v1/probar") {
       if (!validarSuscripcion(d.suscripcion)) return json({ error: "suscripción no válida" }, 400, c);
       const estado = await enviar(d.suscripcion, { titulo: "Aviso de prueba", cuerpo: "Los avisos de fin de descanso funcionan.", etiqueta: "prueba" }, claves(env));

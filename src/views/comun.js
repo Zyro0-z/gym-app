@@ -1,7 +1,6 @@
 // Piezas compartidas por varias vistas.
-import { h } from "../ui/dom.js";
-import { fechaRelativa, minutos, kgTotal } from "../ui/textos.js";
-import { plural as pl, plural } from "../core/formato.js";
+import { minutos, kgTotal } from "../ui/textos.js";
+import { plural as pl } from "../core/formato.js";
 
 /** Totales de una sesión del modelo: series hechas y volumen. */
 export function totalesSesion(s) {
@@ -21,4 +20,3 @@ export function lineaSesion(s) {
 }
 
 export const sesionesOrdenadas = (est) => est.sesiones.slice().sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : a.id < b.id ? 1 : -1));
-export { fechaRelativa, plural };
