@@ -13,7 +13,9 @@ import { ESTADOS } from "../core/estancamiento.js";
 import { kg, kgTotal, fechaCorta, capital } from "../ui/textos.js";
 import { tonoEstado, iconoTend, pctTxt } from "./progreso.js";
 import { ligaVigente } from "./ligas.js";
-import { e1rmReciente, ruidoE1rm, prPorRango } from "../core/prescripcion.js";
+import { e1rmReciente, ruidoE1rm, prPorRango, bandaRuido } from "../core/prescripcion.js";
+import { deEjercicio, nombreArticulacion } from "../core/molestias.js";
+import { anotarMolestia } from "./molestias.js";
 import { nombreMusculo } from "../core/musculos.js";
 import { diagramaCuerpo, vistaPara } from "../ui/cuerpo.js";
 
@@ -67,7 +69,8 @@ export function vistaEjercicio([k], app) {
       const fiabilidad = rec1 ? "Fiabilidad de la última estimación: " + rec1.confianza + " (" + rec1.reps + " reps" + (rec1.rpe != null ? " @" + rpeTxt(rec1.rpe) : ", sin RPE") + ")"
         + (ruido ? " · ruido personal ±" + fmt(ruido.sd, 1) + " kg (" + fmt(ruido.pct, 1) + " %, " + ruido.n + " sesiones): una mejora menor no se distingue de la variación normal" : " · con 5 sesiones se mide tu ruido personal") + "." : null;
       const grafica = hist.length ? graficaLinea({ puntos: hist.map((x) => ({ x: numDia(x.dia), y: x.mejorRM, detalle: capital(fechaCorta(x.dia, A.hoy)) + " · " + x.mejorRMReps + " reps" })),
-        formato: (v) => kg(v), ejeX: (n) => fechaCorta(deNum(n)), etiqueta: "e1RM por sesión" }) : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Sin sesiones en este periodo.");
+        formato: (v) => kg(v), ejeX: (n) => fechaCorta(deNum(n)), etiqueta: "e1RM por sesión",
+        banda: ruido && hist.length > 2 ? bandaRuido(e.hist, ruido.sd).filter((b) => b.dia >= desde).map((b) => ({ x: numDia(b.dia), lo: b.lo, hi: b.hi })) : null }) : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Sin sesiones en este periodo.");
       const out = [
         seccion({}, h("div", { class: "tarjeta" },
           h("div", { class: "fila entre" }, h("div", null, h("div", { class: "etiqueta" }, "e1RM de la última sesión"), h("div", { class: "cifra t-title1 c-accent" }, fmt(actual, 1), h("span", { class: "ud" }, " kg"))),
@@ -77,6 +80,7 @@ export function vistaEjercicio([k], app) {
           fiabilidad ? h("div", { class: "etiqueta", style: { marginTop: "4px" } }, fiabilidad) : null,
           h("div", { style: { margin: "12px 0 4px" } }, segmentado(RANGOS, rango, (v) => { rango = v; this.render(c); }, { etiqueta: "Rango" })),
           grafica,
+          ruido && hist.length > 2 ? h("div", { class: "etiqueta", style: { marginTop: "6px" } }, "Franja: tu ruido de ±" + fmt(ruido.sd, 1) + " kg alrededor de la media de las últimas 5 sesiones. Un punto dentro de la franja no es un cambio real.") : null,
           e.hist.length < 3 ? h("div", { class: "etiqueta", style: { marginTop: "6px" } }, "Con 3 sesiones o más se calcula la tendencia.") : null)),
       ];
       const mc = cat() && cat().musculos;
@@ -97,6 +101,10 @@ export function vistaEjercicio([k], app) {
           h("div", { class: "fila", style: { gap: "8px" } }, p.clave === "sube" ? h("span", { class: "c-ok", style: { display: "flex" } }, icono("flecha-arriba", { tam: 20, grosor: 2.2 })) : null, h("div", { class: "t-headline" }, p.estado)),
           txt ? h("div", { class: "t-subhead c-2", style: { marginTop: "4px" } }, capital(txt)) : null)));
       }
+      const mol = deEjercicio(store.estado.molestias || [], k);
+      out.push(seccion({ cab: "Molestias", pie: mol.length ? "Anotadas con este ejercicio. Si se repiten, bajar la carga o cambiar la variante suele ser mejor que insistir." : "Si notas una molestia con este ejercicio, anótala: así verás si se repite." },
+        lista([...mol.slice(0, 3).map((m) => celda({ titulo: nombreArticulacion(m.articulacion), sub: capital(fechaCorta(m.fecha, A.hoy)) + (m.nota ? " · " + m.nota : ""), valor: chip("Nivel " + m.nivel, m.nivel >= 4 ? "bad" : m.nivel === 3 ? "warn" : null), alPulsar: () => anotarMolestia(app, {}, m) })),
+          celda({ titulo: "Anotar molestia", estilo: "accion", alPulsar: () => anotarMolestia(app, { ejercicioId: k }) })])));
       const L = A.liga, le = L && L.ok ? L.ejercicios.get(k) : null;
       const estado = [];
       if (d) estado.push(celda({ titulo: "Semáforo", valor: chip(ESTADOS[d.estado].texto, tonoEstado(d.estado)) }));

@@ -2,7 +2,7 @@
 import { h, poner } from "../ui/dom.js";
 import { icono } from "../ui/iconos.js";
 import { seccion, lista, celda, vacio, chip, segmentado } from "../ui/controles.js";
-import { graficaBarras, graficaLinea } from "../ui/graficas.js";
+import { graficaBarras, graficaLinea, sparkline } from "../ui/graficas.js";
 import { diagramaCuerpo } from "../ui/cuerpo.js";
 import { insignia } from "../ui/insignias.js";
 import { colorGrupo } from "../ui/tema.js";
@@ -113,6 +113,9 @@ function resumen(A, app, semVol, cambiarSem) {
     vg ? celda({ izquierda: insignia(vg.p.nivel, 32), titulo: "Liga", sub: vg.viejo ? "Última conocida" : null, valor: vg.p.nivel.txt, chevron: true, alPulsar: () => app.nav.ir("ligas") }) : null,
     celda({ titulo: "Series por músculo", sub: "Volumen semanal efectivo, con recuento fraccional", chevron: true, alPulsar: () => app.nav.ir("musculos") }),
     celda({ titulo: "Fatiga y descarga", sub: "Semana a semana: e1RM, RPE y recuperación", chevron: true, alPulsar: () => app.nav.ir("fatiga") }),
+    celda({ titulo: "Rendimiento y recuperación", sub: "Cómo rindes según el sueño, el estrés y la energía", chevron: true, alPulsar: () => app.nav.ir("rendimiento") }),
+    celda({ titulo: "Molestias articulares", sub: "Dónde, cuánto y con qué ejercicio", valor: (app.store.estado.molestias || []).length ? String(app.store.estado.molestias.length) : null, chevron: true, alPulsar: () => app.nav.ir("molestias") }),
+    celda({ titulo: "Mesociclos", sub: "Bloques de semanas y su resumen", chevron: true, alPulsar: () => app.nav.ir("mesociclos") }),
     A.porGimnasio && A.porGimnasio.length ? celda({ titulo: "Por gimnasio", sub: "Tu e1RM en cada gimnasio, ejercicio a ejercicio", chevron: true, alPulsar: () => app.nav.ir("porGimnasio") }) : null,
     celda({ titulo: "Comparar periodos", sub: "4 semanas, mes o 3 meses frente al anterior", chevron: true, alPulsar: () => app.nav.ir("comparar") }),
   ].filter(Boolean))));
@@ -143,7 +146,8 @@ function ejercicios(A, app, q, guardarQ) {
       orden.map((g) => seccion({ cab: g }, lista(porG.get(g).sort((a, b) => a.nombre.localeCompare(b.nombre, "es")).map((e) => {
         const d = A.diagnostico.get(e.k), ic = iconoTend(d && d.tend);
         return celda({ titulo: e.nombre, sub: d ? ESTADOS[d.estado].texto : null,
-          valor: h("span", { class: "valor-tend" }, ic ? h("span", { class: "c-" + (ic === "sube" ? "ok" : ic === "baja" ? "bad" : "2") }, icono(ic, { tam: 16, grosor: 2.2 })) : null, e.rmMax ? kg(e.rmMax.st.oneRM) : "—"),
+          valor: h("span", { class: "valor-tend" }, e.hist.length >= 3 ? sparkline(e.hist.slice(-8).map((x) => x.mejorRM), { ancho: 48, alto: 18 }) : null,
+            ic ? h("span", { class: "c-" + (ic === "sube" ? "ok" : ic === "baja" ? "bad" : "2") }, icono(ic, { tam: 16, grosor: 2.2 })) : null, e.rmMax ? kg(e.rmMax.st.oneRM) : "—"),
           chevron: true, alPulsar: () => app.nav.ir("ejercicio/" + encodeURIComponent(e.k)) });
       })))));
   };

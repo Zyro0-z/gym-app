@@ -16,6 +16,8 @@ import { programarDescarga, posponerDescarga } from "./fatiga.js";
 import { mostrarInstalar, marcarVisto } from "../ui/instalar.js";
 import { propuestaDescarga } from "../core/descarga.js";
 import { gimnasiosDe, gimnasioActivo } from "../core/gimnasios.js";
+import { mesocicloActual, estadoMesociclo } from "../core/mesociclos.js";
+import { sparkline } from "../ui/graficas.js";
 
 export function vistaHoy(_p, app) {
   const { store } = app;
@@ -25,7 +27,9 @@ export function vistaHoy(_p, app) {
     sobre: () => capital(fechaLarga(store.hoy())),
     bajoTitulo: () => {
       const A = store.analisis(), b = A.C.bloquesActivos(A.hoy).find((x) => x.esDeload);
-      return b ? chip("Descarga hasta el " + fechaCorta(b.fin, A.hoy), "accent") : null;
+      if (b) return chip("Descarga hasta el " + fechaCorta(b.fin, A.hoy), "accent");
+      const m = mesocicloActual(store.estado.ajustes.mesociclos, A.hoy);
+      return m ? chip(m.nombre + " · semana " + estadoMesociclo(m, A.hoy).semana + " de " + m.semanas, null) : null;
     },
     alOcultar: () => clearInterval(reloj1),
     destruir: () => clearInterval(reloj1),
@@ -150,9 +154,11 @@ function semana(A, est) {
   const hechas = so ? so.lista.reduce((a, g) => a + g.hechas, 0) : A.resumen.act.ser;
   const objetivo = so ? so.lista.reduce((a, g) => a + g.min, 0) : 0;
   const r = A.racha, n = r.viva ? r.racha : 0;
-  const series = h("div", { class: "fila", style: { gap: "10px" } },
-    anillo({ frac: objetivo ? hechas / objetivo : 0, tam: 30, grosor: 4, ok: objetivo > 0 && hechas >= objetivo, etiqueta: hechas + " de " + objetivo + " series" }),
-    h("div", { class: "semana-dato" }, h("span", { class: "num t-headline" }, objetivo ? hechas + " de " + objetivo : String(hechas)), h("span", { class: "c-2" }, " series")));
+  const frac = objetivo ? hechas / objetivo : 0;
+  const series = h("div", { class: "semana-anillo" },
+    anillo({ frac, tam: 60, grosor: 7, ok: objetivo > 0 && hechas >= objetivo, etiqueta: objetivo ? hechas + " de " + objetivo + " series" : plural(hechas, "serie", "series") + " esta semana",
+      centro: h("div", { class: "centro-anillo" }, objetivo ? Math.round(frac * 100) + " %" : String(hechas), h("small", null, objetivo ? "objetivo" : "series")) }),
+    h("div", { class: "semana-dato" }, objetivo ? [h("span", { class: "num t-headline" }, hechas + " de " + objetivo), h("span", { class: "c-2" }, " series")] : h("span", { class: "c-2" }, "esta semana")));
   const racha = h("div", { class: "fila", style: { gap: "8px" } },
     h("span", { class: r.viva ? "c-accent" : "c-3", style: { display: "flex" }, "aria-hidden": "true" }, icono("llama", { tam: 22 })),
     h("div", { class: "semana-dato" }, h("span", { class: "num t-headline" }, String(n)), h("span", { class: "c-2" }, (n === 1 ? " semana" : " semanas") + " de racha" + (!r.viva && r.racha ? " (la anterior, " + r.racha + ")" : ""))));
@@ -165,7 +171,8 @@ function lineas(A, est, app) {
   const celdas = [];
   if (s) celdas.push(celda({ titulo: s.rutina || "Entrenamiento libre", sub: lineaSesion(s), valor: capital(fechaRelativa(s.fecha, A.hoy)), chevron: true,
     alPulsar: () => app.nav.ir("sesion/" + encodeURIComponent(s.id), { pestana: "historial" }) }));
-  celdas.push(celda({ icono: "bascula", colorIcono: "var(--g-morado)", titulo: "Peso corporal", valor: ult ? kg(ult.kg) : null,
+  const tendencia = A.peso.puntos.slice(-14).map((p) => (p.media != null ? p.media : p.kg));
+  celdas.push(celda({ icono: "bascula", colorIcono: "var(--g-morado)", titulo: "Peso corporal", valor: ult ? h("span", { class: "valor-tend" }, tendencia.length >= 3 ? sparkline(tendencia, { ancho: 48, alto: 18 }) : null, kg(ult.kg)) : null,
     control: h("button", { class: "btn-redondo", "aria-label": "Añadir pesaje", onClick: (e) => { e.stopPropagation(); abrirPesaje(app); } }, icono("mas")) }));
   if (!est.borrador) celdas.push(celda({ icono: "lista", colorIcono: "var(--g-naranja)", titulo: "Otra rutina", chevron: true, alPulsar: () => elegirRutina(app) }));
   return seccion({ cab: s ? "Última sesión" : null }, lista(celdas, { iconos: false }));

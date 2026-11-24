@@ -8,6 +8,7 @@ import { fmt } from "../../core/formato.js";
 import { esRpe, rpeTxt } from "../../core/rpe.js";
 import { e1rmReciente, cargaParaRpe } from "../../core/prescripcion.js";
 import { elegirEjercicio } from "../selector.js";
+import { anotarMolestia } from "../molestias.js";
 import { vacia, nombreDe, aTexto, tipoDeCatalogo } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
 import { filaSerie, resaltarActual, resumenDe } from "./serie.js";
@@ -119,7 +120,7 @@ export function bloqueEjercicio(e, i) {
 export async function menuEjercicio(i) {
   const e = E.M.d.ejercicios[i];
   const op = [{ texto: "Cambiar ejercicio", valor: "cambiar" }, { texto: "Ver historia", valor: "historia" }, { texto: e.nota ? "Editar nota" : "Añadir nota", valor: "nota" }];
-  if (E.app.store.estado.catalogo.some((x) => x.id === e.ejercicioId)) op.push({ texto: "Nota fija del ejercicio", valor: "notafija" });
+  if (E.app.store.estado.catalogo.some((x) => x.id === e.ejercicioId)) op.push({ texto: "Nota fija del ejercicio", valor: "notafija" }, { texto: "Anotar molestia", valor: "molestia" });
   const ejs = E.M.d.ejercicios;
   if (i < ejs.length - 1 && !(e.grupoId && ejs[i + 1].grupoId === e.grupoId)) op.push({ texto: "Unir con el siguiente", valor: "unir" });
   if (posicionSuperserie(ejs, i)) op.push({ texto: "Separar de la superserie", valor: "separar" });
@@ -137,6 +138,7 @@ export async function menuEjercicio(i) {
   } else if (r === "historia") return verHistoria(e);
   else if (r === "nota") return editarNota(e);
   else if (r === "notafija") return editarNotaFija(e);
+  else if (r === "molestia") return anotarMolestia(E.app, { ejercicioId: e.ejercicioId });
   else if (r === "discos") return calculadoraDiscos(e);
   else if (r === "backoffs") { const b = anadirBackoffs(e); if (!b) { E.app.toast("Marca antes una serie con peso y repeticiones", { icono: null }); return; } E.app.toast("Back-offs: " + aTexto(b[0].peso) + " kg × " + b[0].reps + " a RPE " + rpeTxt(b[0].rpe), { icono: null }); }
   else if (r === "calentar") { if (!anadirCalentamiento(e)) { E.app.toast("Pon antes el peso de la primera serie de trabajo", { icono: null }); return; } }

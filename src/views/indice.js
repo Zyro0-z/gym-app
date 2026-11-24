@@ -14,11 +14,17 @@ import { vistaMusculos } from "./musculos.js";
 import { vistaComparar } from "./comparar.js";
 import { vistaPorGimnasio } from "./porgimnasio.js";
 import { vistaMedidas } from "./medidas.js";
+import { vistaRendimiento } from "./rendimiento.js";
+import { vistaMolestias } from "./molestias.js";
+import { vistaMesociclos, vistaMesociclo } from "./mesociclos.js";
+import { vistaNube } from "./nube.js";
 import { vistaRutinas, vistaRutina, vistaHorario, vistaEjercicios, vistaEjercicioCat, vistaGrupos, vistaObjetivos, vistaCuerpo,
   vistaBloques, vistaBloque, vistaEntrenamiento, vistaCalidad, vistaAvanzado } from "./editores.js";
 
 // Vistas que necesitan el análisis: sin él (el Worker aún calcula) se ve un esqueleto
-for (const v of [vistaHoy, vistaProgreso, vistaHistorial, vistaSesion, vistaEjercicio, vistaGrupo, vistaLigas, vistaLiga, vistaCalidad, vistaFatiga, vistaComparar]) v.analisis = true;
+for (const v of [vistaHoy, vistaProgreso, vistaHistorial, vistaSesion, vistaEjercicio, vistaGrupo, vistaLigas, vistaLiga, vistaCalidad, vistaFatiga, vistaComparar, vistaRendimiento, vistaMesociclo]) v.analisis = true;
+vistaRendimiento.pestana = vistaMolestias.pestana = "progreso";
+vistaMesociclos.pestana = vistaMesociclo.pestana = "ajustes";
 vistaHoy.esqueleto = vistaProgreso.esqueleto = "tarjetas";
 
 export const PESTANAS = [
@@ -40,5 +46,6 @@ export const VISTAS = {
   grupos: vistaGrupos, objetivos: vistaObjetivos, cuerpo: vistaCuerpo, bloques: vistaBloques, bloque: vistaBloque,
   entrenamiento: vistaEntrenamiento, calidad: vistaCalidad, avanzado: vistaAvanzado,
   fatiga: vistaFatiga, musculos: vistaMusculos, porGimnasio: vistaPorGimnasio, comparar: vistaComparar, medidas: vistaMedidas,
+  rendimiento: vistaRendimiento, molestias: vistaMolestias, mesociclos: vistaMesociclos, mesociclo: vistaMesociclo, nube: vistaNube,
   noEncontrada: vistaNoEncontrada,
 };

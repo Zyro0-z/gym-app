@@ -1,5 +1,5 @@
 // Repositorios: cargar y guardar el modelo. Toda escritura de varias partes es atómica.
-import { abrir, tx, leerKV, todasSesiones, escribirKV, ponerSesion, quitarSesion, plano } from "./db.js";
+import { abrir, tx, leerKV, todasSesiones, escribirKV, borrarKV, ponerSesion, quitarSesion, plano } from "./db.js";
 import { ESQUEMA, CLAVES_RESPALDO, completarAjustes, instantanea } from "./modelo.js";
 import { guardarEspejo, leerEspejo } from "./espejo.js";
 
@@ -14,13 +14,13 @@ export async function cargar() {
   if (schema === 3) informe = await migrar3a4();
   else if (schema < ESQUEMA) await escribirKV("schema", ESQUEMA);
 
-  const [sesiones, catalogo, rutinas, pesajes, medidas, ajustes, borrador] = await Promise.all([
-    todasSesiones(), leerKV("catalogo"), leerKV("rutinas"), leerKV("pesajes"), leerKV("medidas"), leerKV("ajustes"), leerKV("borrador")]);
+  const [sesiones, catalogo, rutinas, pesajes, medidas, molestias, ajustes, borrador] = await Promise.all([
+    todasSesiones(), leerKV("catalogo"), leerKV("rutinas"), leerKV("pesajes"), leerKV("medidas"), leerKV("molestias"), leerKV("ajustes"), leerKV("borrador")]);
   let b = borrador || null;
   const esp = leerEspejo();
   // El borrador replicado en localStorage gana si es más reciente (iOS pudo perder la última escritura)
   if (esp && esp.borrador && (!b || (esp.borrador.cambio || 0) > (b.cambio || 0))) b = esp.borrador;
-  return { sesiones, catalogo: catalogo || [], rutinas: rutinas || [], pesajes: pesajes || [], medidas: medidas || [], ajustes: completarAjustes(ajustes), borrador: b, informe };
+  return { sesiones, catalogo: catalogo || [], rutinas: rutinas || [], pesajes: pesajes || [], medidas: medidas || [], molestias: molestias || [], ajustes: completarAjustes(ajustes), borrador: b, informe };
 }
 
 /**
@@ -62,6 +62,10 @@ export const guardarRutinas = (r) => escribirKV("rutinas", plano(r));
 export const guardarPesajes = (p) => escribirKV("pesajes", plano(p));
 export const guardarAjustes = (a) => escribirKV("ajustes", plano(a));
 export const guardarMedidas = (m) => escribirKV("medidas", plano(m));
+export const guardarMolestias = (m) => escribirKV("molestias", plano(m));
+/** Clave de la copia en la nube: vive aparte de los datos (no se exporta ni se borra con ellos). */
+export const leerNube = () => leerKV("nube");
+export const guardarNube = (n) => (n ? escribirKV("nube", plano(n)) : borrarKV("nube"));
 export async function guardarBorrador(b) {
   const v = b ? Object.assign(plano(b), { cambio: Date.now() }) : null;
   guardarEspejo({ borrador: v });
@@ -114,6 +118,7 @@ export async function leerRespaldo(clave) {
   const esq = r.esquema || 3;
   const out = { app: "gym", version: esq >= 4 ? 3 : 2, esquema: esq, exportado: r.fecha, sesiones: d.sesiones, catalogo: d.catalogo, rutinas: d.rutinas, pesajes: d.pesajes, ajustes: d.ajustes };
   if (d.medidas) out.medidas = d.medidas;
+  if (d.molestias) out.molestias = d.molestias;
   return out;
 }
 
@@ -124,7 +129,7 @@ export async function leerRespaldo(clave) {
 export async function reemplazarTodo(m, actual, motivo = "importar") {
   await tx(["kv", "sesiones"], "readwrite", (s) => {
     s.kv.put(plano({ fecha: new Date().toISOString(), sesiones: actual.sesiones, catalogo: actual.catalogo, rutinas: actual.rutinas,
-      pesajes: actual.pesajes, medidas: actual.medidas || [], ajustes: actual.ajustes }), "respaldo-importacion");
+      pesajes: actual.pesajes, medidas: actual.medidas || [], molestias: actual.molestias || [], ajustes: actual.ajustes }), "respaldo-importacion");
     rotarRespaldos(s.kv, instantanea(actual, motivo));
     s.sesiones.clear();
     for (const ses of m.sesiones) s.sesiones.put(plano(ses));
@@ -133,6 +138,7 @@ export async function reemplazarTodo(m, actual, motivo = "importar") {
     s.kv.put(plano(m.pesajes), "pesajes");
     s.kv.put(plano(m.ajustes), "ajustes");
     s.kv.put(plano(m.medidas || []), "medidas");
+    s.kv.put(plano(m.molestias || []), "molestias");
     s.kv.put(ESQUEMA, "schema");
   });
 }

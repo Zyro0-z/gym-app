@@ -106,7 +106,13 @@ e = await estado();
 assert.equal(e.borrador.descanso.avisado, true, "no vuelve a avisar");
 
 paso("4.2 al recargar con un descanso vencido hace rato: «hace 3 min»");
-await p.evaluate(async () => { const s = window.__gym.store, d = JSON.parse(JSON.stringify(s.estado.borrador)); d.descanso = { fin: Date.now() - 185000, total: 90, avisado: false }; await s.guardarBorrador(d); });
+// pagehide guarda el estado de la pantalla (espejo síncrono + IndexedDB); este oyente va después y deja como último
+// estado «el de antes de que cerraran la app»: un borrador con el descanso vencido y más reciente que cualquier otro
+await p.evaluate(() => {
+  const d = JSON.parse(JSON.stringify(window.__gym.store.estado.borrador));
+  d.descanso = { fin: Date.now() - 185000, total: 90, avisado: false }; d.cambio = Date.now() + 1e8;
+  window.addEventListener("pagehide", () => { const e = JSON.parse(localStorage.getItem("gym-espejo") || "{}"); e.borrador = d; localStorage.setItem("gym-espejo", JSON.stringify(e)); });
+});
 await p.reload(); await p.waitForFunction(() => window.__gym); await espera(800);
 assert.match(await toasts(), /Descanso terminado hace 3 min/);
 await descartar();

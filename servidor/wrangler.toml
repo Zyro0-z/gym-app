@@ -11,6 +11,11 @@ ORIGEN = "https://zyro0-z.github.io"
 name = "AVISOS"
 class_name = "Avisos"
 
+# Copias cifradas (opcional). Crea el espacio con «npx wrangler kv namespace create COPIAS» y pega aquí su id.
+[[kv_namespaces]]
+binding = "COPIAS"
+id = "PEGA_AQUI_EL_ID_DEL_KV"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Avisos"]

@@ -34,9 +34,34 @@ contenido. Todo fichero nuevo va en `FICHEROS` (un test sigue los imports desde 
   en Archivos.
 - **Importar** valida el archivo entero (tipos, rangos, fechas, ids repetidos) antes de tocar nada.
 
-**Límites de la plataforma.** En iPhone, una web no puede escribir sola en iCloud Drive ni en Archivos,
-y sin servidor no hay sincronización entre dispositivos. La app no sincroniza: el camino soportado es
-guardar la copia a mano y, si hace falta, importarla en otro dispositivo.
+- **Copia en la nube (opcional)**: Ajustes › Datos › «Copia en la nube» sube una copia **cifrada de
+  extremo a extremo** a tu propio Worker de Cloudflare (`servidor/`, espacio KV `COPIAS`). La app cifra
+  aquí (AES-256-GCM, clave derivada con PBKDF2-SHA256 de 600 000 iteraciones); el servidor solo guarda
+  un bloque ilegible y el hash de un token. La clave se guarda en este iPhone, aparte de los datos, y
+  no va dentro de las copias. **Si la pierdes, nadie puede recuperar la copia.** La subida automática
+  espera 5 s tras guardar una sesión. No hay sincronización entre dispositivos: restaurar reemplaza los
+  datos (con copia interna antes).
+
+**Límites de la plataforma.** En iPhone, una web no puede escribir sola en iCloud Drive ni en Archivos.
+La app no sincroniza entre dispositivos: el camino soportado es la copia a mano en Archivos y, si lo
+configuras, la copia cifrada en tu servidor.
+
+## Análisis y registros
+
+- **Rendimiento** (Progreso › Más análisis): el rendimiento de cada sesión es el mejor e1RM de cada
+  ejercicio frente a la mediana de sus 5 sesiones anteriores (hacen falta 3 y 2 ejercicios
+  comparables; los días de descarga no cuentan). Se agrupa por sueño, estrés y energía, con intervalo
+  del 95 % y **siempre el número de sesiones**. Una banda con menos de 5 sesiones sale en hueco; la
+  correlación de Spearman solo se llama concluyente con n ≥ 12 y |t| ≥ 2. Es una asociación, no una
+  causa.
+- **Intensidad (RPE)** (Progreso › Fatiga): reparto de las series de trabajo por franja de RPE en 8
+  semanas, con la cobertura (series con RPE anotado).
+- **Molestias** (Progreso › Más análisis; también desde el menú de un ejercicio al entrenar):
+  articulación, lado, nivel 1–5, ejercicio y nota. Resume 30 días y marca «persistente» con 3 o más
+  anotaciones de nivel 3+ en 14 días. Solo recoge lo que anotas; no diagnostica.
+- **Mesociclos** (Ajustes): N semanas con nombre y, si quieres, una última de descarga (se programa
+  también como bloque de descarga). El detalle compara semanas: series, RPE, volumen y e1RM.
+- **Tarjeta de sesión** (Historial y resumen): imagen PNG 1080 × 1350 con lo esencial, para compartir.
 
 ## Con la pantalla bloqueada
 
@@ -104,7 +129,7 @@ node tests/e2e/capturas.mjs <carpeta> [chromium|webkit]   # todas las pantallas,
 sh tests/webkit.sh e2e/entreno.mjs webkit                 # una sola prueba e2e con WebKit
 ```
 
-Las e2e cubren la migración en IndexedDB real, el arranque con datos de la versión 1, la navegación,
+Las e2e cubren las vistas de análisis, la tarjeta PNG y la copia en la nube con un servidor simulado, la migración en IndexedDB real, el arranque con datos de la versión 1, la navegación,
 un entrenamiento completo con recarga a mitad, editar y borrar sesiones, exportar e importar la copia,
 el uso sin conexión y el aviso de versión nueva. Fallan con cualquier error de consola o con textos
 «NaN», «undefined» o «[object».

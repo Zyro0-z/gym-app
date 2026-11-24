@@ -621,3 +621,17 @@ sesión» en rojo con una confirmación.
 | Temporizador de descanso con `role=timer` y un anuncio `polite` al empezar y a 10 s del final | Leer cada segundo sería ruido. |
 | Tarjeta «Añadir a pantalla de inicio» solo en Safari de iPhone sin instalar, una vez | Sin atajos en el manifiesto (iOS no los muestra). |
 
+## 11. Decisiones de las fases 4 y 5
+
+| Decisión | Por qué |
+|---|---|
+| Hoy: anillo de 60 px con el % en el centro, racha al lado y miniatura del peso | Se lee la semana de un vistazo sin entrar en Progreso. |
+| Progreso › Ejercicios: miniatura de tendencia por fila; Fatiga: 8 semanas en miniaturas con los mismos ejes | Comparar entre ejercicios y semanas sin abrir cada ficha. Un hueco es una semana sin dato, no un cero. |
+| e1RM con banda de ruido personal (sd de las últimas sesiones) | Una subida dentro de la banda es ruido normal; evita celebrar o alarmarse por un día. |
+| El punto máximo de una gráfica avisa con háptica de impacto al recorrerla | Se siente el récord del periodo sin mirar. |
+| Rendimiento: franja del IC 95 %, punto hueco con n < 5 y veredicto «sin conclusión» salvo n ≥ 12 y |t| ≥ 2 | Con pocas sesiones, dormir bien o mal se parece al ruido de un día a otro: siempre se enseña n y nunca se afirma una causa. |
+| Molestias: niveles 1–5 con texto, «persistente» a las 3 anotaciones de nivel 3+ en 14 días | Registrar y resumir; el diagnóstico es de un fisioterapeuta. |
+| Mesociclo con descarga final crea el bloque de descarga | La propuesta de descarga y el análisis ya respetan los bloques; no hay una segunda fuente de verdad. |
+| Tarjeta de sesión con paleta fija, no la del tema | Se ve igual donde se publique. Se comparte como archivo PNG (hoja de Compartir) o se descarga. |
+| Copia en la nube cifrada en el dispositivo; clave aparte de los datos y fuera de las copias | El servidor no ve datos ni clave. Si se pierde la clave no hay recuperación: se avisa donde se muestra. |
+| Sonido: se desbloquea en cualquier toque, se reanuda al volver a la app y la campana reintenta si el contexto estaba parado; guardado también en `pagehide`/`freeze` | iOS suspende el audio (llamadas, Siri, bloqueo) y a veces cierra la app sin `visibilitychange`. |

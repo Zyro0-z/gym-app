@@ -13,6 +13,7 @@ import { crearCopia, leerCopia, estadoCopia } from "./data/modelo.js";
 import { analizar } from "./core/analisis.js";
 import { rehidratar } from "./core/rehidratar.js";
 import { hoyISO } from "./core/fechas.js";
+import { crearNube } from "./data/nube.js";
 
 const copiar = (x) => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
 
@@ -22,6 +23,8 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
   let worker = null, enCurso = null, otraVez = false, sigId = 0;
   const esperas = [];
   const subs = new Set();
+  const nube = crearNube();
+  let tNube = 0;
 
   const avisar = (tema) => { for (const fn of [...subs]) { try { fn(tema); } catch (e) { console.error(e); } } };
   const cambio = (tema, analitico = true) => { if (analitico) version++; avisar(tema); };
@@ -73,8 +76,18 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     poner(analizar(m, hoy), v, hoy);
   }
 
+  /** Copia cifrada automática: 5 s después del último cambio en las sesiones (si está activada y configurada). */
+  function programarNube() {
+    clearTimeout(tNube);
+    const n = estado && estado.ajustes.nube;
+    if (!n || !n.activa || !n.auto || !n.url) return;
+    tNube = setTimeout(() => store.subirNube().catch((e) => console.warn("Copia en la nube:", e.message)), 5000);
+  }
+
   const store = {
     get estado() { return estado; },
+    /** Último resultado de la copia en la nube: { subiendo, error } (solo en memoria). */
+    nubeEstado: { subiendo: false, error: null },
     hoy: () => hoyISO(reloj()),
     suscribir(fn) { subs.add(fn); return () => subs.delete(fn); },
 
@@ -100,7 +113,7 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
       await repos.guardarSesion(s);
       const i = estado.sesiones.findIndex((x) => x.id === s.id);
       if (i >= 0) estado.sesiones[i] = copiar(s); else estado.sesiones.push(copiar(s));
-      cambio("sesiones");
+      cambio("sesiones"); programarNube();
       // Copia interna cada N sesiones nuevas (si falla, la sesión ya está guardada)
       if (i < 0) try {
         const n = await repos.contarSesionNueva(), cada = (estado.ajustes.copiasInternas && estado.ajustes.copiasInternas.cada) || 5;
@@ -110,10 +123,11 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     async borrarSesion(id) {
       await repos.borrarSesion(id);
       estado.sesiones = estado.sesiones.filter((x) => x.id !== id);
-      cambio("sesiones");
+      cambio("sesiones"); programarNube();
     },
     async guardarPesajes(p) { await repos.guardarPesajes(p); estado.pesajes = copiar(p); cambio("pesajes"); },
     async guardarMedidas(m) { await repos.guardarMedidas(m); estado.medidas = copiar(m); cambio("medidas", false); },
+    async guardarMolestias(m) { await repos.guardarMolestias(m); estado.molestias = copiar(m); cambio("molestias", false); },
     async guardarRutinas(r) { await repos.guardarRutinas(r); estado.rutinas = copiar(r); cambio("rutinas"); },
     async guardarCatalogo(c) { await repos.guardarCatalogo(c); estado.catalogo = copiar(c); cambio("catalogo"); },
     /** El borrador del entrenamiento en curso no afecta al análisis. */
@@ -129,12 +143,12 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     /** Sustituye todo por la copia `m`; los datos actuales quedan en «respaldo-importacion» y en las copias internas. */
     async importar(m, motivo = "importar") {
       await repos.reemplazarTodo(m, estado, motivo);
-      estado = Object.assign({}, estado, { sesiones: copiar(m.sesiones), catalogo: copiar(m.catalogo), rutinas: copiar(m.rutinas), pesajes: copiar(m.pesajes), medidas: copiar(m.medidas || []), ajustes: copiar(m.ajustes) });
+      estado = Object.assign({}, estado, { sesiones: copiar(m.sesiones), catalogo: copiar(m.catalogo), rutinas: copiar(m.rutinas), pesajes: copiar(m.pesajes), medidas: copiar(m.medidas || []), molestias: copiar(m.molestias || []), ajustes: copiar(m.ajustes) });
       cambio("todo");
     },
     /** Deja la app sin sesiones, pesajes, medidas, rutinas ni borrador. Conserva ajustes y catálogo; antes guarda una copia interna. */
     async borrarTodo() {
-      await store.importar({ sesiones: [], catalogo: estado.catalogo, rutinas: [], pesajes: [], medidas: [], ajustes: estado.ajustes }, "borrar");
+      await store.importar({ sesiones: [], catalogo: estado.catalogo, rutinas: [], pesajes: [], medidas: [], molestias: [], ajustes: estado.ajustes }, "borrar");
       await store.guardarBorrador(null);
     },
     listarRespaldos: () => repos.listarRespaldos(),
@@ -144,6 +158,29 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
       if (!r) throw new Error("La copia ya no existe.");
       await store.importar(store.leerCopia(JSON.stringify(r)), "restaurar");
     },
+    // ── copia cifrada en la nube (la clave vive aparte de los datos y no se exporta) ──
+    async claveNube() { const n = await repos.leerNube(); return n && n.frase ? n.frase : null; },
+    guardarClaveNube: (frase) => repos.guardarNube(frase ? { frase } : null),
+    /** Cifra y sube la copia actual. Lanza Error con el motivo si no se puede. */
+    async subirNube() {
+      const n = estado.ajustes.nube, frase = await store.claveNube();
+      if (!n.url || !frase) throw new Error("Falta la dirección del servidor o la clave.");
+      store.nubeEstado = { subiendo: true, error: null }; avisar("nube");
+      try {
+        const r = await nube.subir(n.url, frase, store.textoCopia());
+        await store.guardarAjustes((a) => { a.nube.ultima = { at: new Date(r.at).toISOString(), bytes: r.bytes, sesiones: estado.sesiones.length }; }, { analitico: false });
+        store.nubeEstado = { subiendo: false, error: null }; avisar("nube");
+        return r;
+      } catch (e) { store.nubeEstado = { subiendo: false, error: e.message }; avisar("nube"); throw e; }
+    },
+    /** Baja y descifra la copia de la nube: devuelve el modelo ya validado (no lo aplica). */
+    async bajarNube() {
+      const n = estado.ajustes.nube, frase = await store.claveNube();
+      if (!n.url || !frase) throw new Error("Falta la dirección del servidor o la clave.");
+      return store.leerCopia(await nube.bajar(n.url, frase));
+    },
+    infoNube: async () => { const n = estado.ajustes.nube, frase = await store.claveNube(); return n.url && frase ? nube.info(n.url, frase) : null; },
+    async borrarNube() { const n = estado.ajustes.nube, frase = await store.claveNube(); if (n.url && frase) await nube.borrar(n.url, frase); },
     estadoAlmacen: () => repos.estadoAlmacen(),
     pedirPersistencia: () => repos.pedirPersistencia(),
   };

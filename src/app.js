@@ -19,7 +19,8 @@ const ctx = {
 
 // el estado :active de iOS necesita un manejador de touchstart; y el audio se desbloquea en un gesto
 document.addEventListener("touchstart", () => {}, { passive: true });
-document.addEventListener("pointerdown", prepararSonido, { once: true });
+// En cada toque (no solo el primero): si iOS interrumpió el audio, el siguiente gesto lo reanuda
+document.addEventListener("pointerdown", prepararSonido, { capture: true, passive: true });
 
 async function arrancar() {
   aplicarApariencia(leerEspejoApariencia());

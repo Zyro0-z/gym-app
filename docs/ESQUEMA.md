@@ -100,6 +100,16 @@ borrador), `gym-progreso` (segmento abierto), `gym-periodo-volumen`, `gym-period
 
 Todas las medidas son opcionales, en cm (número > 0). Una entrada por fecha.
 
+## Molestias (`kv.molestias`, esquema 4)
+
+```js
+{ id: "mo-2026-11-15-k3f9x", fecha: "2026-11-15", articulacion: "hombro", lado: "der", nivel: 3, ejercicioId: "pressbancabarra", nota: "al bajar" }
+```
+
+`articulacion` de una lista cerrada (cuello, hombro, codo, muneca, espalda-alta, espalda-baja, cadera,
+rodilla, tobillo); `nivel` entero de 1 a 5; `lado` (`izq`, `der`, `ambos`), `ejercicioId` y `nota`
+opcionales; `id` único. Campo opcional de la copia (`molestias`): una copia sin él se lee como `[]`.
+
 ## Ajustes
 
 ```js
@@ -136,11 +146,32 @@ Todas las medidas son opcionales, en cm (número > 0). Una entrada por fecha.
 `completarAjustes()` rellena las claves que falten con los valores por defecto, así que unos ajustes
 de una versión anterior siempre se leen bien.
 
+### Mesociclos y nube (`ajustes`, esquema 4, opcionales)
+
+- `ajustes.mesociclos`: `[{ id, nombre, inicio (lunes), semanas (2–16), descarga }]`. Con `descarga`,
+  la última semana se guarda también como bloque `meso-<id>` en `ajustes.bloques`.
+- `ajustes.nube`: `{ activa, url, auto, ultima: { at, bytes, sesiones } | null }`. **La clave no está
+  aquí**: vive en `kv.nube` (`{ frase }`), que no se exporta y no se borra al importar ni con «borrar
+  todo».
+
+## Copia cifrada en la nube (sobre)
+
+El navegador sube `JSON.stringify` de este objeto; el servidor solo lo guarda y lo devuelve:
+
+```js
+{ v: 1, kdf: "PBKDF2-SHA256", it: 600000, sal: "<base64 16 B>", iv: "<base64 12 B>", gz: true, ct: "<base64>" }
+```
+
+`ct` es AES-256-GCM del texto de la copia (comprimido con gzip si `gz`), con la clave derivada de la
+clave de la persona y `sal`. El AAD es `gym-nube-v1|gz=0|1`, así que alterar el sobre o el indicador
+de compresión hace fallar el descifrado. El identificador de la copia (`id`, 32 hex) y el `token`
+(64 hex) salen de la misma clave con una sal fija distinta, y no permiten derivar la clave de cifrado.
+
 ## Copia de seguridad (archivo)
 
 ```js
 { app: "gym", version: 3, esquema: 4, exportado: "2026-11-15T10:00:00.000Z",
-  sesiones: [...], catalogo: [...], rutinas: [...], pesajes: [...], medidas: [...], ajustes: {...} }
+  sesiones: [...], catalogo: [...], rutinas: [...], pesajes: [...], medidas: [...], molestias: [...], ajustes: {...} }
 ```
 
 | Versión de copia | Esquema | Se acepta |
@@ -153,7 +184,7 @@ de una versión anterior siempre se leen bien.
 Reglas de validación (`validarCopia`): listas obligatorias (`sesiones`, `catalogo`, `rutinas`,
 `pesajes`), ids no vacíos y sin repetir (sesiones, catálogo, rutinas), fechas reales, horas `H:MM`,
 pesos de 0 a 2000, repeticiones de 0 a 1000, tipos de serie y de ejercicio conocidos, RPE de 5 a 10 en
-pasos de 0,5, recuperación en rango, pesajes de 0 a 700 kg y medidas de 0 a 400 cm. Si algo falla, el
+pasos de 0,5, recuperación en rango, pesajes de 0 a 700 kg, medidas de 0 a 400 cm, molestias con articulación y nivel válidos e ids únicos, y mesociclos con id, nombre, inicio y semanas. Si algo falla, el
 mensaje dice qué y dónde (por ejemplo, «sesión 3 (2026-02-30): fecha imposible o ausente») y no se
 toca ningún dato.
 

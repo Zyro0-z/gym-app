@@ -45,6 +45,12 @@
   --g-rosa: #FF2D55; --g-azul: #007AFF; --g-verde: #34C759; --g-naranja: #FF9500;
   --g-morado: #AF52DE; --g-indigo: #5856D6; --g-amarillo: #FFCC00; --g-cian: #32ADE6;
 
+  /* gráficos (Fase 4): la serie principal usa el acento; las demás, esta paleta; la banda es el acento muy tenue.
+     Reglas: una sola serie principal por gráfica, el color nunca es la única señal (hay texto y forma) y
+     las miniaturas de un mismo grupo comparten escala. */
+  --graf-banda: color-mix(in srgb, var(--accent) 17%, transparent);
+  --graf-2: var(--g-indigo); --graf-3: var(--g-naranja); --graf-4: var(--g-verde); --graf-5: var(--g-rosa);
+
   /* tipografía (rem sobre el tamaño de texto del sistema; 1rem = 17 pt por defecto) */
   --f-large: 2rem;          /* 34 */
   --f-title1: 1.647rem;     /* 28 */

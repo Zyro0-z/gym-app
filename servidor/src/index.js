@@ -7,7 +7,9 @@
 //   POST /v1/programar   { id, suscripcion, en, titulo?, cuerpo? }   un aviso por dispositivo (id)
 //   POST /v1/cancelar    { id }
 //   POST /v1/probar      { suscripcion }                   aviso inmediato de prueba
+//   PUT/GET/DELETE /v1/copia/:id   copia de seguridad cifrada de extremo a extremo (copias.js)
 import { enviar } from "./push.js";
+import { manejarCopia } from "./copias.js";
 
 const SERVICIOS = [/^https:\/\/web\.push\.apple\.com\//, /^https:\/\/fcm\.googleapis\.com\//, /^https:\/\/updates\.push\.services\.mozilla\.com\//,
   /^https:\/\/[a-z0-9.-]+\.notify\.windows\.com\//];
@@ -22,7 +24,7 @@ const claves = (env) => ({ publica: env.VAPID_PUBLICA, privada: env.VAPID_PRIVAD
 
 function cors(env, req) {
   const o = req.headers.get("Origin");
-  return o && o === env.ORIGEN ? { "Access-Control-Allow-Origin": o, "Access-Control-Allow-Methods": "GET, POST", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Max-Age": "86400", Vary: "Origin" } : null;
+  return o && o === env.ORIGEN ? { "Access-Control-Allow-Origin": o, "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE", "Access-Control-Allow-Headers": "Content-Type, Authorization", "Access-Control-Max-Age": "86400", Vary: "Origin" } : null;
 }
 const json = (o, estado, cab) => new Response(JSON.stringify(o), { status: estado, headers: Object.assign({ "Content-Type": "application/json" }, cab) });
 
@@ -32,6 +34,8 @@ export default {
     if (!c) return json({ error: "origen no permitido" }, 403, {});
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: c });
     const ruta = new URL(req.url).pathname;
+    const copia = await manejarCopia(req, env, ruta, c, json);
+    if (copia) return copia;
     if (!env.VAPID_PUBLICA || !env.VAPID_PRIVADA || !env.VAPID_SUJETO) return json({ error: "faltan las claves VAPID (wrangler secret put)" }, 500, c);
     if (req.method === "GET" && ruta === "/v1/clave") return json({ clave: env.VAPID_PUBLICA }, 200, c);
     if (req.method !== "POST") return json({ error: "no encontrado" }, 404, c);

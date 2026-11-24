@@ -26,6 +26,7 @@ export function vistaAjustes(_p, app) {
           celda({ icono: "diana", colorIcono: "var(--g-rosa)", titulo: "Objetivos", chevron: true, alPulsar: () => app.nav.ir("objetivos") }),
           celda({ icono: "bascula", colorIcono: "var(--g-morado)", titulo: "Peso corporal", chevron: true, alPulsar: () => app.nav.ir("cuerpo") }),
           celda({ icono: "capas", colorIcono: "var(--g-indigo)", titulo: "Bloques", chevron: true, alPulsar: () => app.nav.ir("bloques") }),
+          celda({ icono: "calendario", colorIcono: "var(--g-naranja)", titulo: "Mesociclos", valor: (est.ajustes.mesociclos || []).length ? String(est.ajustes.mesociclos.length) : null, chevron: true, alPulsar: () => app.nav.ir("mesociclos") }),
           celda({ icono: "cuerpo", colorIcono: "var(--g-cian)", titulo: "Grupos musculares", chevron: true, alPulsar: () => app.nav.ir("grupos") }),
         ], { iconos: true })),
         seccion({}, lista([

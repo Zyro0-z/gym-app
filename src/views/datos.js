@@ -96,6 +96,9 @@ export function vistaDatos(_p, app) {
             valor: ec.avisar ? h("span", { class: "chip bad" }, h("span", { class: "punto" }), "Pendiente") : null }),
           celda({ icono: "descargar", colorIcono: "var(--g-verde)", titulo: "Importar copia", estilo: "accion", alPulsar: () => importarCopia(app) }),
         ], { iconos: true })),
+        seccion({ cab: "Copia en la nube", pie: "Opcional: copia cifrada de extremo a extremo en un servidor propio (el mismo Worker de los avisos)." }, lista([
+          celda({ icono: "nube", colorIcono: "var(--g-cian)", titulo: "Copia cifrada en la nube", valor: est.ajustes.nube && est.ajustes.nube.url ? (est.ajustes.nube.auto ? "Automática" : "Manual") : "Sin configurar", chevron: true, alPulsar: () => app.nav.ir("nube") }),
+        ], { iconos: true })),
         seccion({ cab: "Copias internas", pie: "Se guardan solas en este iPhone cada " + plural(cada, "sesión nueva", "sesiones nuevas") + " y antes de importar o restaurar; se conservan las 3 últimas. No sustituyen a la copia en Archivos: si se borran los datos de la app, se borran con ellas." },
           lista([
             ...(internas === null ? [celda({ titulo: "Cargando…" })] : !internas.length ? [celda({ titulo: "Aún no hay copias internas" })]
@@ -118,7 +121,7 @@ export function vistaDatos(_p, app) {
         seccion({ cab: "Borrar", pie: "Exporta antes una copia en Archivos: la copia interna se pierde si desinstalas la app." }, lista([
           celda({ titulo: "Borrar todos los datos", estilo: "destructiva", alPulsar: async () => { if (await borrarTodo(app)) recargar(); } }),
         ])),
-        seccion({ cab: "Sincronización", pie: "Los datos viven solo en este iPhone y no se sincronizan con otros dispositivos: la app no tiene servidor. En iPhone, una web no puede guardar sola en iCloud Drive ni en Archivos; la copia se guarda a mano con «Guardar copia en Archivos» y, en la hoja de Compartir, «Guardar en Archivos». Para pasar los datos a otro dispositivo, importa allí esa copia." }),
+        seccion({ cab: "Sincronización", pie: "Los datos viven solo en este iPhone y no se sincronizan con otros dispositivos (la copia cifrada de la nube es opcional y solo guarda una copia). En iPhone, una web no puede guardar sola en iCloud Drive ni en Archivos; la copia se guarda a mano con «Guardar copia en Archivos» y, en la hoja de Compartir, «Guardar en Archivos». Para pasar los datos a otro dispositivo, importa allí esa copia." }),
       );
     },
   };

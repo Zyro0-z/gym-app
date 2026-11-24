@@ -44,12 +44,10 @@ function mejoresPorSemana(A) {
 }
 
 /**
- * @returns {{ suficiente: boolean, semanasConDatos: number, semanas: object[], actual: object|null }}
- *   semanas: de la más antigua a la más reciente (como mucho `n`), cada una con
- *   { lunes, sesiones, series, volumen, rpe, sueno, estres, energia, e1rmPct, ejerciciosComparados, descarga }
+ * Filas semanales (las de `lunes`, en ese orden) con { lunes, sesiones, series, volumen, rpe, nRpe, sueno, estres,
+ * energia, e1rmPct, ejerciciosComparados, descarga }. Sirve también para la semana en curso y para los mesociclos.
  */
-export function informeFatiga(A, { n = 8 } = {}) {
-  const lunesHoy = lunesDe(A.hoy);
+export function filasSemanas(A, lunes) {
   const crudos = crudosPorSemana(A), mejores = mejoresPorSemana(A);
   const fila = (w) => {
     const sem = A.semanas.find((x) => x.clave === w) || { ser: 0, vol: 0, n: 0 };
@@ -64,8 +62,28 @@ export function informeFatiga(A, { n = 8 } = {}) {
       sueno: media(c.sueno), estres: media(c.estres), energia: media(c.energia),
       e1rmPct: mediana(cambios), ejerciciosComparados: cambios.length, descarga: enDescarga(A.C, w) || enDescarga(A.C, masDias(w, 6)) };
   };
+  return lunes.map(fila);
+}
+
+/** Cambio del mejor e1RM de cada ejercicio entre la primera y la última de las semanas dadas (mediana, %). null si ningún ejercicio aparece en dos. */
+export function cambioE1rm(A, lunes) {
+  const set = new Set(lunes), cambios = [];
+  for (const m of mejoresPorSemana(A).values()) {
+    const ws = [...m.keys()].filter((w) => set.has(w)).sort();
+    if (ws.length >= 2) cambios.push((m.get(ws[ws.length - 1]) / m.get(ws[0]) - 1) * 100);
+  }
+  return { pct: mediana(cambios), ejercicios: cambios.length };
+}
+
+/**
+ * @returns {{ suficiente: boolean, semanasConDatos: number, semanas: object[], actual: object|null }}
+ *   semanas: de la más antigua a la más reciente (como mucho `n`), cada una con
+ *   { lunes, sesiones, series, volumen, rpe, sueno, estres, energia, e1rmPct, ejerciciosComparados, descarga }
+ */
+export function informeFatiga(A, { n = 8 } = {}) {
+  const lunesHoy = lunesDe(A.hoy);
   const completas = A.semanas.map((x) => x.clave).filter((w) => w < lunesHoy);
   const conDatos = completas.filter((w) => (A.semanas.find((x) => x.clave === w) || {}).n > 0);
-  const semanas = completas.slice(-n).map(fila);
-  return { suficiente: conDatos.length >= SEMANAS_MIN, semanasConDatos: conDatos.length, semanas, actual: fila(lunesHoy) };
+  const filas = filasSemanas(A, [...completas.slice(-n), lunesHoy]);
+  return { suficiente: conDatos.length >= SEMANAS_MIN, semanasConDatos: conDatos.length, semanas: filas.slice(0, -1), actual: filas[filas.length - 1] };
 }

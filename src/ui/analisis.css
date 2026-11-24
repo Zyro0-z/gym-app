@@ -1,0 +1,54 @@
+/* Fases 4 y 5: miniaturas, bandas, franjas de reparto, tarjeta de sesión y copia en la nube. */
+
+/* ── gráficas ── */
+.grafica .banda-confianza { fill: var(--graf-banda); stroke: none; }
+
+/* ── miniaturas (small multiples) ── */
+.rejilla-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.mini { min-width: 0; padding: 8px 10px 6px; border-radius: var(--r-control); background: var(--cell-2); }
+.mini-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; font-size: var(--f-caption1); }
+.mini-titulo { color: var(--label-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-valor { font-weight: 600; font-size: var(--f-footnote); white-space: nowrap; }
+.mini-svg { display: block; width: 100%; height: 44px; margin-top: 4px; overflow: visible; }
+.mini-linea { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mini-punto { fill: var(--accent-ink); }
+.mini-barra { fill: var(--accent); }
+.mini-barra.ultima { fill: var(--accent-ink); }
+
+/* ── sparklines en listas ── */
+.valor-tend .sparkline { margin-right: 6px; }
+.valor-tend .sparkline path { stroke: var(--accent); }
+
+/* ── reparto en franjas (RPE) ── */
+.franja { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--fill); }
+.franja > i { display: block; height: 100%; min-width: 2px; }
+.leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: var(--f-caption1); color: var(--label-2); }
+.leyenda span { display: inline-flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }
+.leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+/* ── bandas de rendimiento ── */
+.banda-fila { display: grid; grid-template-columns: minmax(98px, 1fr) 1.6fr auto; align-items: center; gap: 10px; padding: 6px 0; font-size: var(--f-subhead); }
+.banda-fila .pista { position: relative; height: 10px; border-radius: 5px; background: var(--fill-2); }
+.banda-fila .pista i.cero { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--label-3); }
+.banda-fila .pista i.rango { position: absolute; top: 3px; height: 4px; border-radius: 2px; background: var(--graf-banda); }
+.banda-fila .pista i.media { position: absolute; top: 0; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--accent); }
+.banda-fila.pocos .pista i.media { background: var(--cell); border: 2px solid var(--accent); box-sizing: border-box; }
+.banda-fila .n { color: var(--label-2); font-size: var(--f-footnote); white-space: nowrap; text-align: right; }
+
+/* ── tarjeta de sesión para compartir ── */
+.vista-tarjeta { display: block; width: 100%; max-width: 360px; margin: 0 auto; border-radius: 16px; }
+
+/* ── copia en la nube ── */
+.clave-nube { display: block; padding: 12px; border-radius: var(--r-control); background: var(--cell-2); font: 600 var(--f-callout)/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; word-break: break-all; user-select: all; -webkit-user-select: all; text-align: center; }
+.campo-texto { width: 100%; min-height: 44px; padding: 0 12px; border-radius: var(--r-control); background: var(--cell-2); color: var(--label); font-size: var(--f-body); }
+
+/* ── niveles de molestia ── */
+.nivel-molestia { display: flex; gap: 6px; }
+.nivel-molestia button { flex: 1; min-height: 44px; border-radius: var(--r-control); background: var(--fill-2); color: var(--label); font-weight: 600; font-variant-numeric: tabular-nums; }
+.nivel-molestia button[aria-checked="true"] { background: var(--accent); color: var(--on-accent); }
+.nivel-molestia button[aria-checked="true"][data-alto] { background: var(--bad); }
+
+/* ── Hoy: anillo de la semana ── */
+.semana-anillo { display: flex; align-items: center; gap: 14px; }
+.semana-anillo .centro-anillo { font-size: var(--f-subhead); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; text-align: center; }
+.semana-anillo .centro-anillo small { display: block; font-size: var(--f-caption2); font-weight: 500; color: var(--label-2); }

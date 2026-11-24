@@ -2,7 +2,7 @@
 // rejilla tenue de 3-4 líneas, eje Y a la derecha y selección por arrastre con un indicador
 // vertical y una burbuja arriba. Se dibujan al ancho real del contenedor (ResizeObserver).
 import { h, s } from "./dom.js";
-import { seleccion } from "./haptica.js";
+import { seleccion, impacto } from "./haptica.js";
 
 const EJE_Y = 40, EJE_X = 20, ARRIBA = 52;   // ARRIBA: hueco para la burbuja de selección
 let nGrad = 0;
@@ -63,7 +63,7 @@ function contenedor(alto, dibujar, etiqueta, resumen = "") {
 }
 
 /** Selección por arrastre: `xs` posiciones de cada dato y `info(i)` → { valor, detalle, y }. */
-function seleccionable(el, svg, xs, ys, alto, info, ancho) {
+function seleccionable(el, svg, xs, ys, alto, info, ancho, marcar = -1) {
   const cursor = s("line", { class: "cursor", y1: ARRIBA - 6, y2: alto - EJE_X, visibility: "hidden" });
   const marca = s("circle", { class: "selec", r: 5, visibility: "hidden" });
   svg.append(cursor, marca);
@@ -74,7 +74,7 @@ function seleccionable(el, svg, xs, ys, alto, info, ancho) {
     let i = 0;
     for (let j = 1; j < xs.length; j++) if (Math.abs(xs[j] - cx) < Math.abs(xs[i] - cx)) i = j;
     if (i === i0) return;
-    if (i0 !== -1) seleccion();
+    if (i0 !== -1) { if (i === marcar) impacto(); else seleccion(); }   // el máximo del periodo suena distinto
     i0 = i;
     const d = info(i);
     cursor.setAttribute("x1", xs[i]); cursor.setAttribute("x2", xs[i]); cursor.setAttribute("visibility", "visible");
@@ -151,11 +151,11 @@ function barraPath(x, y, w, hh, r) {
  * Línea (y área). puntos: [{ x: número (día), y, detalle }]; ejeX(x) → texto de la marca.
  * secundaria: [{ x, y }] línea punteada (media móvil); conPuntos dibuja cada dato.
  */
-export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null, area = true, conPuntos = true, secundaria = null, etiqueta = "", dominioX = null }) {
+export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null, area = true, conPuntos = true, secundaria = null, etiqueta = "", dominioX = null, banda = null }) {
   return contenedor(alto, (el, ancho) => {
     const svg = s("svg", { width: ancho, height: alto, viewBox: `0 0 ${ancho} ${alto}` });
     if (!puntos.length) { el.appendChild(svg); return; }
-    const vals = puntos.map((p) => p.y).concat(secundaria ? secundaria.map((p) => p.y) : []);
+    const vals = puntos.map((p) => p.y).concat(secundaria ? secundaria.map((p) => p.y) : [], banda ? banda.flatMap((b) => [b.lo, b.hi]) : []);
     let lo = Math.min(...vals), hi = Math.max(...vals);
     const marg = (hi - lo) * 0.12 || Math.abs(hi) * 0.05 || 1;
     const ticks = marcas(lo - marg, hi + marg, 4);
@@ -172,6 +172,11 @@ export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null
         svg.append(s("text", { class: "eje", x: x(v), y: alto - 4, "text-anchor": k === 0 ? "start" : k === n - 1 ? "end" : "middle" }, ejeX(Math.round(v))));
       }
     }
+    if (banda && banda.length > 1) {   // franja de ±ruido personal: la zona donde un cambio no se distingue de la variación normal
+      const arriba = banda.map((b, i) => (i ? "L" : "M") + x(b.x).toFixed(1) + " " + y(b.hi).toFixed(1)).join("");
+      const abajo = banda.slice().reverse().map((b) => "L" + x(b.x).toFixed(1) + " " + y(b.lo).toFixed(1)).join("");
+      svg.append(s("path", { class: "banda-confianza", d: arriba + abajo + "Z" }));
+    }
     const camino = (ps) => ps.map((p, i) => (i ? "L" : "M") + x(p.x).toFixed(1) + " " + y(p.y).toFixed(1)).join("");
     const linea = camino(puntos);
     if (area && puntos.length > 1) {
@@ -185,8 +190,9 @@ export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null
     if (puntos.length > 1) svg.append(s("path", { class: "linea", d: linea }));
     if (conPuntos || puntos.length === 1) for (const p of puntos) svg.append(s("circle", { class: "punto", cx: x(p.x), cy: y(p.y), r: puntos.length > 40 ? 2 : 3 }));
     el.appendChild(svg);
+    const iMax = puntos.length > 2 ? puntos.reduce((m, p, i) => (p.y > puntos[m].y ? i : m), 0) : -1;
     seleccionable(el, svg, puntos.map((p) => x(p.x)), puntos.map((p) => y(p.y)), alto,
-      (i) => ({ valor: formato(puntos[i].y), detalle: puntos[i].detalle || "" }), ancho);
+      (i) => ({ valor: formato(puntos[i].y), detalle: (puntos[i].detalle || "") + (i === iMax ? " · máximo del periodo" : "") }), ancho, iMax);
   }, etiqueta, describirSerie(puntos.map((p) => p.y), formato, (i) => puntos[i].detalle || (ejeX ? ejeX(puntos[i].x) : "")));
 }
 
@@ -199,4 +205,35 @@ export function sparkline(valores, { ancho = 64, alto = 22 } = {}) {
   const d = v.map((n, i) => (i ? "L" : "M") + ((i / (v.length - 1)) * (ancho - 4) + 2).toFixed(1) + " " + (alto - 2 - ((n - lo) / (hi - lo || 1)) * (alto - 4)).toFixed(1)).join("");
   svg.append(s("path", { d }));
   return svg;
+}
+
+/**
+ * Miniatura sin ejes para varias a la vez (small multiples): una etiqueta, el último valor y la forma
+ * de la serie. `tipo`: "barras" o "linea"; `valores` con null donde no hay dato. Todas las miniaturas de
+ * un grupo deben usar la misma escala horizontal (mismo número de valores) para poder compararse.
+ */
+export function miniGrafica({ titulo, valores, formato = fmtEje, tipo = "linea", unidad = "", alto = 44, nombres = null }) {
+  const v = valores.map((n) => (typeof n === "number" && isFinite(n) ? n : null));
+  const ult = v.map((n, i) => (n == null ? -1 : i)).filter((i) => i >= 0).pop();
+  const ancho = 120, n = v.length, num = v.filter((x) => x != null);
+  const svg = s("svg", { class: "mini-svg", viewBox: `0 0 ${ancho} ${alto}`, preserveAspectRatio: "none", "aria-hidden": "true" });
+  if (num.length) {
+    let lo = Math.min(...num), hi = Math.max(...num);
+    if (tipo === "barras") lo = Math.min(0, lo);
+    if (hi === lo) { hi += 1; lo -= tipo === "barras" ? 0 : 1; }
+    const y = (x) => 3 + (alto - 6) * (1 - (x - lo) / (hi - lo));
+    const cx = (i) => (n === 1 ? ancho / 2 : 4 + (i / (n - 1)) * (ancho - 8));
+    if (tipo === "barras") {
+      const bw = Math.max(3, (ancho / n) * 0.62);
+      v.forEach((x, i) => { if (x != null) svg.append(s("rect", { class: ["mini-barra", i === ult && "ultima"], x: cx(i) - bw / 2, y: Math.min(y(x), y(0)), width: bw, height: Math.max(1.5, Math.abs(y(0) - y(x))), rx: 1.5 })); });
+    } else {
+      let d = "", pen = false;
+      v.forEach((x, i) => { if (x == null) { pen = false; return; } d += (pen ? "L" : "M") + cx(i).toFixed(1) + " " + y(x).toFixed(1); pen = true; });
+      svg.append(s("path", { class: "mini-linea", d, "vector-effect": "non-scaling-stroke" }));
+      if (ult != null) svg.append(s("circle", { class: "mini-punto", cx: cx(ult), cy: y(v[ult]), r: 2.6 }));
+    }
+  }
+  const desc = describirSerie(v, formato, nombres);
+  return h("div", { class: "mini", role: "img", "aria-label": titulo + ". " + desc },
+    h("div", { class: "mini-cab" }, h("span", { class: "mini-titulo" }, titulo), h("span", { class: "mini-valor num" }, ult == null ? "—" : formato(v[ult]) + unidad)), svg);
 }

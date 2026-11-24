@@ -37,14 +37,15 @@ function recorrido(ids) {
   for (const s of ["Resumen", "Ejercicios", "Músculos", "Cuerpo"]) P.push(["progreso-" + s.toLowerCase(), async (g) => { await g.tab("progreso"); await g.seg(s); }]);
   P.push(["historial", (g) => g.tab("historial")], ["ajustes", (g) => g.tab("ajustes")]);
   const rutas = [["ejercicio", ids.ej && "ejercicio/" + encodeURIComponent(ids.ej), "progreso"], ["grupo", "grupo/" + encodeURIComponent(ids.grupo), "progreso"], ["ligas", "ligas", "progreso"],
-    ["liga", ids.liga && "liga/grupo/" + encodeURIComponent(ids.liga), "progreso"], ["fatiga", "fatiga", "progreso"], ["musculos", "musculos", "progreso"], ["porGimnasio", "porGimnasio", "progreso"], ["comparar", "comparar", "progreso"], ["medidas", "medidas", "progreso"],
+    ["liga", ids.liga && "liga/grupo/" + encodeURIComponent(ids.liga), "progreso"], ["fatiga", "fatiga", "progreso"], ["musculos", "musculos", "progreso"], ["porGimnasio", "porGimnasio", "progreso"], ["comparar", "comparar", "progreso"], ["medidas", "medidas", "progreso"], ["rendimiento", "rendimiento", "progreso"], ["molestias", "molestias", "progreso"],
     ["sesion", ids.ses && "sesion/" + encodeURIComponent(ids.ses), "historial"], ["rutinas", "rutinas", "ajustes"], ["rutina", ids.rut && "rutina/" + encodeURIComponent(ids.rut), "ajustes"],
     ["horario", "horario", "ajustes"], ["ejercicios", "ejercicios", "ajustes"], ["ejercicio-cat", ids.cat && "ejercicioCat/" + encodeURIComponent(ids.cat), "ajustes"],
     ["entrenamiento", "entrenamiento", "ajustes"], ["objetivos", "objetivos", "ajustes"], ["cuerpo", "cuerpo", "ajustes"], ["bloques", "bloques", "ajustes"], ["bloque", "bloque/+", "ajustes"],
-    ["grupos", "grupos", "ajustes"], ["apariencia", "apariencia", "ajustes"], ["datos", "datos", "ajustes"], ["calidad", "calidad", "ajustes"], ["avanzado", "avanzado", "ajustes"], ["guia", "guia", "ajustes"]];
+    ["grupos", "grupos", "ajustes"], ["mesociclos", "mesociclos", "ajustes"], ["nube", "nube", "ajustes"], ["apariencia", "apariencia", "ajustes"], ["datos", "datos", "ajustes"], ["calidad", "calidad", "ajustes"], ["avanzado", "avanzado", "ajustes"], ["guia", "guia", "ajustes"]];
   for (const [n, r, t] of rutas) if (r) P.push([n, async (g) => { await g.tab(t); await g.tab(t); await g.ir(r, t); }]);
   P.push(
     ["hoja-pesaje", async (g) => { await g.tab("hoy"); await g.p.getByRole("button", { name: "Añadir pesaje" }).click(); await g.espera(600); }, { capa: ".hoja", rol: "dialog" }],
+    ["hoja-molestia", async (g) => { await g.cerrarCapas(); await g.tab("progreso"); await g.ir("molestias", "progreso"); await g.p.getByRole("button", { name: "Anotar molestia" }).first().click(); await g.espera(600); }, { capa: ".hoja", rol: "dialog" }],
     ["alerta", async (g) => { await g.cerrarCapas(); g.p.evaluate(() => { window.__alerta = window.__gym.confirmar("¿Borrar la sesión?", "No se puede deshacer.", "Borrar", true); }); await g.espera(600); }, { capa: ".alerta-capa", rol: "alertdialog" }],
     ["toast", async (g) => { await g.cerrarCapas(); await g.p.evaluate(() => window.__gym.toast("Copia exportada")); await g.espera(300); }, { toast: true }],
     ["entreno", async (g) => { await g.cerrarCapas(); await g.p.evaluate(async (rut) => { const x = window.__gym; const r = x.store.estado.rutinas.find((y) => y.id === rut); await x.entreno.empezar(r ? r.nombre : null); }, ids.rut); await g.espera(900); }, { capa: ".modal-completo" }],

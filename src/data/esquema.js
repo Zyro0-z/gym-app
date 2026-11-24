@@ -2,6 +2,7 @@
 // Sin librerías. Devuelve una lista de problemas en frases legibles; vacía si la copia es válida.
 // El modelo está descrito campo a campo en docs/ESQUEMA.md.
 import { fechaISO } from "../core/fechas.js";
+import { validarMolestia } from "../core/molestias.js";
 
 export const TIPOS_SERIE = ["normal", "calentamiento", "fallo", "descendente"];
 export const TIPOS_EJERCICIO = ["peso", "duracion", "temporizador"];
@@ -27,6 +28,7 @@ export function validarCopia(o, { version = 3, esquema = 4 } = {}) {
   if (o.esquema !== undefined && (!esNum(o.esquema) || o.esquema < 3 || o.esquema > esquema)) mal("esquema de datos no soportado (" + JSON.stringify(o.esquema) + ")");
   for (const k of ["sesiones", "catalogo", "rutinas", "pesajes"]) if (!Array.isArray(o[k])) mal("falta la lista «" + k + "»");
   if (o.medidas !== undefined && !Array.isArray(o.medidas)) mal("«medidas» no es una lista");
+  if (o.molestias !== undefined && !Array.isArray(o.molestias)) mal("«molestias» no es una lista");
   if (o.ajustes !== undefined && o.ajustes !== null && (typeof o.ajustes !== "object" || Array.isArray(o.ajustes))) mal("los ajustes no tienen el formato esperado");
   if (p.length) return p.slice(0, MAX_PROBLEMAS);
 
@@ -106,6 +108,16 @@ export function validarCopia(o, { version = 3, esquema = 4 } = {}) {
     for (const k of MEDIDAS) if (!opcional(x[k]) && !(esNum(x[k]) && x[k] > 0 && x[k] < 400)) return mal("medida del " + x.fecha + ": «" + k + "» no válida");
     return false;
   });
+  const idsMo = new Set();
+  (o.molestias || []).some((x, i) => {
+    const f = validarMolestia(x, null);
+    if (f.length) return mal("molestia " + (i + 1) + ": " + f[0].toLowerCase());
+    if (typeof x.id !== "string" || !x.id || idsMo.has(x.id)) return mal("molestia " + (i + 1) + ": identificador ausente o repetido");
+    idsMo.add(x.id);
+    return false;
+  });
+  const mesos = o.ajustes && o.ajustes.mesociclos;
+  if (mesos !== undefined && mesos !== null && !(Array.isArray(mesos) && mesos.every((m) => m && esTexto(m.id) && esTexto(m.nombre) && fechaISO(m.inicio) && Number.isInteger(m.semanas)))) mal("los mesociclos no tienen el formato esperado");
   return p.slice(0, MAX_PROBLEMAS);
 }
 

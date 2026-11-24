@@ -8,8 +8,10 @@ y avisa con «Descanso terminado hace X s».
 - Web Push estándar (VAPID, cifrado `aes128gcm`), sin dependencias: `src/push.js`.
 - Solo acepta peticiones con `Origin: https://zyro0-z.github.io` y solo envía a servicios de push
   conocidos (Apple, Google, Mozilla, Microsoft).
-- No guarda nada del entrenamiento: la suscripción del dispositivo, la hora y el texto del aviso
-  («Descanso terminado», el ejercicio y la serie). Se borra al enviarlo o cancelarlo.
+- Avisos: no guarda nada del entrenamiento, solo la suscripción del dispositivo, la hora y el texto del
+  aviso («Descanso terminado», el ejercicio y la serie). Se borra al enviarlo o cancelarlo.
+- Copia en la nube (opcional): guarda en KV un **sobre cifrado** que la app cifra antes de enviarlo (el
+  servidor no tiene la clave) y el hash del token de acceso. Ver «Copia cifrada» más abajo.
 - No se publica con la app (GitHub Pages solo copia `index.html`, `src/`, `assets/`…).
 
 ## Coste
@@ -19,6 +21,22 @@ noviembre de 2026): los Durable Objects del plan gratuito tienen que usar almace
 eso `new_sqlite_classes` en `wrangler.toml`); las alarmas cuentan como peticiones (100 000 al día) y
 cada `setAlarm()` como una fila escrita (100 000 al día). Un entrenamiento con 20 descansos son
 unas 60 operaciones.
+
+## Copia cifrada (KV)
+
+Necesita un espacio KV enlazado como `COPIAS` (sin él, `/v1/copia/*` responde 500 y los avisos siguen
+funcionando). Una vez, antes de desplegar:
+
+```sh
+npx wrangler kv namespace create COPIAS
+```
+
+Copia el `id` que imprime en `wrangler.toml` (`[[kv_namespaces]]`, en lugar de `PEGA_AQUI_EL_ID_DEL_KV`).
+
+Cabe en el plan gratuito: KV permite 100 000 lecturas y 1 000 escrituras al día y 1 GB (valores de
+hasta 25 MiB; aquí el máximo es 8 MB). Cada petición hace una lectura (comprobar el token) y, al subir,
+una escritura; la app espera 5 s tras guardar una sesión, así que son pocas al día. KV es de
+consistencia eventual: tras subir, otra ubicación puede tardar hasta ~1 minuto en ver la copia nueva.
 
 ## Desplegar (una vez)
 
@@ -56,8 +74,16 @@ ligada a la clave pública).
 | POST | `/v1/programar` | `{ id, suscripcion, en, titulo?, cuerpo? }` | `{ ok }` · `en` en ms, como mucho dentro de 1 h |
 | POST | `/v1/cancelar` | `{ id }` | `{ ok }` |
 | POST | `/v1/probar` | `{ suscripcion }` | `{ estado }` del servicio de push |
+| PUT | `/v1/copia/:id` | sobre cifrado (JSON) | `{ ok, at, bytes }` · `Authorization: Bearer <token>`; la primera escritura fija el token |
+| GET | `/v1/copia/:id` | — | el sobre · 404 si no hay copia |
+| GET | `/v1/copia/:id/info` | — | `{ bytes, at }` |
+| DELETE | `/v1/copia/:id` | — | `{ ok }` |
 
-`id` identifica el dispositivo (lo genera la app; un aviso pendiente por dispositivo: programar otro
+Errores de `/v1/copia`: 400 (id o sobre no válidos), 401 (sin token), 403 (token distinto del de la
+copia), 413 (más de 8 MB), 500 (falta el KV). El `id` y el `token` los deriva la app de la clave de la
+persona; no se puede deducir la clave de ellos.
+
+`id` (en `/v1/programar`) identifica el dispositivo (lo genera la app; un aviso pendiente por dispositivo: programar otro
 sustituye al anterior).
 
 ## Pruebas
@@ -67,4 +93,6 @@ cd servidor && npm test          # node:test, sin red: push simulado y Durable O
 ```
 
 Comprueban que el dispositivo descifra el mensaje (RFC 8291), la firma VAPID (RFC 8292), el CORS,
-programar → alarma → envío, cancelar y el rechazo de datos no válidos.
+programar → alarma → envío, cancelar y el rechazo de datos no válidos. `copias.test.mjs` cubre las
+rutas de la copia (token, límites, CORS) y el cliente real de la app contra el Worker con un KV en
+memoria.

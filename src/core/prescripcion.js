@@ -121,3 +121,16 @@ export function ajustarPorRpe(sug, p, rpeObj = null) {
   if (p.clave === "mantén" && esRpe(rpeObj) && media <= rpeObj - 1.5) return Object.assign({}, sug, { motivo: sug.motivo + " · RPE medio " + txt + ", te sobraba", holgura: true });
   return sug;
 }
+
+/**
+ * Franja de ruido personal para la gráfica del e1RM: media móvil de las `ventana` últimas sesiones ± `sd`
+ * (el ruido de ruidoE1rm). Un punto dentro de la franja no se distingue de la variación normal.
+ * @returns {{dia:string, lo:number, hi:number}[]}  una por sesión con e1RM
+ */
+export function bandaRuido(hist, sd, ventana = 5) {
+  const h = hist.filter((x) => x.mejorRM > 0);
+  return h.map((x, i) => {
+    const w = h.slice(Math.max(0, i - ventana + 1), i + 1).map((y) => y.mejorRM), m = w.reduce((a, b) => a + b, 0) / w.length;
+    return { dia: x.dia, lo: m - sd, hi: m + sd };
+  });
+}

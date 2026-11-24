@@ -85,6 +85,13 @@ src/
     comparar.js       dos periodos del mismo largo; % solo con base distinta de cero
     csv.js            CSV con BOM, «;» y coma decimal (series, pesajes, medidas)
     medidas.js        medidas corporales: validación, una por fecha, series para la gráfica
+    estadistica.js    media, mediana, rangos, Spearman (n ≥ 12 y |t| ≥ 2 = concluyente), media con IC 95 %
+    rendimiento.js    índice de rendimiento por sesión y bandas por sueño/estrés/energía (siempre con n)
+    rpebandas.js      reparto de las series de trabajo por franja de RPE y cobertura
+    mesociclos.js     validar, estado, bloque de descarga asociado y resumen por semanas
+    molestias.js      articulaciones, validación, resumen 30 días, «persistente», por ejercicio
+    tarjeta.js        datos de la tarjeta de sesión (el dibujo está en ui/tarjeta.js)
+    cifrado.js        WebCrypto: clave, identidad (id, token), cifrar/descifrar el sobre (AES-GCM + PBKDF2)
   worker/analisis.js  analizar en un Worker de módulo
   data/
     db.js             IndexedDB versionada (onupgradeneeded) y transacciones
@@ -92,8 +99,9 @@ src/
     esquema.js        validación de copias (docs/ESQUEMA.md)
     repos.js          cargar (migrando o rescatando), guardar, importar y restaurar con respaldo
     espejo.js         réplica en localStorage del borrador
+    nube.js           cliente de la copia cifrada (fetch inyectable); servidor en servidor/src/copias.js
   ui/
-    tokens.css, base.css, componentes.css
+    tokens.css, base.css, componentes.css, analisis.css (bandas, miniaturas, tarjeta, clave)
     dom.js, iconos.js, navegacion.js, controles.js, calor.js
     capas.js          hojas, alertas y modales; foco atrapado, Escape y foco devuelto
     graficas.js       barras y líneas SVG con resumen textual (describirSerie) en la etiqueta
@@ -101,10 +109,12 @@ src/
     instalar.js       tarjeta «Añadir a pantalla de inicio» (solo Safari de iPhone sin instalar, una vez)
     insignias.js      presentación; insignias/graficos.js (primitivas), registro.js (las 15 ligas),
                       montaje.js (composición y caché)
+    tarjeta.js        dibuja la tarjeta de sesión en un canvas (PNG 1080×1350) y la comparte
     tema.js, textos.js, teclado.js, haptica.js, sonido.js, version.js
   views/
     indice.js         pestañas, rutas y vistas que necesitan el análisis
     hoy.js, progreso.js, historial.js, ajustes.js, ejercicio.js, ligas.js, datos.js, …
+    rendimiento.js, molestias.js, mesociclos.js, nube.js   vistas de análisis y registros (fase 4-5)
     entreno.js        API del entrenamiento; las piezas, en entreno/:
       estado.js         estado compartido (E.app, E.M) y utilidades
       pantalla.js       modal a pantalla completa, barra minimizada, Wake Lock, guardado, cabecera

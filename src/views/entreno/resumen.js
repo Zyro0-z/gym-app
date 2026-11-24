@@ -7,6 +7,8 @@ import { kg, kgTotal, minutos } from "../../ui/textos.js";
 import { fmt, plural } from "../../core/formato.js";
 import { epley } from "../../core/sesiones.js";
 import { E } from "./estado.js";
+import { datosTarjeta } from "../../core/tarjeta.js";
+import { compartirTarjeta } from "../../ui/tarjeta.js";
 import { derivaEjercicio, UMBRAL_GENERICO_PCT } from "../../core/deriva.js";
 
 export function mejorRM(series) { let m = 0; for (const s of series) if (s.peso > 0 && s.reps > 0) m = Math.max(m, epley(s.peso, s.reps)); return m; }
@@ -75,7 +77,9 @@ export async function mostrarResumen(ses) {
           const dir = !ant || !a || !b ? null : b > a * 1.005 ? "sube" : b < a * 0.995 ? "baja" : "igual";
           return celda({ titulo: e.nombre, sub: plural(e.series.length, "serie", "series") + (mejor && mejor.peso > 0 ? " · mejor " + fmt(mejor.peso, Number.isInteger(mejor.peso) ? 0 : 1) + " × " + mejor.reps : ""),
             valor: dir ? chip(dir === "sube" ? "Mejor" : dir === "baja" ? "Peor" : "Igual", dir === "sube" ? "ok" : dir === "baja" ? "bad" : null, { icono: dir }) : null });
-        }))));
+        }))),
+        seccion({ pie: "Una imagen con lo esencial de la sesión para enviar o publicar." }, lista([celda({ icono: "compartir", colorIcono: "var(--g-azul)", titulo: "Compartir tarjeta", estilo: "accion",
+          alPulsar: () => compartirTarjeta(E.app, datosTarjeta(ses, prs.map((p) => p.e.nombre))) })], { iconos: true })));
     },
   });
 }

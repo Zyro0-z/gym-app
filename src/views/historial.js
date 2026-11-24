@@ -11,6 +11,8 @@ import { plural } from "../core/formato.js";
 import { lineaSesion, sesionesOrdenadas, totalesSesion } from "./comun.js";
 import { editarSesion } from "./entreno.js";
 import { elegirRutina } from "./hoy.js";
+import { datosTarjeta } from "../core/tarjeta.js";
+import { compartirTarjeta } from "../ui/tarjeta.js";
 import { fmt } from "../core/formato.js";
 
 // La lista se pinta por tandas: con cientos de sesiones, pintarlas todas de golpe bloquea la
@@ -98,7 +100,8 @@ export function vistaSesion([id], app) {
       });
       const rec = resumenRecuperacion(s.recuperacion);
       const nota = s.nota ? seccion({ cab: "Nota" }, h("div", { class: "celda-area" }, h("div", { class: "ej-nota", style: { margin: 0, padding: "12px 14px", fontSize: "var(--f-body)" } }, s.nota))) : null;
-      poner(c, cab, rec ? h("p", { class: "seccion t-subhead c-2", style: { marginTop: "-8px" } }, capital(rec)) : null, nota, ejs, seccion({}, lista([celda({ titulo: "Borrar sesión", estilo: "destructiva", alPulsar: async () => {
+      const compartir = seccion({}, lista([celda({ icono: "compartir", colorIcono: "var(--g-azul)", titulo: "Compartir tarjeta", estilo: "accion", alPulsar: () => compartirTarjeta(app, datosTarjeta(s)) })], { iconos: true }));
+      poner(c, cab, rec ? h("p", { class: "seccion t-subhead c-2", style: { marginTop: "-8px" } }, capital(rec)) : null, nota, ejs, compartir, seccion({}, lista([celda({ titulo: "Borrar sesión", estilo: "destructiva", alPulsar: async () => {
         const ok = await app.confirmar("¿Borrar la sesión?", "Se borrará la sesión del " + fechaCorta(s.fecha, hoy) + ". No se puede deshacer.", "Borrar", true);
         if (!ok) return;
         await store.borrarSesion(s.id);

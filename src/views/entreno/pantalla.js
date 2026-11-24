@@ -4,6 +4,7 @@ import { h, poner, animar, reducirMovimiento } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
 import { barraTeclado } from "../../ui/teclado.js";
 import { atraparFoco } from "../../ui/capas.js";
+import { reanudarSonido } from "../../ui/sonido.js";
 import { reloj, fechaCorta, capital } from "../../ui/textos.js";
 import { copiar, aTexto, vacia, leerMin, marcarMin, nombreDe, tipoDeCatalogo } from "./estado.js";
 import { pintarCuerpo } from "./ejercicios.js";
@@ -19,9 +20,13 @@ export function iniciarEntreno(a) {
   E.app.store.suscribir((t) => { if (t === "borrador" || t === "todo") pintarBarraMin(); });
   // Al volver (pantalla desbloqueada, app en primer plano o restaurada de la caché del navegador)
   // se recalcula todo con la hora real y se vuelve a pedir que la pantalla no se apague
-  const volver = () => { if (E.M && E.M.modo === "entreno") pedirWake(); alVolver(); };
+  const volver = () => { if (E.M && E.M.modo === "entreno") pedirWake(); reanudarSonido(); alVolver(); };
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") guardarYa(); else volver(); });
   window.addEventListener("pageshow", volver);
+  // iOS cierra la app sin aviso: pagehide y freeze llegan donde visibilitychange a veces no. guardarYa escribe
+  // el espejo de localStorage de forma SÍNCRONA antes de lanzar la escritura a IndexedDB, que puede no terminar.
+  window.addEventListener("pagehide", () => guardarYa());
+  document.addEventListener("freeze", () => guardarYa());
   // Los controles de la pantalla bloqueada necesitan un toque para poder sonar (política de iOS)
   document.addEventListener("pointerdown", () => activarBloqueo(), { capture: true, passive: true });
   pintarBarraMin();
@@ -174,7 +179,8 @@ export function pintarProgresoCab() {
 export function guardarYa() {
   clearTimeout(E.guardarT);
   pintarProgresoCab();
-  if (E.M && E.M.modo === "entreno") return E.app.store.guardarBorrador(E.M.d);
+  // Sin borrador en el almacén es que se descartó o se terminó: guardar aquí lo resucitaría (p. ej. un pagehide entre guardar la sesión y cerrar)
+  if (E.M && E.M.modo === "entreno" && E.app.store.estado.borrador) return E.app.store.guardarBorrador(E.M.d);
 }
 
 export function pintarCab() {

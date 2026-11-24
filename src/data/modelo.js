@@ -69,6 +69,8 @@ export function ajustesBase() {
     // RPE medio que sube ≥ rpeSube, o sueño medio < `sueno` h; solo tras ≥ semanasMin semanas sin descarga
     descarga: { caidaPct: 3, ejercicios: 2, rpeSube: 1, sueno: 7, semanasMin: 6, pospuestaHasta: null, descartadaEn: null },
     csv: { separador: ";", decimal: "," },
+    mesociclos: [],                            // [{ id, nombre, inicio, semanas, descarga }] (core/mesociclos.js)
+    nube: { activa: false, url: "", auto: true, ultima: null },   // copia cifrada opcional (core/cifrado.js, data/nube.js)
   };
 }
 
@@ -77,7 +79,7 @@ export function completarAjustes(a) {
   const b = ajustesBase();
   if (!a) return b;
   const out = Object.assign({}, b, a);
-  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "ligas", "copiasInternas", "avisoCopia", "descarga", "csv", "analisis"]) out[k] = Object.assign({}, b[k], a[k] || {});
+  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "ligas", "copiasInternas", "avisoCopia", "descarga", "csv", "analisis", "nube"]) out[k] = Object.assign({}, b[k], a[k] || {});
   out.entreno.push = Object.assign({}, b.entreno.push, (a.entreno && a.entreno.push) || {});
   out.horario = Object.assign({}, b.horario, a.horario || {});
   if (!Array.isArray(out.grupos) || !out.grupos.length) out.grupos = b.grupos;
@@ -89,7 +91,7 @@ export function completarAjustes(a) {
 
 export function crearCopia(estado, ahora = new Date().toISOString()) {
   return { app: "gym", version: VERSION_COPIA, esquema: ESQUEMA, exportado: ahora,
-    sesiones: estado.sesiones, catalogo: estado.catalogo, rutinas: estado.rutinas, pesajes: estado.pesajes, medidas: estado.medidas || [], ajustes: estado.ajustes };
+    sesiones: estado.sesiones, catalogo: estado.catalogo, rutinas: estado.rutinas, pesajes: estado.pesajes, medidas: estado.medidas || [], molestias: estado.molestias || [], ajustes: estado.ajustes };
 }
 
 /** Lee el texto de una copia (nueva, antigua o seed.json) y devuelve el modelo. Lanza Error con un motivo legible. */
@@ -101,7 +103,7 @@ export function leerCopia(texto, { ahora = new Date().toISOString() } = {}) {
   if (o.version >= 2 && Array.isArray(o.sesiones)) {
     const problemas = validarCopia(o, { version: VERSION_COPIA, esquema: ESQUEMA });
     if (problemas.length) throw new Error(textoProblemas(problemas));
-    return { sesiones: o.sesiones, catalogo: o.catalogo, rutinas: o.rutinas, pesajes: o.pesajes, medidas: o.medidas || [], ajustes: completarAjustes(o.ajustes), borrador: null, origen: "v" + o.version };
+    return { sesiones: o.sesiones, catalogo: o.catalogo, rutinas: o.rutinas, pesajes: o.pesajes, medidas: o.medidas || [], molestias: o.molestias || [], ajustes: completarAjustes(o.ajustes), borrador: null, origen: "v" + o.version };
   }
   if (Array.isArray(o.sessions)) throw new Error("La copia es de una versión muy antigua de la app (anterior a la 2.0) y ya no se puede importar.");
   throw new Error("El archivo no contiene sesiones: no parece una copia de esta app.");
@@ -129,6 +131,7 @@ export const CLAVES_RESPALDO = Array.from({ length: N_RESPALDOS }, (_, i) => "re
 export function instantanea(estado, motivo, ahora = new Date().toISOString()) {
   const datos = { sesiones: estado.sesiones || [], catalogo: estado.catalogo || [], rutinas: estado.rutinas || [], pesajes: estado.pesajes || [], ajustes: estado.ajustes || null };
   if (estado.medidas) datos.medidas = estado.medidas;
+  if (estado.molestias) datos.molestias = estado.molestias;
   const r = { fecha: ahora, motivo, esquema: ESQUEMA, sesiones: datos.sesiones.length, bytes: 0, datos };
   r.bytes = JSON.stringify(datos).length;
   return r;
