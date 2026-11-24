@@ -5,8 +5,8 @@
 import { canon } from "./nombres.js";
 
 export const MUSCULOS = [
-  { id: "pecho-clavicular", nombre: "Pectoral clavicular", grupo: "Pecho" },
-  { id: "pecho-esternal", nombre: "Pectoral esternal", grupo: "Pecho" },
+  { id: "pecho-clavicular", nombre: "Pecho superior (clavicular)", grupo: "Pecho" },
+  { id: "pecho-esternal", nombre: "Pecho medio e inferior (esternal)", grupo: "Pecho" },
   { id: "deltoide-anterior", nombre: "Deltoides anterior", grupo: "Hombro" },
   { id: "deltoide-lateral", nombre: "Deltoides lateral", grupo: "Hombro" },
   { id: "deltoide-posterior", nombre: "Deltoides posterior", grupo: "Hombro" },
@@ -39,11 +39,12 @@ export const nombreMusculo = (id) => (MUSCULO.has(id) ? MUSCULO.get(id).nombre :
 
 // [nombre, grupo, principales, secundarios, extra]
 const B = [
-  ["Press banca", "Pecho", ["pecho-esternal", "pecho-clavicular"], ["deltoide-anterior", "triceps-lateral-medial", "triceps-largo"], { material: "barra" }],
-  ["Press plano con mancuernas", "Pecho", ["pecho-esternal", "pecho-clavicular"], ["deltoide-anterior", "triceps-lateral-medial", "triceps-largo"], { material: "mancuerna" }],
+  ["Press banca", "Pecho", ["pecho-esternal"], ["pecho-clavicular", "deltoide-anterior", "triceps-lateral-medial", "triceps-largo"], { material: "barra" }],
+  ["Press plano con mancuernas", "Pecho", ["pecho-esternal"], ["pecho-clavicular", "deltoide-anterior", "triceps-lateral-medial", "triceps-largo"], { material: "mancuerna" }],
   ["Press inclinado con mancuernas", "Pecho", ["pecho-clavicular"], ["pecho-esternal", "deltoide-anterior", "triceps-lateral-medial"], { material: "mancuerna" }],
   ["Press inclinado con barra", "Pecho", ["pecho-clavicular"], ["pecho-esternal", "deltoide-anterior", "triceps-lateral-medial"], { material: "barra" }],
-  ["Aperturas en polea", "Pecho", ["pecho-esternal", "pecho-clavicular"], ["deltoide-anterior"], { material: "polea" }],
+  ["Aperturas en polea", "Pecho", ["pecho-esternal"], ["pecho-clavicular", "deltoide-anterior"], { material: "polea" }],
+  ["Aperturas en polea baja a alta", "Pecho", ["pecho-clavicular"], ["pecho-esternal", "deltoide-anterior"], { material: "polea" }],
   ["Aperturas con mancuernas", "Pecho", ["pecho-esternal"], ["pecho-clavicular", "deltoide-anterior"], { material: "mancuerna" }],
   ["Press en máquina", "Pecho", ["pecho-esternal"], ["pecho-clavicular", "deltoide-anterior", "triceps-lateral-medial"], { material: "máquina" }],
   ["Fondos en paralelas", "Pecho", ["pecho-esternal", "triceps-lateral-medial"], ["deltoide-anterior", "triceps-largo"], { modoCarga: "lastre" }],
@@ -89,9 +90,22 @@ const B = [
   ["Plancha", "Core", ["recto-abdominal", "oblicuos"], ["erectores", "serrato"], {}],
 ];
 
-// Alias de nombres que Sergio ya usa (id canónico → nombre del catálogo base)
-const ALIAS = { pressplano: "press plano con mancuernas", pressinclinado: "press inclinado con mancuernas", sentadillahack: "sentadilla hack",
-  tricepspolea: "extensión de tríceps en polea", tricepspoleaaltacuerda: "extensión de tríceps en polea", facepull: "face pull" };
+// Alias de nombres que Sergio ya usa (nombre → nombre del catálogo base). Las claves se normalizan con `clave`.
+const ALIAS_NOMBRES = {
+  "Press plano": "Press plano con mancuernas", "Press plano (Manc)": "Press plano con mancuernas",
+  "Press inclinado": "Press inclinado con mancuernas", "Press inclinado (Manc)": "Press inclinado con mancuernas",
+  "Press banca (Barra)": "Press banca", "Press militar (Máquina)": "Press militar en máquina",
+  "Press francés (Barra Z)": "Press francés", "Curl bíceps mancuernas": "Curl con mancuernas", "Curl bíceps": "Curl con mancuernas",
+  "Extensión cuádriceps": "Extensión de cuádriceps", "Crunch abdominal (Polea alta)": "Crunch en polea alta",
+  "Elevaciones laterales (Polea)": "Elevaciones laterales en polea", "Elevaciones laterales (Manc)": "Elevaciones laterales con mancuernas",
+  "Aperturas polea (Baja a alta)": "Aperturas en polea baja a alta", "Aperturas polea": "Aperturas en polea",
+  "Tríceps polea": "Extensión de tríceps en polea", "Tríceps polea alta (Cuerda)": "Extensión de tríceps en polea", "Tríceps polea alta cuerda": "Extensión de tríceps en polea",
+  "Remo polea baja": "Remo en polea baja", "Pájaros (Máquina)": "Pájaros en máquina", "Bíceps polea baja": "Curl en polea baja",
+  "Face-pull": "Face pull", "Remo pecho apoyado (Máquina)": "Remo pecho apoyado",
+};
+/** Clave de comparación: como `canon`, sin paréntesis (los usa Sergio para el material: «Press Plano (Manc)»). */
+const clave = (n) => canon(n).replace(/[()]/g, "");
+const ALIAS = Object.fromEntries(Object.entries(ALIAS_NOMBRES).map(([k, v]) => [clave(k), v]));
 
 export const CATALOGO_BASE = B.map(([nombre, grupo, p, s, x]) => ({ id: canon(nombre), nombre, grupo, unilateral: !!x.unilateral, tipoAncla: "peso",
   tipoMaterial: x.material || null, incremento: null, rangoReps: null, top: false, estandar: null, musculos: { p, s }, ...(x.modoCarga ? { modoCarga: x.modoCarga } : {}) }));
@@ -99,10 +113,11 @@ const POR_ID = new Map(CATALOGO_BASE.map((c) => [c.id, c]));
 
 /** Entrada del catálogo base para un nombre (o id), o null. */
 export function baseDe(nombre) {
-  const k = canon(nombre);
+  const k = clave(nombre);
   if (POR_ID.has(k)) return POR_ID.get(k);
   if (ALIAS[k]) return POR_ID.get(canon(ALIAS[k])) || null;
-  return null;
+  const sinParentesis = clave(String(nombre).replace(/\([^)]*\)/g, ""));
+  return sinParentesis !== k && POR_ID.has(sinParentesis) ? POR_ID.get(sinParentesis) : null;
 }
 
 /** Ejercicios del catálogo base que aún no están en `catalogo`. */
@@ -128,4 +143,23 @@ export function equivalentes(catalogo, id) {
     .map((c) => { const comun = c.musculos.p.filter((m) => p.includes(m)).length; return { c, comun, igual: comun === p.length && c.musculos.p.length === p.length }; })
     .sort((a, b) => (b.igual - a.igual) || (b.comun - a.comun) || a.c.nombre.localeCompare(b.c.nombre, "es"))
     .map((x) => x.c);
+}
+
+/**
+ * Rellena los músculos (y grupo, material y modo de carga si faltan) de los ejercicios del catálogo que aún no tienen
+ * ninguno, a partir del catálogo base. No toca los que ya tienen músculos. `sinCoincidencia` lista los que no están en la base.
+ * @returns {{catalogo:object[], cambiados:number, sinCoincidencia:object[]}}
+ */
+export function asignarMusculos(catalogo) {
+  const sinCoincidencia = [];
+  let cambiados = 0;
+  const salida = catalogo.map((ej) => {
+    if (ej.musculos && (ej.musculos.p.length || ej.musculos.s.length)) return ej;
+    const b = baseDe(ej.nombre) || baseDe(ej.id);
+    if (!b) { sinCoincidencia.push(ej); return ej; }
+    cambiados++;
+    return Object.assign({}, ej, { grupo: ej.grupo || b.grupo, tipoMaterial: ej.tipoMaterial || b.tipoMaterial, musculos: JSON.parse(JSON.stringify(b.musculos)) },
+      b.modoCarga && !ej.modoCarga ? { modoCarga: b.modoCarga } : {});
+  });
+  return { catalogo: salida, cambiados, sinCoincidencia };
 }

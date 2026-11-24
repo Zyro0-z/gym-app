@@ -17,7 +17,7 @@ import { abrirPesaje } from "./pesaje.js";
 import { tarjetaMedidas, editarMedidas } from "./medidas.js";
 import { ligaVigente } from "./ligas.js";
 import { elegirRutina } from "./hoy.js";
-import { n1 } from "./musculos.js";
+import { n1, seccionAsignarMusculos } from "./musculos.js";
 
 const SEGMENTOS = [{ valor: "resumen", texto: "Resumen" }, { valor: "ejercicios", texto: "Ejercicios" }, { valor: "musculos", texto: "Músculos" }, { valor: "cuerpo", texto: "Cuerpo" }];
 /** Sin preferencia guardada y sin series esta semana, Músculos abre en el primer periodo con series (semana, 30 días o todo) para no enseñar un mapa vacío. */
@@ -181,8 +181,13 @@ function porMusculo(A, app, periodo, cambiar, modo, cambiarModo) {
   const txt = (v) => n1(v) + (v === 1 ? " serie" : " series");
   const cab = [h("div", { class: "seccion junta" }, segmentado(MODOS_M, modo, cambiarModo, { etiqueta: "Detalle del mapa" })),
     h("div", { class: "seccion junta" }, segmentado(PERIODOS_MM, periodo, cambiar, { etiqueta: "Periodo" }))];
-  if (!filas.length) return [...cab, vacio({ icono: "pesa", titulo: "Sin series en este periodo", texto: "Cuando entrenes aparecerá aquí cada músculo." })];
-  return [...cab,
+  const asignar = seccionAsignarMusculos(app, () => app.nav.repintarActual());
+  if (!filas.length) {
+    const sinMus = V.sinMusculos.length > 0;
+    return [...cab, vacio({ icono: "pesa", titulo: sinMus ? "Ejercicios sin músculos asignados" : "Sin series en este periodo",
+      texto: sinMus ? "Tus ejercicios no tienen músculos asignados, así que el mapa no puede repartir las series." : "Cuando entrenes aparecerá aquí cada músculo." }), asignar];
+  }
+  return [...cab, asignar,
     seccion({ pie: "Series efectivas por músculo: principal = 1 serie, secundario = " + n1(V.fraccion) + ". Toca una zona para ver su valor." },
       h("div", { class: "tarjeta" }, diagramaCuerpo(filas.map((f) => ({ nombre: f.nombre, tokens: [f.id + "-*"], valor: f.v })), { etiqueta: "Series efectivas por músculo", unidad: txt }))),
     seccion({ cab: "Músculos, de más a menos series" }, lista(filas.map((f) => celda({ titulo: f.nombre, sub: f.grupo, valor: h("span", { class: "num" }, txt(f.v)) })))),

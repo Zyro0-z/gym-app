@@ -9,6 +9,7 @@ import { capital, reloj } from "../../ui/textos.js";
 import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
 import { kgTxt, usosEjercicio, renombrarEjercicio } from "./comun.js";
 import { MUSCULOS, nombreMusculo, baseQueFalta } from "../../core/musculos.js";
+import { seccionAsignarMusculos } from "../musculos.js";
 
 /* ---------- Catálogo de ejercicios ---------- */
 
@@ -46,7 +47,8 @@ export function vistaEjercicios(_p, app) {
             const nuevos = baseQueFalta(store.estado.catalogo);
             await store.guardarCatalogo([...store.estado.catalogo, ...nuevos.map((x) => JSON.parse(JSON.stringify(x)))]);
             app.toast(plural(nuevos.length, "ejercicio añadido", "ejercicios añadidos")); this.render(c); pintar();
-          } })])) : null);
+          } })])) : null,
+        seccionAsignarMusculos(app, () => { this.render(c); }));
       pintar();
     },
   };

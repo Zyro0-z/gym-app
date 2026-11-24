@@ -43,7 +43,7 @@ paso("Series por músculo: principales cuentan 1, secundarios 0,5 y el ejercicio
 await p.evaluate(() => window.__gym.nav.ir("musculos", { pestana: "progreso" })); await espera(1000);
 const vm = p.locator('.pantalla[data-ruta="musculos"]');
 const txt = await vm.innerText();
-assert.match(txt, /Pectoral esternal/); assert.match(txt, /Tríceps \(lateral y medial\)/);
+assert.match(txt, /Pecho medio e inferior/); assert.match(txt, /Tríceps \(lateral y medial\)/);
 assert.match(txt, /Remo con barra/, "sin músculos asignados");
 const A = await p.evaluate(() => { const V = window.__gym.store.analisis().volumenMusculos(); return V.filas.map((f) => [f.id, f.actual, f.previa]); });
 const pe = A.find((x) => x[0] === "pecho-esternal"), tr = A.find((x) => x[0] === "triceps-lateral-medial");
