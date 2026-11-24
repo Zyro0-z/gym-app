@@ -92,18 +92,13 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
     const extra = resumen ? resumen(elegido) : null;
     info.replaceChildren(h("div", { class: "resumen" }, h("span", { class: "txt" }, h("b", null, elegido.nombre), " · ", elegido.valor > 0 ? unidad(elegido.valor) : "sin datos"), extra));
   }
-  /** Enfoca un grupo (null lo quita): las demás zonas se atenúan y, si el grupo solo está en una cara, se muestra esa. */
+  /** Enfoca un grupo (null lo quita): las demás zonas se atenúan. La cara que se ve solo la cambia el selector, nunca un toque. */
   function foco(g, usuario) {
     elegido = g;
     if (svg) {
       svg.classList.toggle("con-foco", !!g);
       for (const [q, x] of zonaDe) q.classList.toggle("marcada", !!g && x === g);
       for (const [q, c] of sombras) c.classList.toggle("on", !!g && zonaDe.get(q) !== g);
-      if (g && selector) {
-        const caras = new Set([...zonaDe].filter(([, x]) => x === g).map(([q]) => q.dataset.v));
-        const v = caras.size === 1 ? (caras.has("f") ? "frente" : "espalda") : caras.size > 1 ? "ambas" : vistaAct;
-        if (v !== vistaAct) { ponerVista(v); sel.poner(v); }
-      }
     }
     pintarInfo();
     if (alElegir) alElegir(g, usuario);

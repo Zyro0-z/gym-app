@@ -52,7 +52,7 @@ assert.equal(await viewBox(), "0 0 465 1050");
 await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Espalda" }).click(); await espera(300);
 assert.equal(await viewBox(), "465 0 472 1050");
 
-paso("tocar una zona (aunque cambie de cara) no mueve la página ni cambia el alto del mapa y del resumen");
+paso("tocar una zona no mueve la página ni cambia el alto del mapa y del resumen");
 const medir = () => p.evaluate(() => {
   const d = document.querySelector(".diagrama-cuerpo"); let y = 0;
   for (let e = d; e; e = e.parentElement) y += e.scrollTop || 0;
@@ -62,7 +62,7 @@ await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Ambas"
 const antes = await medir();
 await p.locator(".diagrama-cuerpo path[data-nivel][id^='m-dorsal']").first().click({ force: true }); await espera(700);
 assert.deepEqual(await medir(), antes, "ni desplazamiento ni cambio de alto");
-assert.equal(await viewBox(), "465 0 472 1050", "el dorsal cambia a la cara trasera sin mover nada");
+assert.equal(await viewBox(), "0 0 937 1050", "enfocar una zona no cambia de cara");
 await p.locator(".diagrama-cuerpo path[data-nivel][id^='m-dorsal']").first().click({ force: true }); await espera(300);
 
 paso("tocar una zona enfoca su músculo: resumen, resto atenuado y fila marcada");
@@ -77,11 +77,11 @@ await dorsal.click({ force: true }); await espera(300);
 assert.equal(await marcadas(), 0, "volver a tocar lo quita");
 assert.equal(await p.locator(".celda.enfocada").count(), 0);
 
-paso("tocar una fila de la lista enfoca el músculo y cambia de cara si hace falta");
+paso("tocar una fila de la lista enfoca el músculo sin cambiar de cara");
 await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Frente" }).click(); await espera(300);
 await p.locator(".celda.pulsable", { hasText: "Dorsal ancho" }).click(); await espera(400);
-assert.equal(await viewBox(), "465 0 472 1050", "el dorsal solo está en la espalda");
-assert.equal(await p.locator("[aria-label='Vista del mapa'] [role=radio][aria-checked=true]").innerText(), "Espalda");
+assert.equal(await viewBox(), "0 0 465 1050", "la cara no cambia sola");
+assert.equal(await p.locator("[aria-label='Vista del mapa'] [role=radio][aria-checked=true]").innerText(), "Frente");
 assert.ok((await marcadas()) >= 1);
 await p.locator(".celda.pulsable", { hasText: "Pecho medio e inferior" }).click(); await espera(400);
 assert.equal(await viewBox(), "0 0 465 1050");

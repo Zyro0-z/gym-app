@@ -48,3 +48,9 @@ test("migrarRegiones: diagrama antiguo → músculos; lo nuevo no cambia", () =>
   assert.deepEqual(a.grupos[0].regiones, ["pecho-*"]);
   assert.deepEqual(completarAjustes(completarAjustes({ grupos: a.grupos })).grupos, a.grupos);
 });
+
+test("el mapa es simétrico: cada músculo de cada cara tiene región a la izquierda y a la derecha", () => {
+  const lados = new Map();
+  for (const r of regiones) { const k = r.musculo + "|" + r.v; lados.set(k, (lados.get(k) || new Set()).add(r.lado)); }
+  for (const [k, l] of lados) assert.deepEqual([...l].sort(), ["d", "i"], k);
+});

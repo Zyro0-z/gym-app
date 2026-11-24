@@ -48,53 +48,71 @@ ESPALDA = {128: "trapecio", 102: "trapecio-superior", 60: "deltoide-posterior", 
   79: "antebrazo", 32: "vastos", 91: "isquiotibiales", 48: "isquiotibiales", 108: "aductores", 120: "isquiotibiales", 135: "isquiotibiales",
   136: "isquiotibiales", 84: "isquiotibiales", 50: "gemelos", 52: "gemelos", 9: "soleo"}
 # (clave, etiquetas, eje de simetría, columnas del recorte)
-VISTAS = [("f", FRENTE, 691, 380, 1000, "frente"), ("e", ESPALDA, 1943, 1630, 2260, "espalda")]
+VISTAS = [("f", FRENTE, 692, 380, 1000, "frente"), ("e", ESPALDA, 1944, 1630, 2260, "espalda")]
 ESCALA, Y0, Y1 = 0.75, 20, 1420
 A = Image.open(AQUI + "imagen.png").convert("L")
+Ag = np.array(A)
 
 def espejo(m, eje):
     out = np.zeros_like(m); xs = np.arange(W); nx = 2 * eje - xs; ok = (nx >= 0) & (nx < W)
     out[:, xs[ok]] = m[:, nx[ok]]; return out
+def erosion(m, r):
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))
+    e = cv2.erode(m.astype(np.uint8), k) > 0
+    return e if e.sum() > 30 else m
+def dilatar(m, r):
+    return cv2.dilate(m.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))) > 0
 
 salida = []; x_off = 0; cajas = {}; contador = {}
+cols = np.arange(W)[None, :]
 for v, etiq, eje, x0, x1, nombre in VISTAS:
+    # 3. piezas de la mitad izquierda; la derecha es su espejo, así la figura es simétrica y no depende de cómo se coloreó
     sub = np.zeros_like(R2); sub[:, x0:x1] = R2[:, x0:x1]
-    ids = [i for i in np.unique(sub) if i]
-    L_ = dict(etiq); izq = [i for i in ids if i in etiq]
-    for i in ids:
-        if i in L_ or np.nonzero(sub == i)[1].mean() <= eje: continue
-        mm = espejo(sub == i, eje); mejor, mo = None, 0
-        for j in izq:
-            o = int((mm & (sub == j)).sum())
-            if o > mo: mo, mejor = o, j
-        if mejor is not None and mo > 0.4 * (sub == i).sum(): L_[i] = etiq[mejor]
+    izq = cols < eje
+    piezas = {}
+    for i, m in etiq.items(): piezas.setdefault(m, np.zeros((H, W), bool))[:] |= (sub == i) & izq
+    # 4. cuenca: las piezas (erosionadas) son las semillas y el borde final se ajusta a las líneas de la imagen
+    nombres = sorted(piezas)
+    marc = np.zeros((H, W), np.int32)
+    fondo = (Ag < 12).astype(np.uint8); _, lab_f = cv2.connectedComponents(fondo, connectivity=4)
+    marc[erosion(lab_f == lab_f[0, 0], 2)] = 1
+    otras = (sub > 0) & izq
+    for i, m in etiq.items(): otras &= sub != i
+    for q in (erosion(otras, 2), erosion(espejo(otras, eje), 2)): marc[q & (marc == 0)] = 2
+    nucleo = {}
+    for k, nm in enumerate(nombres):
+        iz = erosion(piezas[nm], 3); nucleo[nm] = iz | espejo(iz, eje)
+        marc[nucleo[nm] & (marc <= 2)] = 3 + k
+    ws = cv2.watershed(cv2.cvtColor(cv2.GaussianBlur(Ag, (0, 0), 0.8), cv2.COLOR_GRAY2BGR), marc.copy())
+    idx2 = ndi.distance_transform_edt(ws <= 0, return_distances=False, return_indices=True); ws = ws[idx2[0], idx2[1]]
     w, h = int((x1 - x0) * ESCALA), int((Y1 - Y0) * ESCALA)
     A.crop((x0, Y0, x1, Y1)).resize((w, h), Image.LANCZOS).save(f"assets/cuerpo-{nombre}.webp", quality=88, method=6)
     cajas[v] = (x_off, w, h)
-    for i, m in sorted(L_.items()):
-        mk = sub == i
-        if not mk.any(): continue
-        partes = [(m, mk)]
-        if m == "pecho":   # la fuente dibuja el pecho entero: la franja de arriba es la clavicular
+    for k, nm in enumerate(nombres):
+        base = piezas[nm] | espejo(piezas[nm], eje)
+        mk = (ws == 3 + k) & dilatar(base, 12)   # no se sale de donde estaba la pieza (ni invade manos, cabeza...)
+        mk = cv2.GaussianBlur(mk.astype(np.float32), (0, 0), 1.2) > 0.5
+        trozos = [(nm, mk)]
+        if nm == "pecho":   # la fuente dibuja el pecho entero: la franja de arriba es la clavicular (el corte se hace con la forma ya ajustada)
             arriba = np.zeros_like(mk)
             for x in np.unique(np.nonzero(mk)[1]):
                 c = np.nonzero(mk[:, x])[0]; arriba[c[c < c.min() + 0.40 * (c.max() - c.min())], x] = True
-            partes = [("pecho-clavicular", mk & arriba), ("pecho-esternal", mk & ~arriba)]
-        elif m == "trapecio":   # ídem: cuello y hombro / zona entre escápulas / parte baja
-            ys = np.nonzero(mk)[0]; t, b = ys.min(), ys.max()
-            f = lambda a, z: mk & (np.arange(H)[:, None] >= t + a * (b - t)) & (np.arange(H)[:, None] < t + z * (b - t) + (1 if z == 1 else 0))
-            partes = [("trapecio-superior", f(0, 0.28)), ("romboides", f(0.28, 0.55)), ("trapecio-medio", f(0.55, 1))]
-        for nm, pm in partes:
-            if pm.sum() < 60: continue
-            pm = cv2.morphologyEx(pm.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
-            d = ""
-            for c in cv2.findContours(pm, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]:
-                if cv2.contourArea(c) < 30: continue
-                c = cv2.approxPolyDP(c, 1.3, True)[:, 0, :].astype(float)
-                d += "M" + "L".join(f"{(px - x0) * ESCALA + x_off:.1f} {(py - Y0) * ESCALA:.1f}" for px, py in c) + "Z"
-            lado = "i" if np.nonzero(pm)[1].mean() < eje else "d"
-            k = contador[(nm, lado)] = contador.get((nm, lado), 0) + 1
-            salida.append(f'<path id="m-{nm}-{lado}-{k}" data-v="{v}" d="{d}"/>')
+            trozos = [("pecho-clavicular", mk & arriba), ("pecho-esternal", mk & ~arriba)]
+        elif nm == "trapecio":   # ídem: cuello y hombro / zona entre escápulas / parte baja
+            ys = np.nonzero(mk)[0]; t, bb = ys.min(), ys.max(); fila = np.arange(H)[:, None]
+            trozos = [(n2, mk & (fila >= t + a0 * (bb - t)) & (fila < t + z0 * (bb - t))) for n2, a0, z0 in (("trapecio-superior", 0, 0.28), ("romboides", 0.28, 0.55), ("trapecio-medio", 0.55, 1.01))]
+        for nm, mk in trozos:
+          for lado, lm in (("i", mk & (cols < eje)), ("d", mk & (cols >= eje))):
+              pm = cv2.morphologyEx(lm.astype(np.uint8), cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+              if pm.sum() < 60: continue
+              d = ""
+              for c in cv2.findContours(pm, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[0]:
+                  if cv2.contourArea(c) < 30: continue
+                  c = cv2.approxPolyDP(c, 1.2, True)[:, 0, :].astype(float)
+                  d += "M" + "L".join(f"{(px - x0) * ESCALA + x_off:.1f} {(py - Y0) * ESCALA:.1f}" for px, py in c) + "Z"
+              if not d: continue
+              n = contador[(nm, lado)] = contador.get((nm, lado), 0) + 1
+              salida.append(f'<path id="m-{nm}-{lado}-{n}" data-v="{v}" d="{d}"/>')
     x_off += w
 
 (fx, fw, h), (ex, ew, _) = cajas["f"], cajas["e"]
