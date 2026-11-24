@@ -77,6 +77,18 @@ async function borrarTodo(app) {
   return true;
 }
 
+/** Borra el historial (sesiones, pesajes, medidas, molestias) y deja rutinas, ejercicios y tablas; antes queda una copia interna. */
+async function borrarHistorial(app) {
+  const n = app.store.estado.sesiones.length;
+  const ok = await app.confirmar("¿Borrar el historial?",
+    "Se borran " + plural(n, "sesión", "sesiones") + ", pesajes, medidas y molestias. Se conservan las rutinas, los ejercicios (con sus músculos y ligas) y los ajustes, tablas incluidas. Las ligas se calculan con tu historial: volverán a salir cuando registres entrenos y tu peso. Antes se guarda una copia interna.", "Borrar historial", true);
+  if (!ok) return false;
+  try { await app.store.borrarHistorial(); }
+  catch (e) { await app.alerta({ titulo: "No se pudo borrar", mensaje: e.message }); return false; }
+  exito(); app.toast("Historial borrado");
+  return true;
+}
+
 export function vistaDatos(_p, app) {
   const { store } = app;
   let almacen = null, internas = null;
@@ -119,6 +131,7 @@ export function vistaDatos(_p, app) {
           celda({ titulo: "Pesajes", valor: String(est.pesajes.length) }),
         ])),
         seccion({ cab: "Borrar", pie: "Exporta antes una copia en Archivos: la copia interna se pierde si desinstalas la app." }, lista([
+          celda({ titulo: "Borrar historial (conserva rutinas y tablas)", estilo: "destructiva", alPulsar: async () => { if (await borrarHistorial(app)) recargar(); } }),
           celda({ titulo: "Borrar todos los datos", estilo: "destructiva", alPulsar: async () => { if (await borrarTodo(app)) recargar(); } }),
         ])),
         seccion({ cab: "Sincronización", pie: "Los datos viven solo en este iPhone y no se sincronizan con otros dispositivos (la copia cifrada de la nube es opcional y solo guarda una copia). En iPhone, una web no puede guardar sola en iCloud Drive ni en Archivos; la copia se guarda a mano con «Guardar copia en Archivos» y, en la hoja de Compartir, «Guardar en Archivos». Para pasar los datos a otro dispositivo, importa allí esa copia." }),

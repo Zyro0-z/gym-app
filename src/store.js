@@ -151,6 +151,11 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
       await store.importar({ sesiones: [], catalogo: estado.catalogo, rutinas: [], pesajes: [], medidas: [], molestias: [], ajustes: estado.ajustes }, "borrar");
       await store.guardarBorrador(null);
     },
+    /** Quita sesiones, pesajes, medidas, molestias y borrador. Conserva rutinas, catálogo y ajustes (tablas de estándares incluidas); antes guarda una copia interna. */
+    async borrarHistorial() {
+      await store.importar({ sesiones: [], catalogo: estado.catalogo, rutinas: estado.rutinas, pesajes: [], medidas: [], molestias: [], ajustes: estado.ajustes }, "borrar");
+      await store.guardarBorrador(null);
+    },
     listarRespaldos: () => repos.listarRespaldos(),
     /** Restaura una copia interna: se valida igual que un archivo y los datos actuales se guardan antes. */
     async restaurarRespaldo(clave) {

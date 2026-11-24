@@ -65,6 +65,18 @@ assert.equal(r[0].motivo, "restaurar"); assert.equal(r[0].sesiones, 2, "lo que h
 const t2 = await p.evaluate(() => document.body.innerText);
 for (const m of ["NaN", "undefined", "[object"]) assert.ok(!t2.includes(m), m);
 
+paso("Ajustes › Datos: borrar solo el historial conserva rutinas, catálogo y tablas");
+await p.evaluate(() => window.__gym.store.guardarAjustes((a) => { a.estandares = { squat: [{ pc: 80, niveles: [1, 2, 3, 4, 5] }] }; }));
+const antes = await p.evaluate(() => { const s = window.__gym.store.estado; return [s.rutinas.length, s.catalogo.length]; });
+await p.evaluate(() => window.__gym.nav.ir("datos", { pestana: "ajustes" })); await espera(900);
+await p.locator(".pestana.activa .pantalla:not([hidden]) .celda", { hasText: "Borrar historial" }).click(); await espera(500);
+await p.locator(".alerta button", { hasText: "Borrar historial" }).click(); await espera(1200);
+const hist = await p.evaluate(() => { const s = window.__gym.store.estado; return [s.sesiones.length, s.pesajes.length, s.rutinas.length, s.catalogo.length, Object.keys(s.ajustes.estandares || {}).join()]; });
+assert.deepEqual(hist, [0, 0, antes[0], antes[1], "squat"]);
+await p.locator(".pestana.activa .pantalla:not([hidden]) .celda", { hasText: "Antes de borrar" }).first().click(); await espera(500);
+await p.locator(".alerta button", { hasText: "Restaurar" }).click(); await espera(1200);
+assert.equal(await p.evaluate(() => window.__gym.store.estado.sesiones.length), 20, "se puede deshacer restaurando");
+
 paso("Ajustes › Datos: borrar todos los datos (con copia interna previa)");
 await p.evaluate(() => window.__gym.nav.ir("datos", { pestana: "ajustes" })); await espera(900);
 await p.locator(".pestana.activa .pantalla:not([hidden]) .celda", { hasText: "Borrar todos los datos" }).click(); await espera(500);
