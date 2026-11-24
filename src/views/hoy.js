@@ -18,6 +18,7 @@ import { propuestaDescarga } from "../core/descarga.js";
 import { gimnasiosDe, gimnasioActivo } from "../core/gimnasios.js";
 import { mesocicloActual, estadoMesociclo } from "../core/mesociclos.js";
 import { sparkline } from "../ui/graficas.js";
+import { sugerirCarga } from "../core/sugerencia.js";
 
 export function vistaHoy(_p, app) {
   const { store } = app;
@@ -43,7 +44,7 @@ export function vistaHoy(_p, app) {
         return;
       }
       const A = store.analisis();
-      poner(c, tarjetaHoy(A, est, app), avisoInstalar(def, c), avisoCopia(app), avisoDescarga(A, app), semana(A, est), lineas(A, est, app));
+      poner(c, tarjetaHoy(A, est, app), avisoInstalar(def, c), avisoDescarga(A, app), semana(A, est), avisoCopia(app), lineas(A, est, app));
       if (est.borrador) {
         const t = c.querySelector("[data-reloj-hoy]");
         reloj1 = setInterval(() => { if (t && store.estado.borrador) t.textContent = reloj((Date.now() - store.estado.borrador.inicio) / 1000); }, 1000);
@@ -88,7 +89,7 @@ function tarjetaHoy(A, est, app) {
   }
   const t = A.hoyToca;
   const sig = siguienteRutina(A);
-  let encabezado = "Hoy toca", titulo, linea = "", extra = null, accion, repetir = null;
+  let encabezado = "Hoy toca", titulo, linea = "", extra = null, accion, repetir = null, cifra = null;
   if (t && !t.descanso && t.estado === "hecho") {
     encabezado = "Hoy";
     titulo = t.esperado;
@@ -105,6 +106,7 @@ function tarjetaHoy(A, est, app) {
     if (t.estado === "otra") extra = chip("Hoy ya entrenaste otra rutina", null);
     accion = boton("Empezar", () => (t.rutina ? empezarEntreno(t.esperado) : elegirRutina(app)), { icono: "play" });
     repetir = ultimaDe(est, t.esperado);
+    cifra = cifraClave(A, t.rutina);
   } else if (t && t.descanso) {
     encabezado = "Hoy";
     titulo = "Descanso";
@@ -122,9 +124,11 @@ function tarjetaHoy(A, est, app) {
     "aria-label": "Repetir la última sesión" + (repetir.rutina ? " de " + repetir.rutina : "") + ", del " + fechaCorta(repetir.fecha, A.hoy) },
     icono("repetir"), h("span", null, "Repetir última · " + fechaCorta(repetir.fecha, A.hoy))) : null;
   return h("div", { class: "seccion" }, h("div", { class: "tarjeta hoy-principal", role: "region", "aria-label": encabezado + ": " + titulo },
-    h("div", { class: "etiqueta" }, encabezado),
+    encabezado !== "Hoy" ? h("div", { class: "etiqueta" }, encabezado) : null,
     h("h2", { class: "t-title1", style: { margin: "2px 0 4px" } }, titulo),
     linea ? h("div", { class: "t-subhead c-2" }, linea) : null,
+    cifra ? h("div", { class: "hoy-cifra" }, h("div", { class: "etiqueta" }, "Objetivo · " + cifra.nombre),
+      h("div", { class: "num" }, kg(cifra.peso), h("span", { class: "c-2" }, " × " + cifra.reps))) : null,
     extra ? h("div", { style: { marginTop: "8px" } }, extra) : null,
     gimnasiosDe(est.ajustes).length > 1 ? h("button", { class: "chip-gimnasio", "aria-label": "Gimnasio: " + gimnasioActivo(est.ajustes).nombre + ". Cambiar", onClick: async () => {
       const l = gimnasiosDe(est.ajustes), act = gimnasioActivo(est.ajustes);
@@ -132,6 +136,18 @@ function tarjetaHoy(A, est, app) {
       if (r) await app.store.guardarAjustes((a) => { a.gimnasioActivo = r; }, { analitico: false });
     } }, icono("ubicacion", { tam: 14 }), h("span", null, gimnasioActivo(est.ajustes).nombre)) : null,
     accion ? h("div", { style: { marginTop: "14px" } }, accion, otra) : null));
+}
+
+/** Cifra clave de la sesión: la carga sugerida para el primer ejercicio de la rutina que tenga una. */
+function cifraClave(A, rutina) {
+  if (!rutina) return null;
+  try {
+    for (const e of rutina.ejercicios.slice(0, 3)) {
+      const p = A.progresionDe(e.k), s = p ? sugerirCarga(p, A.incrementoDe(p)) : null;
+      if (s) return { nombre: e.nombre, peso: s.peso, reps: s.reps };
+    }
+  } catch (err) { /* sin sugerencia */ }
+  return null;
 }
 
 /** Última sesión de la rutina `nombre` (o la última de todas si es null). */
@@ -162,7 +178,8 @@ function semana(A, est) {
   const racha = h("div", { class: "fila", style: { gap: "8px" } },
     h("span", { class: r.viva ? "c-accent" : "c-3", style: { display: "flex" }, "aria-hidden": "true" }, icono("llama", { tam: 22 })),
     h("div", { class: "semana-dato" }, h("span", { class: "num t-headline" }, String(n)), h("span", { class: "c-2" }, (n === 1 ? " semana" : " semanas") + " de racha" + (!r.viva && r.racha ? " (la anterior, " + r.racha + ")" : ""))));
-  return seccion({ cab: "Esta semana" }, h("div", { class: "tarjeta" }, tira, h("div", { class: "semana-datos" }, series, racha)));
+  const leyenda = h("div", { class: "leyenda-semana", "aria-hidden": "true" }, h("span", null, h("i", { class: "m-hecho" }), "Entrenado"), h("span", null, h("i", { class: "m-previsto" }), "Previsto"), h("span", null, h("i", { class: "m-nada" }), "Descanso"));
+  return seccion({ cab: "Esta semana" }, h("div", { class: "tarjeta" }, tira, leyenda, h("div", { class: "semana-datos" }, series, racha)));
 }
 
 function lineas(A, est, app) {
@@ -196,13 +213,15 @@ function avisoDescarga(A, app) {
       { texto: "Ver por qué", alPulsar: () => app.nav.ir("fatiga", { pestana: "progreso" }) }] }));
 }
 
-/** Tarjeta de copia pendiente: la última copia EXPORTADA es vieja o hay muchas sesiones nuevas. */
+/** Copia pendiente: una fila discreta (un toque abre «guardar» o «posponer»), no una tarjeta de peso. */
 function avisoCopia(app) {
   const ec = app.store.estadoCopia();
   if (!ec.tarjeta) return null;
   const texto = ec.nunca ? "Aún no has guardado ninguna copia fuera de este iPhone."
     : ec.nuevas > 5 ? plural(ec.nuevas, "sesión nueva", "sesiones nuevas") + " desde tu última copia en Archivos."
     : "Tu última copia en Archivos es de hace " + plural(ec.dias, "día", "días") + ".";
-  return h("div", { class: "seccion" }, avisoCompacto({ titulo: "Guarda una copia", texto, etiqueta: "Copia de seguridad pendiente",
-    acciones: [{ texto: "Guardar copia", alPulsar: () => exportarCopia(app) }, { texto: "Posponer 3 días", alPulsar: () => app.store.posponerAvisoCopia(3) }] }));
+  return seccion({}, lista([celda({ icono: "aviso", colorIcono: "var(--warn-ink)", titulo: "Guarda una copia", sub: texto, chevron: true, alPulsar: async () => {
+    const r = await app.hojaAcciones({ mensaje: "Copia de seguridad", opciones: [{ texto: "Guardar copia", valor: "guardar" }, { texto: "Posponer 3 días", valor: "posponer" }] });
+    if (r === "guardar") exportarCopia(app); else if (r === "posponer") app.store.posponerAvisoCopia(3);
+  } })], { iconos: false }));
 }

@@ -39,9 +39,11 @@ assert.equal(await p.evaluate(() => window.__gym.store.estado.sesiones.length), 
 
 paso("Hoy avisa de la copia sin exportar; «Posponer 3 días» la quita");
 await p.locator(".tabbar [data-tab=hoy]").click(); await espera(600);
-assert.equal(await p.locator("[aria-label='Copia de seguridad pendiente']").count(), 1);
-await p.locator("[aria-label='Copia de seguridad pendiente'] button", { hasText: "Posponer" }).click(); await espera(500);
-assert.equal(await p.locator("[aria-label='Copia de seguridad pendiente']").count(), 0);
+const filaCopia = p.locator(".celda", { hasText: "Guarda una copia" });
+assert.equal(await filaCopia.count(), 1);
+await filaCopia.click(); await espera(400);
+await p.getByRole("button", { name: "Posponer 3 días" }).click(); await espera(500);
+assert.equal(await filaCopia.count(), 0);
 assert.ok(await p.evaluate(() => window.__gym.store.estado.ajustes.avisoCopia.pospuestoHasta));
 
 paso("importar guarda antes los datos en la rotación y en respaldo-importacion");
