@@ -644,3 +644,4 @@ sesión» en rojo con una confirmación.
 - Alertas con una etiqueta de más de 13 caracteres apilan los botones.
 - Filas no pulsables de detalle: `estilo: "compacta"` (36 px). Las pulsables mantienen 44 pt.
 - Iconos de Ajustes en neutro; título grande a 30 pt; borde de 0,5 px en tarjetas en modo oscuro.
+- Insignias de liga rediseñadas: medallas con material propio (madera, cobre, hierro, bronce, plata, oro, platino), gemas facetadas (zafiro, esmeralda, rubí), diamante de talla brillante, medallón con laurel (Maestro) y medallones alados (Gran Maestro, Élite, Leyenda con anillo espectral). Bisel, brillo superior y glifo en relieve; versión simplificada hasta 48 px. Ninguna variante sale del lienzo de 128×128 (el recorte de Leyenda venía de sus rayos).

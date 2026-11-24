@@ -13,8 +13,8 @@ import { L } from "./insignias/registro.js";
 export function crearInsignias() { return { svg, total: L.length, nombres: L.map((o) => o.nombre) }; }
 
 // Color dominante de cada liga (1-15), para su barra de progreso.
-export const COLOR_LIGA = ["#9a6232", "#d9722e", "#8a96a3", "#c48a3a", "#c3cfdc", "#f5b800", "#4fb5a8", "#3b6ff0", "#12b366",
-  "#e0284f", "#8fd8ff", "#9b5cf0", "#e0337a", "#f5c400", "#8b6cff"];
+export const COLOR_LIGA = ["#9a6232", "#d9722e", "#6f7c8a", "#c48a3a", "#aebccb", "#f2b200", "#47b5a6", "#3b6ff0", "#12b366",
+  "#e0284f", "#79cdf2", "#9b5cf0", "#e0337a", "#f1b800", "#7a56f0"];
 
 let INS = null, nCopia = 0;
 /**

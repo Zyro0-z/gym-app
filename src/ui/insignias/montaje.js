@@ -1,96 +1,91 @@
-// Insignias de liga · reglas de montaje: compone cuerpo, emblema y cinta de la división, con caché.
-import { f, rad2, lin, rad, escala, poli, circulo, mezcla, defsPaleta, sombra, cuerpo, barridoSvg, numeral, cinta, defsMesa, cuerpoGema, defsPlumas, corona, estiloAnim } from "./graficos.js";
-import { L, CINTA } from "./registro.js";
+// Insignias de liga · montaje: apila silueta, bisel, cara, brillo y glifo, y añade la división (I, II, III) en una píldora.
+import { f, mezcla, lin, rad, poli, redondea, circulo, glifo, laurel, ala, paleta, facetas, defsBase, sombraSuelo, estrella, marcas } from "./graficos.js";
+import { L, CINTA, DIAMANTE } from "./registro.js";
 
-// ═══════════════════════════ montaje ═══════════════════════════
-export function montar(n, simple, num) {
-  const o = L[n - 1], p = o.pal, nn = String(n).padStart(2, "0");
-  const P = "L" + nn + (simple ? "s" : "") + "-", c = simple ? "" : "l" + nn;
-  const anim = simple ? null : o.anim || null;
-  let defs = defsPaleta(P, p, { barrido: !!(anim && anim.barrido) }) + (o.defs ? o.defs(P) : "");
-  let cuerpoSvg = "";
-  const cy = o.cy;
-  if (o.gema) {
-    defs += defsMesa(P, p);
-    if (o.diamante) {   // perfil: mesa, corona y pabellón
-      const tabla = [[42, 12], [86, 12]], cintura = [[6, 42], [122, 42]], punta = [64, 124];
-      const pts = [tabla[0], tabla[1], cintura[1], punta, cintura[0]], d = poli(pts);
-      const prisma = ["#ff9aa8", "#ffd48a", "#fff7a0", "#a9f2b4", "#9fd8ff", "#c7a9ff"];
-      let fac = "";
-      const corona = [[42, 12], [53, 12], [64, 12], [75, 12], [86, 12]], cinturaP = [6, 25, 45, 64, 83, 103, 122].map((x) => [x, 42]);
-      for (let i = 0; i < 6; i++) {    // corona: triángulos alternos entre la mesa y la cintura
-        const a = corona[Math.min(4, Math.round(i * 4 / 6))], b = corona[Math.min(4, Math.round((i + 1) * 4 / 6))];
-        const t = i / 5, col = mezcla(p.claro, p.oscuro, 0.1 + 0.5 * Math.abs(t - 0.3));
-        fac += `<path d="${poli([a, cinturaP[i], cinturaP[i + 1], b])}" fill="${!simple && i % 2 ? mezcla(col, prisma[i], 0.3) : col}"/>`;
-      }
-      for (let i = 0; i < 6; i++) {    // pabellón: gajos hacia la punta
-        const t = i / 5, col = mezcla(p.base, p.oscuro, 0.15 + 0.6 * t);
-        fac += `<path d="${poli([cinturaP[i], cinturaP[i + 1], punta])}" fill="${!simple && i % 2 === 0 ? mezcla(col, prisma[(i + 3) % 6], 0.28) : col}"/>`;
-      }
-      fac += `<path d="${poli([tabla[0], tabla[1], [80, 24], [48, 24]])}" fill="url(#${P}mesa)"/>`;
-      if (!simple) fac += `<path d="${cinturaP.map((q) => `M${q[0]} ${q[1]} L64 124`).join(" ")} ${corona.map((q, i) => `M${q[0]} ${q[1]} L${cinturaP[Math.min(6, i * 1.5 | 0)][0]} 42`).join(" ")} M6 42 H122" stroke="#ffffff" stroke-opacity="0.55" stroke-width="0.7"/>`;
-      cuerpoSvg = sombra(d, 60, simple ? 2.5 : 3) +
-        `<path d="${d}" fill="${p.oscuro}" stroke="#0d0d0d" stroke-opacity="0.7" stroke-width="${simple ? 3 : 1.8}" stroke-linejoin="round"/>` +
-        `<g transform="${escala(0.96, 60)}">${fac}</g>` +
-        `<path d="${d}" fill="none" stroke="url(#${P}filo)" stroke-width="${simple ? 2.4 : 1.6}" transform="${escala(0.97, 60)}"/>` +
-        `<clipPath id="${P}recorte"><path d="${d}"/></clipPath>` + (anim && anim.barrido ? `<g clip-path="url(#${P}recorte)">${barridoSvg(P, c)}</g>` : "");
-    } else if (o.escalones) {
-      const pts = o.puntos(), d = poli(pts);
-      let esc = "";
-      const niveles = simple ? [1, 0.7] : [1, 0.84, 0.7, 0.56];
-      const cx = 64, cyG = 58, tono = [0.6, 0.3, -0.2, -0.5, -0.65, -0.4, 0.1, 0.5];
-      for (let k = 0; k < niveles.length - 1; k++) {
-        const A = pts.map(([x, y]) => [cx + (x - cx) * niveles[k] * 0.965, cyG + (y - cyG) * niveles[k] * 0.965]);
-        const B = pts.map(([x, y]) => [cx + (x - cx) * niveles[k + 1] * 0.965, cyG + (y - cyG) * niveles[k + 1] * 0.965]);
-        for (let i = 0; i < 8; i++) { const j = (i + 1) % 8, t = tono[i] * (1 - k * 0.2) + (k % 2 ? 0.08 : -0.04);
-          esc += `<path d="${poli([A[i], A[j], B[j], B[i]])}" fill="${t > 0 ? mezcla(p.base, p.claro, t) : mezcla(p.base, p.oscuro, -t)}"${simple ? "" : ` stroke="#ffffff" stroke-opacity="0.25" stroke-width="0.5"`}/>`; }
-      }
-      const mesa = pts.map(([x, y]) => [cx + (x - cx) * niveles[niveles.length - 1] * 0.965, cyG + (y - cyG) * niveles[niveles.length - 1] * 0.965]);
-      esc += `<path d="${poli(mesa)}" fill="url(#${P}mesa)"/>`;
-      if (!simple) esc += `<path d="${poli(pts.map(([x, y]) => [cx + (x - cx) * 0.3, cyG + (y - cyG) * 0.3]))}" fill="none" stroke="${p.oscuro}" stroke-opacity="0.3" stroke-width="0.7"/>`;
-      cuerpoSvg = sombra(d, cyG, simple ? 2.5 : 3) +
-        `<path d="${d}" fill="${p.oscuro}" stroke="#0d0d0d" stroke-opacity="0.7" stroke-width="${simple ? 3 : 1.8}" stroke-linejoin="round"/>` + esc +
-        `<path d="${d}" fill="none" stroke="url(#${P}filo)" stroke-width="${simple ? 2.4 : 1.6}" transform="${escala(0.97, cyG)}"/>` +
-        `<clipPath id="${P}recorte"><path d="${d}"/></clipPath>` + (anim && anim.barrido ? `<g clip-path="url(#${P}recorte)">${barridoSvg(P, c)}</g>` : "");
-    } else {
-      const ctr = o.centro || [64, 58];
-      cuerpoSvg = cuerpoGema(P, p, o.puntos(), ctr[0], ctr[1], o.kMesa, { simple, barrido: anim && anim.barrido ? c : "" });
-    }
-  } else if (o.medallon) {
-    const r = o.medallon.r, a = o.alas;
-    if (a) defs += defsPlumas(P, a);
-    if (o.aura) defs += rad(P + "aura", [[0, o.aura, 0.85], [0.5, o.aura, 0.3], [1, o.aura, 0]]);
-    const d = circulo(64, cy, r);
-    cuerpoSvg = (o.aura && !simple ? `<circle class="${c}-aura" cx="64" cy="${cy}" r="60" fill="url(#${P}aura)"/>` : "") +
-      (o.detras ? o.detras(P, p, simple, c) : "") +
-      sombra(circulo(64, cy, r + 5), cy, 2.5) +
-      `<path d="${circulo(64, cy, r + 5)}" fill="url(#${P}oro)" stroke="#0d0d0d" stroke-opacity="0.7" stroke-width="${simple ? 2.4 : 1.4}"/>` +
-      cuerpo(P, d, cy, p, { cara: 1, simple, barrido: anim && anim.barrido ? c : "",
-        textura: (() => { let s = ""; for (let i = 0; i < 36; i++) { const g = rad2(i * 10); s += `<path d="M64 ${cy} L${f(64 + r * Math.cos(g))} ${f(cy + r * Math.sin(g))}" stroke="#ffffff" stroke-opacity="0.1" stroke-width="0.5"/>`; } return s; })() });
-    defs += lin(P + "oro", [[0, "#fff4b8"], [0.3, "#f0c94f"], [0.55, "#b8860b"], [0.75, "#f7dc84"], [1, "#7a5406"]], 0, 0, 0.35, 1);
-  } else {
-    cuerpoSvg = cuerpo(P, o.d, cy, p, { cara: o.cara || 0.88, simple, textura: o.textura ? o.textura(P) : "", barrido: anim && anim.barrido ? c : "" }) +
-      (o.extra ? o.extra(P, p, simple) : "");
+const PRISMA = ["#ff9aa8", "#ffd48a", "#fff7a0", "#a9f2b4", "#9fd8ff", "#c7a9ff"];
+const centro = (pts) => { const n = pts.length; return pts.reduce((a, p) => [a[0] + p[0] / n, a[1] + p[1] / n], [0, 0]); };
+
+function estiloAnim(c) {
+  return `<style>.${c}-b{animation:${c}-s 6.5s ease-in-out infinite}.${c}-r{transform-box:fill-box;transform-origin:center;animation:${c}-g 90s linear infinite}` +
+    `@keyframes ${c}-s{0%,58%{transform:translateX(0) skewX(-20deg)}100%{transform:translateX(200px) skewX(-20deg)}}@keyframes ${c}-g{to{transform:rotate(360deg)}}` +
+    `@media (prefers-reduced-motion:reduce){.${c}-b{animation:none;opacity:0}.${c}-r{animation:none}}</style>`;
+}
+
+/** Cuerpo de una medalla de silueta libre o de una gema; devuelve el SVG local (centrado en 0,0). */
+function cuerpo(o, P, p, simple, c) {
+  const d = o.gema ? (o.gema.r ? redondea(o.gema.pts, o.gema.r) : poli(o.gema.pts)) : o.forma;
+  const caraEsc = o.gema || o.diamante ? 0.94 : 0.875;
+  let s = sombraSuelo(P, o.ext);
+  s += `<clipPath id="${P}c1"><path d="${d}"/></clipPath><clipPath id="${P}c2"><path d="${d}" transform="scale(${caraEsc})"/></clipPath>`;
+  if (o.diamante) {
+    s += `<path d="${d}" fill="${p.hondo}" stroke="${p.hondo}" stroke-opacity=".8" stroke-width="2.4" stroke-linejoin="round"/>`;
+    const sombra = [[0.55, 0.8, 1, 0.5, 0.3], [0.2, 0.45, 0.7, 0.35, 0.1]];
+    DIAMANTE.corona.forEach((q, i) => { const col = mezcla(p.base, p.brillo, sombra[0][i] * 0.95); s += `<path d="${poli(q)}" fill="${!simple && i % 2 === 0 ? mezcla(col, PRISMA[i], 0.22) : col}"${simple ? "" : ` stroke="#ffffff" stroke-opacity=".55" stroke-width=".6" stroke-linejoin="round"`}/>`; });
+    DIAMANTE.pabellon.forEach((q, i) => { const col = mezcla(p.base, p.hondo, 0.12 + (0.55 - sombra[1][i] * 0.7)); s += `<path d="${poli(q)}" fill="${!simple && i % 2 ? mezcla(col, PRISMA[(i + 3) % 6], 0.2) : col}"${simple ? "" : ` stroke="#ffffff" stroke-opacity=".3" stroke-width=".6" stroke-linejoin="round"`}/>`; });
+    s += `<path d="M-50 -12H50" stroke="#ffffff" stroke-opacity=".7" stroke-width="1.1"/>`;
+    s += `<g clip-path="url(#${P}c1)"><ellipse cx="-12" cy="-40" rx="46" ry="30" fill="url(#${P}brillo)"/></g>`;
+    s += `<path d="${d}" fill="none" stroke="url(#${P}filo)" stroke-width="1.6" stroke-linejoin="round"/>`;
+    const spark = (x, y, k) => `<g transform="translate(${x} ${y}) scale(${k})">${glifo(P, { ...p, glifoOscuro: false }, `<path d="M0-26C2-10 10-2 26 0 10 2 2 10 0 26-2 10-10 2-26 0-10-2-2-10 0-26Z" fill="@F"/>`)}</g>`;
+    return s + spark(0, -24, 0.42) + (simple ? "" : spark(30, -4, 0.2) + spark(-34, 12, 0.16));
   }
-  const emblema = o.emblema(P, p, simple, anim && anim.destellos ? c : "");
-  const k = o.escala * (simple ? 1.07 : 1);
-  let cuerpoTodo = `<g transform="${escala(k, 58)}">${cuerpoSvg}${emblema}</g>`;
-  // Sin división (y sin cinta), centrada en vertical. Leyenda ya está compuesta así.
-  if (!num && n !== 15 && o.cy !== 64) cuerpoTodo = `<g transform="translate(0 ${f(64 - o.cy)})">${cuerpoTodo}</g>`;
-  const ci = simple ? CINTA.simple : CINTA.completa;
-  const cintaSvg = num ? cinta(P, p, ci.y, ci.alto, ci.ancho, num, simple) : "";
+  s += `<path d="${d}" fill="url(#${P}borde)" stroke="${p.hondo}" stroke-opacity=".6" stroke-width="1" stroke-linejoin="round"/>`;
+  if (o.gema) {
+    const g = o.gema.pts, k1 = o.escalones ? 0.8 : 0.6;
+    s += `<g clip-path="url(#${P}c1)">${facetas(P, p, g, k1, simple)}${o.escalones ? facetas(P, p, g.map(([x, y]) => [x * k1, y * k1]), 0.66, simple) : ""}</g>`;
+  } else {
+    s += `<path d="${d}" transform="scale(.935)" fill="url(#${P}hundido)"/><path d="${d}" transform="scale(.875)" fill="url(#${P}cara)" stroke="#ffffff" stroke-opacity=".28" stroke-width=".6"/>`;
+    if (o.cara) s += `<g clip-path="url(#${P}c2)">${o.cara(P, p, simple)}</g>`;
+    if (o.disco && !simple) s += `<circle r="${o.disco}" fill="${p.hondo}" fill-opacity=".26" stroke="#ffffff" stroke-opacity=".3" stroke-width=".8"/>`;
+    else if (o.disco) s += `<circle r="${o.disco}" fill="${p.hondo}" fill-opacity=".2"/>`;
+    if (o.laurel && !simple) s += laurel(33, 11, 6.2, 2.4, p.brillo);
+  }
+  s += `<g clip-path="url(#${P}${o.gema ? "c1" : "c2"})"><ellipse cx="0" cy="${f(-o.ext * 0.6)}" rx="${f(o.ext * 0.95)}" ry="${f(o.ext * 0.62)}" fill="url(#${P}brillo)"/></g>`;
+  s += `<path d="${d}" fill="none" stroke="url(#${P}filo)" stroke-width="1.5" stroke-linejoin="round" transform="scale(.985)"/>`;
+  if (o.gl) s += `<g transform="translate(0 ${o.gy || 0}) scale(${o.gk})">${glifo(P, p, o.gl())}</g>`;
+  if (o.anim && !simple) s += `<g clip-path="url(#${P}c1)"><rect class="${c}-b" x="-100" y="-70" width="24" height="140" fill="url(#${P}barrido)" transform="skewX(-20)"/></g>`;
+  return s;
+}
+
+function detras(o, P, p, simple, c) {
+  let s = "";
+  if (o.espectro) {
+    s += `<circle r="54" fill="url(#${P}aura)"/><g class="${simple ? "" : c + "-r"}">` + Array.from({ length: 36 }, (_, i) => `<path d="M0-38L${simple ? 5 : 3.4} -55.5 ${simple ? -5 : -3.4} -55.5Z" transform="rotate(${i * 10})" fill="hsl(${i * 10} 88% ${58 + (i % 2) * 8}%)" stroke="#000" stroke-opacity=".18" stroke-width=".5" stroke-linejoin="round"/>`).join("") + `</g>`;
+  }
+  if (o.alas) { const e = o.alas; s += ala(-1, P + "ala", e.R, e.esc) + ala(1, P + "ala", e.R, e.esc); }
+  return s;
+}
+
+function pildora(P, p, num, simple) {
+  const ci = simple ? CINTA.simple : CINTA.completa, n = num.length, w = (simple ? 18 : 15) + n * (simple ? 11 : 8.4), x = 64 - w / 2;
+  const bw = simple ? 4.4 : 3.2, sep = simple ? 8.8 : 6.4, h = ci.alto - (simple ? 10 : 8);
+  let s = `<rect x="${f(x)}" y="${ci.y + 1.2}" width="${f(w)}" height="${ci.alto}" rx="${f(ci.alto / 2)}" fill="#000" fill-opacity=".3"/>` +
+    `<rect x="${f(x)}" y="${ci.y}" width="${f(w)}" height="${ci.alto}" rx="${f(ci.alto / 2)}" fill="url(#${P}pil)" stroke="${p.claro}" stroke-opacity=".75" stroke-width="${simple ? 1.4 : 0.9}"/>`;
+  if (!simple) s += `<rect x="${f(x + 2)}" y="${ci.y + 1.2}" width="${f(w - 4)}" height="${f(ci.alto / 2 - 1)}" rx="${f(ci.alto / 4)}" fill="#ffffff" fill-opacity=".14"/>`;
+  for (let i = 0; i < n; i++) s += `<rect x="${f(64 + (i - (n - 1) / 2) * sep - bw / 2)}" y="${f(ci.y + (ci.alto - h) / 2)}" width="${bw}" height="${h}" rx="${bw / 2}" fill="url(#${P}barra)"/>`;
+  return s;
+}
+
+export function montar(n, simple, num) {
+  const o = L[n - 1], p = paleta(o.base, { oscuro: !!o.oscuro }), nn = String(n).padStart(2, "0");
+  const P = "L" + nn + (simple ? "s" : "") + "-", c = "l" + nn + (simple ? "s" : "");
+  const alaCol = o.espectro ? paleta("#d6ccff") : p;
+  let defs = defsBase(P, p) + (o.defs ? o.defs(P, p) : "") +
+    lin(P + "barrido", [[0, "#ffffff", 0], [0.5, "#ffffff", 0.55], [1, "#ffffff", 0]], 0, 0, 1, 0) +
+    lin(P + "pil", [[0, mezcla(p.sombra, p.hondo, 0.5)], [1, p.hondo]], 0, 0, 0, 1) + lin(P + "barra", [[0, "#ffffff"], [1, p.brillo]], 0, 0, 0, 1);
+  if (o.alas) defs += lin(P + "ala", [[0, alaCol.sombra], [0.45, alaCol.base], [1, alaCol.brillo]], 0, 1, 0, 0);
+  if (o.espectro) defs += rad(P + "aura", [[0, "#ffffff", 0.55], [0.55, "#b9a6ff", 0.28], [1, "#b9a6ff", 0]]);
+  const cy = num ? 54 : 64, k = (num ? o.k : o.kSolo) * (simple ? 1.06 : 1);
+  const cuerpoSvg = `<g transform="translate(64 ${cy}) scale(${f(k)})">${detras(o, P, p, simple, c)}${cuerpo(o, P, p, simple, c)}</g>`;
   const nombre = o.nombre + (num ? " " + num : "");
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" class="liga liga-${nn}${simple ? " liga-32" : ""}" data-liga="${n}" role="img" aria-label="Liga ${nombre}">
 <title>${nombre}</title>
-<!-- Insignia de liga ${n}/15 · ${nombre}${simple ? " · versión de 32 px" : ""}. Diseño propio. -->
-<defs>${defs}</defs>${anim ? estiloAnim(c, anim) : ""}
-<g class="cuerpo">${cuerpoTodo}</g>
-${cintaSvg}
+<defs>${defs}</defs>${o.anim && !simple || o.espectro && !simple ? estiloAnim(c) : ""}
+<g class="cuerpo">${cuerpoSvg}</g>
+${num ? pildora(P, p, num, simple) : ""}
 </svg>
 `;
 }
 
-// ═══════════════════════════ interfaz ═══════════════════════════
 export const hechas = new Map();
 export function svg(n, simple, numeral) {
   const num = n === 15 ? "" : numeral || "";
