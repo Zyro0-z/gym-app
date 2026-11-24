@@ -18,6 +18,7 @@ import { deEjercicio, nombreArticulacion } from "../core/molestias.js";
 import { anotarMolestia } from "./molestias.js";
 import { nombreMusculo } from "../core/musculos.js";
 import { diagramaCuerpo, vistaPara } from "../ui/cuerpo.js";
+import { abrirSesionDelDia } from "./comun.js";
 
 const RANGOS = [{ valor: "1M", texto: "1M" }, { valor: "3M", texto: "3M" }, { valor: "6M", texto: "6M" }, { valor: "Todo", texto: "Todo" }];
 const MATERIAL = { maquina: "máquina", máquina: "máquina", polea: "polea", mancuerna: "mancuerna", barra: "barra" };
@@ -87,9 +88,9 @@ export function vistaEjercicio([k], app) {
       if (mc && ((mc.p && mc.p.length) || (mc.s && mc.s.length))) {
         const ids = [...(mc.p || []), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m))];
         const lista = (xs) => xs.map(nombreMusculo).join(", "), vista = vistaPara(ids);
-        out.push(seccion({ cab: "Músculos", pie: "Oscuro: principal (1 serie). Claro: secundario (cuenta " + fmt((store.estado.ajustes.analisis || {}).fraccionSecundaria ?? 0.5, 2) + " serie). Se corrige en Ajustes › Ejercicios." },
+        out.push(seccion({ cab: "Músculos", pie: "Oscuro con fibras: principal (1 serie). Claro con puntos: secundario (cuenta " + fmt((store.estado.ajustes.analisis || {}).fraccionSecundaria ?? 0.5, 2) + " serie). Se corrige en Ajustes › Ejercicios." },
           h("div", { class: "tarjeta fila", style: vista === "ambas" ? { gap: "12px", flexDirection: "column", alignItems: "stretch" } : { gap: "16px", alignItems: "center" } },
-            diagramaCuerpo([...(mc.p || []).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 2 })), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m)).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 1 }))],
+            diagramaCuerpo([...(mc.p || []).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 2 })), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m)).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 1, textura: "puntos" }))],
               { etiqueta: "Músculos de " + (e.nombre || "este ejercicio"), unidad: (v) => (v >= 2 ? "principal" : "secundario"), vista, mini: true }),
             h("div", { class: "pila", style: { flex: "1", minWidth: "0" } },
               mc.p && mc.p.length ? h("div", null, h("div", { class: "etiqueta" }, "Principales"), h("div", { class: "t-subhead" }, lista(mc.p))) : null,
@@ -123,7 +124,8 @@ export function vistaEjercicio([k], app) {
       if (porRango.length) out.push(seccion({ cab: "Récords por repeticiones", pie: "Más peso levantado en cada rango de repeticiones. Un rango sin registro no tiene récord que batir." },
         lista(porRango.map((x) => celda({ titulo: x.rango.txt + (x.rango.id === "1" ? " repetición" : " reps"), sub: capital(fechaCorta(x.dia, A.hoy)), valor: serieTxt({ peso: x.peso, reps: x.reps }) })))));
       out.push(seccion({ cab: "Sesiones" }, lista(e.hist.slice().reverse().slice(0, 30).map((x) => celda({ titulo: capital(fechaCorta(x.dia, A.hoy)), sub: x.series.map(serieTxt).join(" · "),
-        valor: x.mejorRM ? fmt(x.mejorRM, 1) : null })))));
+        valor: x.mejorRM ? fmt(x.mejorRM, 1) : null, chevron: true,
+        alPulsar: () => abrirSesionDelDia(app, store.estado.sesiones.filter((s) => s.fecha === x.dia && s.ejercicios.some((y) => y.ejercicioId === k)), capital(fechaCorta(x.dia, A.hoy))) })))));
       poner(c, out);
     },
   };

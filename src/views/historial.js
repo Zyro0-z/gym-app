@@ -8,7 +8,7 @@ import { mapaCalor } from "../ui/calor.js";
 import { capital, mesAnio, DIAS_CORTOS, fechaCorta, kg } from "../ui/textos.js";
 import { claveMes, diaSemana, menosMeses } from "../core/fechas.js";
 import { plural } from "../core/formato.js";
-import { lineaSesion, sesionesOrdenadas, totalesSesion } from "./comun.js";
+import { lineaSesion, sesionesOrdenadas, totalesSesion, abrirSesionDelDia } from "./comun.js";
 import { editarSesion } from "./entreno.js";
 import { elegirRutina } from "./hoy.js";
 import { datosTarjeta } from "../core/tarjeta.js";
@@ -38,7 +38,7 @@ export function vistaHistorial(_p, app) {
       const calor = h("div", { class: "tarjeta" }, mapaCalor({
         mes, nivel, hoy, deload: (iso) => A.C.bloquesActivos(iso).some((b) => b.esDeload),
         etiquetaDia: (iso, n) => fechaCorta(iso) + (n ? ", entrenado" : ""),
-        alPulsar: (iso) => { const s = ses.find((x) => x.fecha === iso); if (s) app.nav.ir("sesion/" + encodeURIComponent(s.id)); },
+        alPulsar: (iso) => abrirSesionDelDia(app, ses.filter((x) => x.fecha === iso), capital(fechaCorta(iso))),
         alCambiarMes: (d) => { mes = claveMes(menosMeses(mes + "-01", -d)); this.render(c); },
         puedeAntes: mes > primero, puedeDespues: mes < ultimo,
       }), h("div", { class: "etiqueta", style: { marginTop: "12px" } }, plural(enMes, "sesión", "sesiones") + " en " + mesAnio(mes)));

@@ -94,8 +94,11 @@ function registrarSW() {
   }).catch(() => {});
 }
 
+let avisoPendiente = 0;
+/** Con un entreno en curso el aviso espera: nada debe tapar la barra de series ni el descanso; sale al terminarlo o descartarlo. */
 function avisoActualizacion(sw) {
-  if (document.querySelector(".aviso-actualizacion")) return;
+  if (document.querySelector(".aviso-actualizacion") || avisoPendiente) return;
+  if (store.estado.borrador) { avisoPendiente = setTimeout(() => { avisoPendiente = 0; avisoActualizacion(sw); }, 5000); return; }
   const el = h("div", { class: "aviso-actualizacion", role: "status" },
     h("span", null, "Actualización disponible"),
     h("button", { onClick: async () => { el.querySelector("button").disabled = true; try { await guardarEntrenoYa(); } catch (e) {} sw.postMessage({ tipo: "activar" }); } }, "Recargar"));

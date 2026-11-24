@@ -103,7 +103,7 @@ assert.match(await mapa.getAttribute("aria-label"), /De más a menos: (Pecho|Esp
 assert.ok(await p.locator(".leyenda-niveles .nivel").count() >= 1);
 const zona = p.locator(".diagrama-cuerpo path[data-nivel]").first();
 await zona.click({ force: true }); await espera(300);
-assert.match(await p.locator(".diagrama-info").textContent(), /^(Pecho|Espalda): \d+ series$/);
+assert.match(await p.locator(".diagrama-info").textContent(), /^(Pecho|Espalda) · \d+ series/);
 const colores = await p.evaluate(() => new Set([...document.querySelectorAll(".diagrama-cuerpo path[data-nivel]")].map((x) => getComputedStyle(x).fill)).size);
 assert.equal(colores, 1, "un solo tono");
 

@@ -47,10 +47,15 @@ await p.evaluate(async () => {
 });
 unaSola(await versiones(), "A");
 
-paso("se publica B: mientras no se pulse Recargar, todo sigue siendo A (varias recargas)");
+paso("se publica B con un entreno en curso: el aviso espera hasta que termina");
+await p.evaluate(() => window.__gym.store.guardarBorrador({ ejercicios: [{ ejercicioId: "pressbanca", nombre: "Press banca", series: [] }], inicio: "10:00", fecha: "2026-11-16" }));
 ver = "B";
 await p.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); await r.update(); });
+await p.waitForTimeout(2500);
+assert.equal(await p.locator(".aviso-actualizacion").count(), 0, "sin aviso durante el entreno");
+await p.evaluate(() => window.__gym.store.guardarBorrador(null));
 await p.locator(".aviso-actualizacion").waitFor({ timeout: 15000 });
+paso("mientras no se pulse Recargar, todo sigue siendo A (varias recargas)");
 for (let i = 0; i < 3; i++) {
   await p.reload(); await p.waitForFunction(() => window.__gym);
   await p.waitForTimeout(400);

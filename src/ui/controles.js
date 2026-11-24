@@ -114,6 +114,7 @@ export function segmentado(opciones, valor, alCambiar, { etiqueta = "" } = {}) {
     if (!anim) requestAnimationFrame(() => { pildora.style.transition = ""; });
   }
   marcar(false);
+  el.poner = (v) => { actual = v; marcar(true); };   // cambiar la opción desde fuera, sin avisar a alCambiar
   return el;
 }
 

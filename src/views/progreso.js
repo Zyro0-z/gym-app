@@ -18,6 +18,7 @@ import { tarjetaMedidas, editarMedidas } from "./medidas.js";
 import { ligaVigente } from "./ligas.js";
 import { elegirRutina } from "./hoy.js";
 import { n1, seccionAsignarMusculos } from "./musculos.js";
+import { marcarFila, verMapa } from "./mapa-enlace.js";
 
 const SEGMENTOS = [{ valor: "resumen", texto: "Resumen" }, { valor: "ejercicios", texto: "Ejercicios" }, { valor: "musculos", texto: "Músculos" }, { valor: "cuerpo", texto: "Cuerpo" }];
 /** Sin preferencia guardada y sin series esta semana, Músculos abre en el primer periodo con series (semana, 30 días o todo) para no enseñar un mapa vacío. */
@@ -187,10 +188,14 @@ function porMusculo(A, app, periodo, cambiar, modo, cambiarModo) {
     return [...cab, vacio({ icono: "pesa", titulo: sinMus ? "Ejercicios sin músculos asignados" : "Sin series en este periodo",
       texto: sinMus ? "Tus ejercicios no tienen músculos asignados, así que el mapa no puede repartir las series." : "Cuando entrenes aparecerá aquí cada músculo." }), asignar];
   }
+  const filasEl = new Map();
+  const mapa = diagramaCuerpo(filas.map((f) => ({ nombre: f.nombre, tokens: [f.id + "-*"], valor: f.v })),
+    { etiqueta: "Series efectivas por músculo", unidad: txt, selector: true, alElegir: (g, desdeMapa) => marcarFila(filasEl, g && g.nombre, desdeMapa) });
+  const enfocar = (nombre) => { mapa.foco(nombre); verMapa(mapa); };
   return [...cab, asignar,
-    seccion({ pie: "Series efectivas por músculo: principal = 1 serie, secundario = " + n1(V.fraccion) + ". Toca una zona para ver su valor." },
-      h("div", { class: "tarjeta" }, diagramaCuerpo(filas.map((f) => ({ nombre: f.nombre, tokens: [f.id + "-*"], valor: f.v })), { etiqueta: "Series efectivas por músculo", unidad: txt }))),
-    seccion({ cab: "Músculos, de más a menos series" }, lista(filas.map((f) => celda({ titulo: f.nombre, sub: f.grupo, valor: h("span", { class: "num" }, txt(f.v)) })))),
+    seccion({ pie: "Series efectivas por músculo: principal = 1 serie, secundario = " + n1(V.fraccion) + ". Toca una zona o un músculo de la lista para enfocarlo." },
+      h("div", { class: "tarjeta" }, mapa)),
+    seccion({ cab: "Músculos, de más a menos series" }, lista(filas.map((f) => { const c = celda({ titulo: f.nombre, sub: f.grupo, valor: h("span", { class: "num" }, txt(f.v)), alPulsar: () => enfocar(f.nombre) }); filasEl.set(f.nombre, c); return c; }))),
     seccion({}, lista([celda({ titulo: "Comparar con semanas anteriores", sub: "Pasada, media de 4 semanas y peso del secundario", chevron: true, alPulsar: () => app.nav.ir("musculos") })]))];
 }
 
@@ -202,17 +207,20 @@ function musculos(A, app, periodo, cambiar, modo, cambiarModo) {
   const vol = new Map();
   for (const x of A.series) if (x.dia && okDia(x.dia)) vol.set(canon(x.grupo), (vol.get(canon(x.grupo)) || 0) + (x.st.volumen || 0));
   const filas = grupos.map((g) => ({ nombre: g.nombre, k: canon(g.nombre), ser: b.series[canon(g.nombre)] || 0, vol: vol.get(canon(g.nombre)) || 0, g }));
+  const filasEl = new Map();
   const diagrama = diagramaCuerpo(filas.filter((f) => f.g.regiones && f.g.regiones.length).map((f) => ({ nombre: f.nombre, tokens: f.g.regiones, valor: f.ser })),
-    { etiqueta: "Series por grupo muscular", unidad: (v) => plural(v, "serie", "series") });
+    { etiqueta: "Series por grupo muscular", unidad: (v) => plural(v, "serie", "series"), selector: true,
+      resumen: (g) => h("button", { class: "btn texto", "aria-label": "Abrir " + g.nombre, onClick: () => app.nav.ir("grupo/" + encodeURIComponent(g.nombre)) }, "Abrir ›"),
+      alElegir: (g, desdeMapa) => marcarFila(filasEl, g && g.nombre, desdeMapa) });
   const semanas = A.semanas.slice(-8);
   const vpg = A.volumenPorGrupo;
   const datos = semanas.map((s, i) => ({ etiqueta: s.etiqueta, partes: vpg.map((g) => ({ valor: g.semanas[g.semanas.length - semanas.length + i] || 0, color: colorGrupo(grupos, g.grupo) })) }));
   return [
     h("div", { class: "seccion junta" }, segmentado(MODOS_M, modo, cambiarModo, { etiqueta: "Detalle del mapa" })),
     h("div", { class: "seccion junta" }, segmentado(PERIODOS_M, periodo, cambiar, { etiqueta: "Periodo" })),
-    seccion({ pie: plural(b.total, "serie", "series") + " en el periodo. Más intensidad, más series." }, h("div", { class: "tarjeta" }, diagrama)),
-    seccion({ cab: "Grupos, de más a menos series" }, lista(filas.sort((a, z) => z.ser - a.ser).map((f) => celda({ punto: colorGrupo(grupos, f.nombre), titulo: f.nombre, sub: f.vol ? kgTotal(f.vol) : null,
-      valor: h("span", { class: "num" }, plural(f.ser, "serie", "series")), chevron: true, alPulsar: () => app.nav.ir("grupo/" + encodeURIComponent(f.nombre)) })))),
+    seccion({ pie: plural(b.total, "serie", "series") + " en el periodo. Más intensidad, más series. Toca una zona para enfocar su grupo." }, h("div", { class: "tarjeta" }, diagrama)),
+    seccion({ cab: "Grupos, de más a menos series" }, lista(filas.sort((a, z) => z.ser - a.ser).map((f) => { const c = celda({ punto: colorGrupo(grupos, f.nombre), titulo: f.nombre, sub: f.vol ? kgTotal(f.vol) : null,
+      valor: h("span", { class: "num" }, plural(f.ser, "serie", "series")), chevron: true, alPulsar: () => app.nav.ir("grupo/" + encodeURIComponent(f.nombre)) }); filasEl.set(f.nombre, c); return c; }))),
     seccion({ cab: "Volumen por grupo · 8 semanas" }, h("div", { class: "tarjeta" },
       graficaBarras({ datos, formato: (v) => kgTotal(v), detalle: (d) => "semana del " + d.etiqueta, etiqueta: "Volumen por grupo en las últimas 8 semanas" }),
       h("div", { class: "leyenda" }, vpg.map((g) => h("span", null, h("i", { style: { background: colorGrupo(grupos, g.grupo) } }), g.grupo))))),
