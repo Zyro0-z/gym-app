@@ -635,3 +635,12 @@ sesión» en rojo con una confirmación.
 | Tarjeta de sesión con paleta fija, no la del tema | Se ve igual donde se publique. Se comparte como archivo PNG (hoja de Compartir) o se descarga. |
 | Copia en la nube cifrada en el dispositivo; clave aparte de los datos y fuera de las copias | El servidor no ve datos ni clave. Si se pierde la clave no hay recuperación: se avisa donde se muestra. |
 | Sonido: se desbloquea en cualquier toque, se reanuda al volver a la app y la campana reintenta si el contexto estaba parado; guardado también en `pagehide`/`freeze` | iOS suspende el audio (llamadas, Siri, bloqueo) y a veces cierra la app sin `visibilitychange`. |
+
+## 12. Pulido visual (noviembre 2026)
+
+- Gráficas: barras al 90 % de opacidad (el contraste mínimo de 3:1 en oscuro lo impone), etiquetas del eje X a ≥48 px, línea e1RM sin punto por dato (solo último y máximo) y sin degradado cuando hay franja.
+- La flecha de tendencia sigue al semáforo (`flechaEstado`): Progresa ↑ verde, Estancado → ámbar, Retrocede ↓ roja.
+- Hoy: la cifra clave es la carga sugerida del primer ejercicio; el aviso de copia es una fila.
+- Alertas con una etiqueta de más de 13 caracteres apilan los botones.
+- Filas no pulsables de detalle: `estilo: "compacta"` (36 px). Las pulsables mantienen 44 pt.
+- Iconos de Ajustes en neutro; título grande a 30 pt; borde de 0,5 px en tarjetas en modo oscuro.

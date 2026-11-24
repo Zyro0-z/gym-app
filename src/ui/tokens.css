@@ -52,7 +52,7 @@
   --graf-2: var(--g-indigo); --graf-3: var(--g-naranja); --graf-4: var(--g-verde); --graf-5: var(--g-rosa);
 
   /* tipografía (rem sobre el tamaño de texto del sistema; 1rem = 17 pt por defecto) */
-  --f-large: 2rem;          /* 34 */
+  --f-large: 1.8rem;        /* 30 */
   --f-title1: 1.647rem;     /* 28 */
   --f-title2: 1.294rem;     /* 22 */
   --f-title3: 1.176rem;     /* 20 */

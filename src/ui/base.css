@@ -95,7 +95,7 @@ body.sin-tabbar .pantalla > .scroll { padding-bottom: calc(var(--safe-b) + 32px)
 .btn-barra svg { width: 24px; height: 24px; }
 .btn-barra:disabled { color: var(--label-3); }
 
-.cab-grande { padding: 0 calc(var(--gutter) + 0px); margin: 2px 0 12px; }
+.cab-grande { padding: 0 calc(var(--gutter) + 0px); margin: 0 0 10px; }
 .cab-grande .sobre { color: var(--label-2); font-size: var(--f-footnote); line-height: 1.385; font-weight: 600; margin-bottom: 1px; }
 .cab-grande h1 { font-size: var(--f-large); line-height: 1.206; font-weight: 700; letter-spacing: .011em; overflow-wrap: anywhere; }
 .cab-grande .bajo { margin-top: 6px; }

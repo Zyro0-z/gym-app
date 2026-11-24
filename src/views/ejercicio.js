@@ -67,7 +67,7 @@ export function vistaEjercicio([k], app) {
       const ajustado = rmConRpe(store.estado.sesiones, k);
       const rec1 = e1rmReciente(e), ruido = ruidoE1rm(e.hist);
       const fiabilidad = rec1 ? "Fiabilidad " + rec1.confianza + " (" + rec1.reps + " reps" + (rec1.rpe != null ? " @" + rpeTxt(rec1.rpe) : ", sin RPE") + ")"
-        + (ruido ? " · ruido ±" + fmt(ruido.sd, 1) + " kg (" + fmt(ruido.pct, 1) + " %)" : " · con 5 sesiones se mide tu ruido personal") + "." : null;
+        + (ruido ? " · ruido ±" + fmt(ruido.sd, 1) + " kg (" + fmt(ruido.pct, 1) + "\u00a0%)" : " · con 5 sesiones se mide tu ruido personal") + "." : null;
       const grafica = hist.length ? graficaLinea({ puntos: hist.map((x) => ({ x: numDia(x.dia), y: x.mejorRM, detalle: capital(fechaCorta(x.dia, A.hoy)) + " · " + x.mejorRMReps + " reps" })),
         formato: (v) => kg(v), ejeX: (n) => fechaCorta(deNum(n)), etiqueta: "e1RM por sesión",
         banda: ruido && hist.length > 2 ? bandaRuido(e.hist, ruido.sd).filter((b) => b.dia >= desde).map((b) => ({ x: numDia(b.dia), lo: b.lo, hi: b.hi })) : null }) : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Sin sesiones en este periodo.");

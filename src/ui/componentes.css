@@ -572,3 +572,6 @@ body.con-modal .aviso-actualizacion { display: none; }
 .chip-gimnasio { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 4px; margin-left: -4px; padding: 0 4px; color: var(--accent-ink); font-size: var(--f-footnote); font-weight: 500; }
 .tira-pie { grid-column: 1 / -1; margin: 2px 4px 0; font-size: var(--f-caption1); color: var(--label-2); }
 .serie.pr { box-shadow: inset 3px 0 0 var(--accent); }
+
+/* modo oscuro: borde finísimo para separar las tarjetas del negro */
+:root[data-theme="dark"] .tarjeta, :root[data-theme="dark"] .lista { box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .08); }
