@@ -168,7 +168,7 @@ function capaModal(contenido, clase, { rol = "alertdialog", etiqueta = null, tit
 export function alerta({ titulo, mensaje = "", botones = [{ texto: "Aceptar", valor: true, estilo: "fuerte" }] }) {
   return new Promise((res) => {
     let m;
-    const fila = h("div", { class: ["botones", botones.length > 2 && "vertical"] }, botones.map((b) =>
+    const fila = h("div", { class: ["botones", (botones.length > 2 || botones.some((b) => String(b.texto).length > 13)) && "vertical"] }, botones.map((b) =>
       h("button", { class: [b.estilo === "peligro" && "peligro", (b.estilo === "fuerte" || b.estilo === "cancelar" && botones.length === 1) && "fuerte"],
         onClick: () => { m.quitar(); res(b.valor); } }, b.texto)));
     const idT = idUnico("alerta"), idM = mensaje ? idUnico("alerta") : null;

@@ -11,7 +11,7 @@ import { canon } from "../core/nombres.js";
 import { numDia, deNum, menosMeses, claveSemana } from "../core/fechas.js";
 import { ESTADOS } from "../core/estancamiento.js";
 import { kg, kgTotal, fechaCorta, capital } from "../ui/textos.js";
-import { tonoEstado, iconoTend, pctTxt } from "./progreso.js";
+import { tonoEstado, iconoTend, flechaEstado, pctTxt } from "./progreso.js";
 import { ligaVigente } from "./ligas.js";
 import { e1rmReciente, ruidoE1rm, prPorRango, bandaRuido } from "../core/prescripcion.js";
 import { deEjercicio, nombreArticulacion } from "../core/molestias.js";
@@ -168,8 +168,8 @@ export function vistaGrupo([nombre], app) {
         ligaVigente(lg) ? seccion({}, lista([celda({ izquierda: insignia(ligaVigente(lg).p.nivel, 32), titulo: "Liga de " + nombre, sub: ligaVigente(lg).viejo ? "Última conocida" : null, valor: ligaVigente(lg).p.nivel.txt, chevron: true,
           alPulsar: () => app.nav.ir("liga/grupo/" + encodeURIComponent(k)) })])) : null,
         ejs.length ? seccion({ cab: "Ejercicios" }, lista(ejs.sort((a, b) => b.ser - a.ser).map((e) => {
-          const d = A.diagnostico.get(e.k), ic = iconoTend(d && d.tend);
-          return celda({ titulo: e.nombre, sub: plural(e.ser, "serie", "series") + " en total", valor: h("span", { class: "valor-tend" }, ic ? h("span", { class: "c-" + (ic === "sube" ? "ok" : ic === "baja" ? "bad" : "2") }, icono(ic, { tam: 16, grosor: 2.2 })) : null, e.rmMax ? kg(e.rmMax.st.oneRM) : "—"),
+          const d = A.diagnostico.get(e.k);
+          return celda({ titulo: e.nombre, sub: plural(e.ser, "serie", "series") + " en total", valor: h("span", { class: "valor-tend" }, flechaEstado(d), e.rmMax ? kg(e.rmMax.st.oneRM) : "—"),
             chevron: true, alPulsar: () => app.nav.ir("ejercicio/" + encodeURIComponent(e.k)) });
         }))) : vacio({ icono: "pesa", titulo: "Sin ejercicios", texto: "Aún no has registrado ejercicios de este grupo." }));
     },

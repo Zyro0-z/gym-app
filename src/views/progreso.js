@@ -25,6 +25,14 @@ const ponerPref = (k, v) => { try { localStorage.setItem("gym-" + k, v); } catch
 
 export const TONO = { bad: "bad", warn: "warn", ok: "ok", neutro: null };
 export const tonoEstado = (estado) => TONO[(ESTADOS[estado] || {}).tono] || null;
+/** Flecha coherente con el semáforo: el estado manda sobre el signo de la tendencia reciente. */
+export function flechaEstado(d) {
+  if (!d) return null;
+  const tono = (ESTADOS[d.estado] || {}).tono, ic = d.estado === "progresa" ? "sube" : d.estado === "retrocede" ? "baja" : d.estado === "estancado" ? "igual" : iconoTend(d.tend);
+  if (!ic) return null;
+  const cls = tono === "ok" || tono === "bad" || tono === "warn" ? tono : "2";
+  return h("span", { class: "c-" + cls }, icono(ic, { tam: 16, grosor: 2.2 }));
+}
 export const iconoTend = (t) => (!t ? null : t.dir === "plana" ? "igual" : t.dir.startsWith("sube") ? "sube" : "baja");
 export const pctTxt = (p) => conSigno(p, Math.abs(p) < 10 ? 1 : 0) + " %";
 
@@ -144,10 +152,10 @@ function ejercicios(A, app, q, guardarQ) {
     const orden = grupos.map((g) => g.nombre).filter((g) => porG.has(g)).concat([...porG.keys()].filter((g) => !grupos.some((x) => x.nombre === g)));
     poner(res, !vis.length ? h("p", { class: "seccion-pie", style: { textAlign: "center", padding: "16px" } }, "Ningún ejercicio coincide.") : null,
       orden.map((g) => seccion({ cab: g }, lista(porG.get(g).sort((a, b) => a.nombre.localeCompare(b.nombre, "es")).map((e) => {
-        const d = A.diagnostico.get(e.k), ic = iconoTend(d && d.tend);
+        const d = A.diagnostico.get(e.k);
         return celda({ titulo: e.nombre, sub: d ? ESTADOS[d.estado].texto : null,
           valor: h("span", { class: "valor-tend" }, e.hist.length >= 3 ? sparkline(e.hist.slice(-8).map((x) => x.mejorRM), { ancho: 48, alto: 18 }) : null,
-            ic ? h("span", { class: "c-" + (ic === "sube" ? "ok" : ic === "baja" ? "bad" : "2") }, icono(ic, { tam: 16, grosor: 2.2 })) : null, e.rmMax ? kg(e.rmMax.st.oneRM) : "—"),
+            flechaEstado(d), e.rmMax ? kg(e.rmMax.st.oneRM) : "—"),
           chevron: true, alPulsar: () => app.nav.ir("ejercicio/" + encodeURIComponent(e.k)) });
       })))));
   };

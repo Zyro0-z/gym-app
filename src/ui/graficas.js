@@ -117,7 +117,8 @@ export function graficaBarras({ datos, alto = 180, formato = fmtEje, detalle = n
     rejilla(svg, ticks, y, ancho);
     const zona = ancho - EJE_Y - 4, n = datos.length || 1, hueco = zona / n, bw = Math.max(4, Math.min(28, hueco * 0.62));
     const xs = [], ys = [];
-    const cadaEt = Math.ceil(n / Math.max(1, Math.floor(zona / 34)));
+    const cadaEt = Math.ceil(n / Math.max(1, Math.floor(zona / 48)));
+    let ultEt = -99;
     datos.forEach((d, i) => {
       const cx = hueco * i + hueco / 2, x = cx - bw / 2;
       xs.push(cx); ys.push(null);
@@ -133,7 +134,9 @@ export function graficaBarras({ datos, alto = 180, formato = fmtEje, detalle = n
         const v = d.valor || 0, hh = Math.max(v > 0 ? 2 : 0, y(0) - y(v));
         svg.append(s("path", { class: ["barra", d.activa && "activa"], d: barraPath(x, y(0) - hh, bw, hh, 4) }));
       }
-      if (i % cadaEt === 0 || i === n - 1 && n <= 12) svg.append(s("text", { class: "eje", x: cx, y: alto - 4, "text-anchor": "middle" }, d.etiqueta || ""));
+      const poner = i % cadaEt === 0 || (i === n - 1 && n <= 12 && i - ultEt >= cadaEt);
+      if (poner) ultEt = i;
+      if (poner) svg.append(s("text", { class: "eje", x: cx, y: alto - 4, "text-anchor": "middle" }, d.etiqueta || ""));
     });
     el.appendChild(svg);
     if (seleccionar && datos.length) seleccionable(el, svg, xs, ys, alto, (i) => ({ valor: formato(total(datos[i])), detalle: detalle ? detalle(datos[i], i) : datos[i].etiqueta }), ancho);

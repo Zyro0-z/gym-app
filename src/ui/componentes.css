@@ -156,7 +156,7 @@
 .alerta p { font-size: var(--f-footnote); line-height: 1.385; margin-top: 3px; }
 .alerta .botones { display: flex; box-shadow: inset 0 .5px 0 var(--separator); }
 .alerta .botones.vertical { flex-direction: column; }
-.alerta .botones button { flex: 1; min-height: 44px; color: var(--accent-ink); font-size: var(--f-body); }
+.alerta .botones button { flex: 1; min-width: 0; min-height: 44px; padding: 10px 8px; line-height: 1.25; overflow-wrap: anywhere; color: var(--accent-ink); font-size: var(--f-body); }
 .alerta .botones:not(.vertical) button + button { box-shadow: inset .5px 0 0 var(--separator); }
 .alerta .botones.vertical button + button { box-shadow: inset 0 .5px 0 var(--separator); }
 .alerta .botones button.fuerte { font-weight: 600; }
@@ -303,7 +303,8 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .rejilla-iconos div { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--label); }
 .rejilla-iconos svg { width: 26px; height: 26px; }
 .rejilla-iconos span { font-size: var(--f-caption2); color: var(--label-2); text-align: center; overflow-wrap: anywhere; }
-.escalera { display: flex; gap: 14px; overflow-x: auto; padding: 16px 2px 2px; scroll-snap-type: x proximity; }
+.escalera { display: flex; gap: 14px; overflow-x: auto; padding: 16px 2px 2px; scroll-snap-type: x proximity; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); }
+.escalera::after { content: ""; flex: none; width: 8px; }
 .escalera > div { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; scroll-snap-align: start; min-width: 56px; }
 .escalera span:last-child { font-size: var(--f-caption2); color: var(--label-2); }
 
