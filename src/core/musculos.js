@@ -3,6 +3,7 @@
 // El reparto principal/secundario del catálogo base es cualitativo (revisiones de EMG y biomecánica);
 // se puede corregir ejercicio a ejercicio en Ajustes › Ejercicios.
 import { canon } from "./nombres.js";
+import { B } from "./catalogo-base-datos.js";
 
 export const MUSCULOS = [
   { id: "pecho-clavicular", nombre: "Pecho superior (clavicular)", grupo: "Pecho" },
@@ -36,59 +37,6 @@ export const MUSCULOS = [
 ];
 export const MUSCULO = new Map(MUSCULOS.map((m) => [m.id, m]));
 export const nombreMusculo = (id) => (MUSCULO.has(id) ? MUSCULO.get(id).nombre : id);
-
-// [nombre, grupo, principales, secundarios, extra]
-const B = [
-  ["Press banca", "Pecho", ["pecho-esternal"], ["pecho-clavicular", "deltoide-anterior", "triceps-lateral-medial", "triceps-largo"], { material: "barra" }],
-  ["Press plano con mancuernas", "Pecho", ["pecho-esternal"], ["pecho-clavicular", "deltoide-anterior", "triceps-lateral-medial", "triceps-largo"], { material: "mancuerna" }],
-  ["Press inclinado con mancuernas", "Pecho", ["pecho-clavicular"], ["pecho-esternal", "deltoide-anterior", "triceps-lateral-medial"], { material: "mancuerna" }],
-  ["Press inclinado con barra", "Pecho", ["pecho-clavicular"], ["pecho-esternal", "deltoide-anterior", "triceps-lateral-medial"], { material: "barra" }],
-  ["Aperturas en polea", "Pecho", ["pecho-esternal"], ["pecho-clavicular", "deltoide-anterior"], { material: "polea" }],
-  ["Aperturas en polea baja a alta", "Pecho", ["pecho-clavicular"], ["pecho-esternal", "deltoide-anterior"], { material: "polea" }],
-  ["Aperturas con mancuernas", "Pecho", ["pecho-esternal"], ["pecho-clavicular", "deltoide-anterior"], { material: "mancuerna" }],
-  ["Press en máquina", "Pecho", ["pecho-esternal"], ["pecho-clavicular", "deltoide-anterior", "triceps-lateral-medial"], { material: "máquina" }],
-  ["Fondos en paralelas", "Pecho", ["pecho-esternal", "triceps-lateral-medial"], ["deltoide-anterior", "triceps-largo"], { modoCarga: "lastre" }],
-  ["Press militar con barra", "Hombro", ["deltoide-anterior", "deltoide-lateral"], ["triceps-lateral-medial", "trapecio-superior", "serrato"], { material: "barra" }],
-  ["Press militar en máquina", "Hombro", ["deltoide-anterior", "deltoide-lateral"], ["triceps-lateral-medial"], { material: "máquina" }],
-  ["Press militar con mancuernas", "Hombro", ["deltoide-anterior", "deltoide-lateral"], ["triceps-lateral-medial", "trapecio-superior"], { material: "mancuerna" }],
-  ["Elevaciones laterales con mancuernas", "Hombro", ["deltoide-lateral"], ["trapecio-superior", "manguito"], { material: "mancuerna" }],
-  ["Elevaciones laterales en polea", "Hombro", ["deltoide-lateral"], ["trapecio-superior"], { material: "polea", unilateral: true }],
-  ["Pájaros en máquina", "Hombro", ["deltoide-posterior"], ["trapecio-medio", "romboides"], { material: "máquina" }],
-  ["Face pull", "Hombro", ["deltoide-posterior", "trapecio-medio"], ["manguito", "romboides"], { material: "polea" }],
-  ["Jalón al pecho", "Espalda", ["dorsal", "redondo"], ["biceps", "braquial", "trapecio-medio"], { material: "polea" }],
-  ["Dominadas", "Espalda", ["dorsal", "redondo"], ["biceps", "braquial", "trapecio-medio", "romboides"], { modoCarga: "lastre" }],
-  ["Dominadas asistidas", "Espalda", ["dorsal", "redondo"], ["biceps", "braquial", "trapecio-medio"], { modoCarga: "asistido" }],
-  ["Remo con barra", "Espalda", ["dorsal", "trapecio-medio", "romboides"], ["deltoide-posterior", "biceps", "erectores"], { material: "barra" }],
-  ["Remo con mancuerna", "Espalda", ["dorsal", "trapecio-medio", "romboides"], ["deltoide-posterior", "biceps"], { material: "mancuerna", unilateral: true }],
-  ["Remo en polea baja", "Espalda", ["dorsal", "trapecio-medio", "romboides"], ["deltoide-posterior", "biceps", "redondo"], { material: "polea" }],
-  ["Remo pecho apoyado", "Espalda", ["trapecio-medio", "romboides", "dorsal"], ["deltoide-posterior", "biceps"], { material: "máquina" }],
-  ["Remo alto iso-lateral", "Espalda", ["trapecio-medio", "romboides", "deltoide-posterior"], ["dorsal", "biceps"], { material: "máquina" }],
-  ["Encogimientos", "Espalda", ["trapecio-superior"], ["antebrazo"], { material: "mancuerna" }],
-  ["Peso muerto", "Pierna", ["gluteo-mayor", "isquiotibiales", "erectores"], ["vastos", "aductores", "trapecio-superior", "antebrazo", "dorsal"], { material: "barra" }],
-  ["Peso muerto rumano", "Pierna", ["isquiotibiales", "gluteo-mayor"], ["erectores", "aductores", "antebrazo"], { material: "barra" }],
-  ["Sentadilla", "Pierna", ["vastos", "gluteo-mayor", "recto-femoral"], ["aductores", "erectores", "isquiotibiales"], { material: "barra" }],
-  ["Sentadilla hack", "Pierna", ["vastos", "recto-femoral"], ["gluteo-mayor", "aductores"], { material: "máquina" }],
-  ["Prensa de piernas", "Pierna", ["vastos", "recto-femoral", "gluteo-mayor"], ["aductores", "isquiotibiales"], { material: "máquina" }],
-  ["Zancadas", "Pierna", ["vastos", "gluteo-mayor"], ["recto-femoral", "aductores", "gluteo-medio", "isquiotibiales"], { material: "mancuerna", unilateral: true }],
-  ["Sentadilla búlgara", "Pierna", ["vastos", "gluteo-mayor"], ["aductores", "gluteo-medio", "recto-femoral"], { material: "mancuerna", unilateral: true }],
-  ["Hip thrust", "Pierna", ["gluteo-mayor"], ["isquiotibiales", "aductores", "gluteo-medio"], { material: "barra" }],
-  ["Extensión de cuádriceps", "Pierna", ["recto-femoral", "vastos"], [], { material: "máquina" }],
-  ["Curl femoral tumbado", "Pierna", ["isquiotibiales"], ["gemelos"], { material: "máquina" }],
-  ["Curl femoral sentado", "Pierna", ["isquiotibiales"], ["gemelos"], { material: "máquina" }],
-  ["Gemelos de pie", "Pierna", ["gemelos"], ["soleo"], { material: "máquina" }],
-  ["Gemelos sentado", "Pierna", ["soleo"], ["gemelos"], { material: "máquina" }],
-  ["Curl con barra", "Bíceps", ["biceps"], ["braquial", "antebrazo"], { material: "barra" }],
-  ["Curl con mancuernas", "Bíceps", ["biceps"], ["braquial", "antebrazo"], { material: "mancuerna" }],
-  ["Curl martillo", "Bíceps", ["braquial"], ["biceps", "antebrazo"], { material: "mancuerna" }],
-  ["Curl en polea baja", "Bíceps", ["biceps"], ["braquial", "antebrazo"], { material: "polea" }],
-  ["Curl predicador", "Bíceps", ["biceps"], ["braquial"], { material: "máquina" }],
-  ["Extensión de tríceps en polea", "Tríceps", ["triceps-lateral-medial"], ["triceps-largo"], { material: "polea" }],
-  ["Press francés", "Tríceps", ["triceps-largo", "triceps-lateral-medial"], [], { material: "barra" }],
-  ["Extensión de tríceps sobre la cabeza", "Tríceps", ["triceps-largo"], ["triceps-lateral-medial"], { material: "polea" }],
-  ["Crunch en polea alta", "Core", ["recto-abdominal"], ["oblicuos"], { material: "polea" }],
-  ["Elevación de piernas colgado", "Core", ["recto-abdominal"], ["oblicuos", "antebrazo"], {}],
-  ["Plancha", "Core", ["recto-abdominal", "oblicuos"], ["erectores", "serrato"], {}],
-];
 
 // Alias de nombres que Sergio ya usa (nombre → nombre del catálogo base). Las claves se normalizan con `clave`.
 const ALIAS_NOMBRES = {

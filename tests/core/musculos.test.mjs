@@ -25,3 +25,15 @@ test("baseQueFalta y conBase", () => {
   assert.equal(e.grupo, "Espalda");
   assert.deepEqual(e.musculos.p, ["dorsal", "redondo"]);
 });
+
+test("catálogo base: sin ids repetidos, con músculo principal y solo músculos y grupos conocidos", () => {
+  const ids = new Set(), grupos = new Set(["Pecho", "Espalda", "Pierna", "Hombro", "Bíceps", "Tríceps", "Core", "Antebrazo"]);
+  assert.ok(CATALOGO_BASE.length >= 100);
+  for (const c of CATALOGO_BASE) {
+    assert.ok(!ids.has(c.id), "repetido: " + c.nombre); ids.add(c.id);
+    assert.ok(grupos.has(c.grupo), "grupo desconocido: " + c.nombre);
+    assert.ok(c.musculos.p.length > 0, "sin principal: " + c.nombre);
+    for (const m of [...c.musculos.p, ...c.musculos.s]) assert.ok(MUSCULO.has(m), c.nombre + ": músculo desconocido " + m);
+    assert.ok(!c.musculos.s.some((m) => c.musculos.p.includes(m)), c.nombre + ": músculo a la vez principal y secundario");
+  }
+});

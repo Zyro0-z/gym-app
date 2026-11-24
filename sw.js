@@ -42,6 +42,7 @@ const FICHEROS = [
   "src/core/discos.js",
   "src/core/gimnasios.js",
   "src/core/musculos.js",
+  "src/core/catalogo-base-datos.js",
   "src/core/calentamiento.js",
   "src/core/rutinas.js",
   "src/core/volumen.js",
