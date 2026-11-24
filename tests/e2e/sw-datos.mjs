@@ -67,21 +67,22 @@ await p.locator(".tabbar [data-tab=historial]").click(); await espera(600);
 assert.ok(await p.locator(".pestana.activa .celda", { hasText: "Entrenamiento libre" }).count(), "el historial se ve sin conexión");
 await ctx.setOffline(false);
 
-paso("versión nueva: aviso, guarda el entrenamiento y recarga");
+paso("versión nueva: con un entreno en curso el aviso espera; al terminarlo sale y la recarga conserva los datos");
 await p.evaluate(() => window.__gym.entreno.empezar(null)); await espera(800);
 await p.getByLabel("Minimizar").click(); await espera(500);
 version = "gym-prueba-" + Date.now();
 await p.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); await r.update(); });
+await p.waitForTimeout(2500);
+assert.equal(await p.locator(".aviso-actualizacion").count(), 0, "sin aviso mientras se entrena");
+assert.ok((await estado()).borrador, "el entrenamiento sigue en curso");
+await p.evaluate(() => window.__gym.store.guardarBorrador(null));
 await p.locator(".aviso-actualizacion").waitFor({ timeout: 15000 });
 assert.match(await p.locator(".aviso-actualizacion").innerText(), /Actualización disponible/);
 await Promise.all([p.waitForEvent("load", { timeout: 15000 }), p.locator(".aviso-actualizacion button").click()]);
 await p.waitForFunction(() => window.__gym); await espera(800);
 const cachés = await p.evaluate(() => caches.keys());
 assert.deepEqual(cachés, [version], "solo queda la caché de la versión nueva");
-const e = await estado();
-assert.ok(e.borrador, "el entrenamiento en curso sigue ahí");
-assert.equal(e.sesiones.length, 3);
-assert.equal(await p.locator(".barra-entreno:not([hidden])").count(), 1);
+assert.equal((await estado()).sesiones.length, 3);
 
 console.log(motor, "errores:", errores.length ? errores : "ninguno");
 await b.close(); srv.close();
