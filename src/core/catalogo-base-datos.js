@@ -145,5 +145,5 @@ export const LIGA = {
   "Sentadilla hack": "hack-squat", "Prensa de piernas": "leg-press", "Zancadas": "dumbbell-lunge", "Hip thrust": "hip-thrust", "Extensión de cuádriceps": "leg-extension",
   "Curl femoral tumbado": "lying-leg-curl", "Curl femoral sentado": "seated-leg-curl", "Gemelos de pie": "standing-calf-raise", "Gemelos sentado": "seated-calf-raise",
   "Curl con barra": "barbell-curl", "Curl con barra Z": "ez-bar-curl", "Curl con mancuernas": "dumbbell-curl", "Curl martillo": "hammer-curl", "Curl predicador": "preacher-curl",
-  "Curl en polea baja": "cable-curl", "Extensión de tríceps en polea": "tricep-pushdown", "Crunch en polea alta": "cable-crunch", "Elevación de piernas colgado": "hanging-leg-raise",
+  "Curl en polea baja": "cable-bicep-curl", "Press francés": "lying-tricep-extension", "Extensión de tríceps en polea": "tricep-pushdown", "Crunch en polea alta": "standing-cable-crunch", "Elevación de piernas colgado": "hanging-leg-raise",
 };
