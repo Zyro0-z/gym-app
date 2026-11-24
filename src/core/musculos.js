@@ -69,7 +69,11 @@ export function baseDe(nombre) {
 }
 
 /** Ejercicios del catálogo base que aún no están en `catalogo`. */
-export const baseQueFalta = (catalogo) => { const ya = new Set(catalogo.map((c) => c.id)); return CATALOGO_BASE.filter((c) => !ya.has(c.id)); };
+export const baseQueFalta = (catalogo) => {
+  const ya = new Set(catalogo.map((c) => c.id));
+  for (const c of catalogo) { const b = baseDe(c.nombre); if (b) ya.add(b.id); }   // «Press Banca (Barra)» ya cubre «Press banca»
+  return CATALOGO_BASE.filter((c) => !ya.has(c.id));
+};
 
 /** Lleva los campos de músculos y carga del catálogo base a un ejercicio nuevo. */
 export function conBase(ej) {

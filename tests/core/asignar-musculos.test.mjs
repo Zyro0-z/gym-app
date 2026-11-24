@@ -30,3 +30,10 @@ test("asignarMusculos rellena solo los que no tienen músculos y lista los desco
   assert.deepEqual(r.sinCoincidencia.map((c) => c.id), ["z"]);
   assert.equal(cat[1].musculos, undefined, "no muta la entrada");
 });
+
+test("baseQueFalta no repite un ejercicio que ya tienes con otro nombre", async () => {
+  const { baseQueFalta } = await import("../../src/core/musculos.js");
+  const f = baseQueFalta([{ id: "pressbanca(barra)", nombre: "Press Banca (Barra)" }, { id: "pressplano(manc)", nombre: "Press Plano (Manc)" }]).map((c) => c.nombre);
+  assert.ok(!f.includes("Press banca") && !f.includes("Press plano con mancuernas"));
+  assert.ok(f.includes("Press inclinado con mancuernas"));
+});
