@@ -110,7 +110,7 @@ export function vistaEjercicio([k], app) {
       if (d) estado.push(celda({ titulo: "Semáforo", valor: chip(ESTADOS[d.estado].texto, tonoEstado(d.estado)) }));
       if (d && d.diasSinPR != null) estado.push(celda({ titulo: "Días sin récord", valor: String(d.diasSinPR) }));
       const vle = ligaVigente(le);
-      if (vle) estado.push(celda({ titulo: "Liga", sub: vle.viejo ? "Última conocida" : null, valor: h("span", { class: "valor-tend" }, insignia(vle.p.nivel, 20), vle.p.nivel.txt), chevron: true, alPulsar: () => app.nav.ir("liga/ejercicio/" + encodeURIComponent(k)) }));
+      if (vle) estado.push(celda({ titulo: "Liga", sub: vle.viejo ? "Última conocida" : capital(L.faltaTxt(le)), valor: h("span", { class: "valor-tend" }, insignia(vle.p.nivel, 20), vle.p.nivel.txt), chevron: true, alPulsar: () => app.nav.ir("liga/ejercicio/" + encodeURIComponent(k)) }));
       else if (le && le.motivo) estado.push(celda({ titulo: "Liga", sub: capital(le.motivo) }));
       if (estado.length) out.push(seccion({ cab: "Estado" }, lista(estado)));
       const rec = [];

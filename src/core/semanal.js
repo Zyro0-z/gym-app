@@ -80,7 +80,8 @@ export function hoyToca(C, SESIONES, progresionDe) {
   if (pl) for (const e of pl.ejercicios) porG.set(C.grupoDe(e.k), (porG.get(C.grupoDe(e.k)) || 0) + e.target);
   const gHoy = Array.from(porG.entries()).sort((a, b) => b[1] - a[1])[0];
   const plSub = estado === "pendiente" || estado === "hecho" ? pl : null;
-  const subidas = plSub ? plSub.ejercicios.map((e) => progresionDe(e.k)).filter((p) => p && p.clave === "sube") : [];
+  const enDescarga = (k) => { const b = C.bloqueProtector(C.grupoDe(k), C.hoy); return !!(b && b.esDeload); };   // en descarga no se pide subir
+  const subidas = plSub ? plSub.ejercicios.filter((e) => !enDescarga(e.k)).map((e) => progresionDe(e.k)).filter((p) => p && p.clave === "sube") : [];
   return {
     dia: diaHoy, nombreDia: DIAS_SEMANA[diaHoy], esperado, descanso, estado, rutina: pl || null, grupo: gHoy ? gHoy[0] : null,
     objetivo: !descanso && pl ? pl.ejercicios.reduce((a, e) => a + e.target, 0) : null,

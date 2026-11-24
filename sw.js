@@ -107,6 +107,7 @@ const FICHEROS = [
   "src/views/entreno.js",
   "src/views/entreno/descanso.js",
   "src/views/entreno/ejercicios.js",
+  "src/views/entreno/ayudas.js",
   "src/views/entreno/estado.js",
   "src/views/entreno/herramientas.js",
   "src/views/entreno/recuperacion.js",

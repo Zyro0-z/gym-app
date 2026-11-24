@@ -66,3 +66,8 @@ export function porEjercicio(lista, hoy, dias = 60) {
 
 /** Anotaciones de un ejercicio, de la más reciente a la más antigua. */
 export const deEjercicio = (lista, ejercicioId) => ordenar(lista.filter((m) => m.ejercicioId === ejercicioId));
+
+/** Última anotación de este ejercicio con nivel ≥ `nivelMin` en los últimos `dias` días (o null): el aviso que se ve al entrenarlo. */
+export function molestiaReciente(lista, ejercicioId, hoy, { dias = 21, nivelMin = 3 } = {}) {
+  return deEjercicio(lista, ejercicioId).find((m) => m.fecha <= hoy && numDia(hoy) - numDia(m.fecha) <= dias && m.nivel >= nivelMin) || null;
+}

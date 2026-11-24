@@ -120,6 +120,7 @@ src/
       pantalla.js       modal a pantalla completa, barra minimizada, Wake Lock, guardado, cabecera
       ejercicios.js     bloques de ejercicio, referencias, menú, historia y notas
       serie.js          fila de serie (tipo, anterior, peso, reps, hecha)
+      ayudas.js         aviso de molestia reciente y chip de autorregulación
       descanso.js       temporizador de descanso
       revision.js       terminar (revisión), descartar, guardar una edición
       resumen.js        resumen al terminar

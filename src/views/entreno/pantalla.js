@@ -152,6 +152,7 @@ export function cerrarModal(inmediato) {
   if (document.activeElement && m.capa.contains(document.activeElement)) document.activeElement.blur();
   soltarWake();
   document.body.classList.remove("sin-tabbar", "con-modal");
+  if (E.app.nav) E.app.nav.refrescar();
   pintarBarraMin();
   const fin = () => m.capa.remove();
   if (inmediato || reducirMovimiento()) fin();

@@ -14,8 +14,9 @@ import { guardarPronto, guardarYa } from "./pantalla.js";
 import { filaSerie, resaltarActual, resumenDe } from "./serie.js";
 import { descartar, notaSesion } from "./revision.js";
 import { celdaRecuperacion } from "./recuperacion.js";
+import { avisoMolestia, chipAutorregulacion } from "./ayudas.js";
 import { E } from "./estado.js";
-import { sugerenciaDe, aplicarSugerencia, repetirUltima, posicionSuperserie, unirConSiguiente, separarDeSuperserie, limpiarGrupos, calculadoraDiscos, anadirCalentamiento, anadirBackoffs } from "./herramientas.js";
+import { sugerenciaDe, enDescarga, aplicarSugerencia, repetirUltima, posicionSuperserie, unirConSiguiente, separarDeSuperserie, limpiarGrupos, calculadoraDiscos, anadirCalentamiento, anadirBackoffs } from "./herramientas.js";
 
 export function sesionAnterior(ejercicioId) {
   const fechaTope = E.M.modo === "edicion" ? E.M.d.fecha : "9999";
@@ -38,7 +39,7 @@ export function infoEjercicio(id) {
   if (E.M.modo === "entreno") {
     try {
       const A = E.app.store.analisis(), p = A.progresionDe(id);
-      if (p) { const t = A.proximaVez(p); if (t) partes.push("Próxima vez: " + t); }
+      if (p && !enDescarga(A, id)) { const t = A.proximaVez(p); if (t) partes.push("Próxima vez: " + t); }
       const ej = A.ejercicios.find((x) => x.k === id), r = ej && e1rmReciente(ej);
       if (r) {
         partes.push("e1RM " + fmt(r.e1rm, 0) + " kg (" + r.confianza + ")");
@@ -88,8 +89,11 @@ export function bloqueEjercicio(e, i) {
   const notaFija = cat && cat.notaFija;
   const ultimaNota = E.M.modo === "entreno" && ant && ant.e.nota ? ant.e.nota : "";
   const resumen = resumenDe(e);
-  const filas = e.series.map((s, j) => filaSerie(e, i, s, j, ant ? ant.e.series[j] : null, paso));
-  const sug = sugerenciaDe(e.ejercicioId, e.rpeObjetivo);
+  const filas = e.series.map((s, j) => filaSerie(e, i, s, j, ant ? ant.e.series[j] : null, paso, ant ? ant.e.series : []));
+  const aut = chipAutorregulacion(e, paso, (a) => { aplicarSugerencia(e, a); seleccion(); guardarPronto(); pintarCuerpo(); });
+  const empezado = e.series.some((s) => s.hecha && s.tipo !== "calentamiento");   // con una serie de trabajo hecha, la sugerencia previa ya no aplica
+  const sug = aut || empezado ? null : sugerenciaDe(e.ejercicioId, e.rpeObjetivo);
+  const molestia = avisoMolestia(e, async () => { if (await cambiarEjercicio(i)) { limpiarGrupos(E.M.d.ejercicios); guardarYa(); pintarCuerpo(); } });
   const pos = posicionSuperserie(E.M.d.ejercicios, i);
   return h("section", { class: ["ej", pos && "superserie", pos && "ss-" + pos], dataset: { ej: String(i) } },
     pos === "inicio" ? h("div", { class: "ss-etiqueta" }, "Superserie") : null,
@@ -97,6 +101,7 @@ export function bloqueEjercicio(e, i) {
       h("button", { class: "ej-nombre", onClick: () => menuEjercicio(i) }, e.nombre || nombreDe(e.ejercicioId)),
       h("button", { class: "btn-icono", "aria-label": "Opciones de " + (e.nombre || ""), onClick: () => menuEjercicio(i) }, icono("opciones"))),
     info ? h("div", { class: "ej-info" }, info) : null,
+    molestia, aut,
     sug ? h("button", { class: "chip-sugerencia", "aria-label": "Sugerencia: " + aTexto(sug.peso) + " kilos por " + sug.reps + " repeticiones. " + sug.motivo + ". Toca para ponerla en las series vacías.",
       onClick: () => { const n = aplicarSugerencia(e, sug); seleccion(); guardarPronto(); pintarCuerpo(); if (!n) E.app.toast("Las series ya tienen peso"); } },
       h("span", { class: "t" }, "Sugerido"), h("span", { class: "num" }, aTexto(sug.peso) + " kg × " + sug.reps), h("span", { class: "m" }, sug.motivo)) : null,
@@ -117,6 +122,15 @@ export function bloqueEjercicio(e, i) {
       } }, icono("repetir", { tam: 18 }), h("span", null, "Repetir última"))));
 }
 
+/** Sustituye el ejercicio por otro (equivalentes del mismo músculo arriba). Devuelve true si cambió. */
+async function cambiarEjercicio(i) {
+  const e = E.M.d.ejercicios[i];
+  const x = await elegirEjercicio(E.app, { titulo: "Cambiar ejercicio", parecidosA: e.ejercicioId });
+  if (!x || !E.M) return false;
+  e.ejercicioId = x.ejercicioId; e.nombre = x.nombre; delete e.tipo; Object.assign(e, tipoDeCatalogo(x.ejercicioId));
+  return true;
+}
+
 export async function menuEjercicio(i) {
   const e = E.M.d.ejercicios[i];
   const op = [{ texto: "Cambiar ejercicio", valor: "cambiar" }, { texto: "Ver historia", valor: "historia" }, { texto: e.nota ? "Editar nota" : "Añadir nota", valor: "nota" }];
@@ -132,10 +146,8 @@ export async function menuEjercicio(i) {
   op.push({ texto: "Quitar ejercicio", valor: "quitar", peligro: true });
   const r = await E.app.hojaAcciones({ mensaje: e.nombre, opciones: op });
   if (!E.M || !r) return;
-  if (r === "cambiar") {
-    const x = await elegirEjercicio(E.app, { titulo: "Cambiar ejercicio", parecidosA: e.ejercicioId });
-    if (x && E.M) { e.ejercicioId = x.ejercicioId; e.nombre = x.nombre; delete e.tipo; Object.assign(e, tipoDeCatalogo(x.ejercicioId)); }
-  } else if (r === "historia") return verHistoria(e);
+  if (r === "cambiar") await cambiarEjercicio(i);
+  else if (r === "historia") return verHistoria(e);
   else if (r === "nota") return editarNota(e);
   else if (r === "notafija") return editarNotaFija(e);
   else if (r === "molestia") return anotarMolestia(E.app, { ejercicioId: e.ejercicioId });

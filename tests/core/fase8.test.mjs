@@ -154,3 +154,19 @@ test("sonido: sin AudioContext no falla", async () => {
   assert.doesNotThrow(() => { s.prepararSonido(); s.reanudarSonido(); }); assert.equal(s.campana(), false);
   delete globalThis.window;
 });
+
+import { molestiaReciente } from "../../src/core/molestias.js";
+
+test("molestia reciente: nivel ≥ 3, últimos 21 días, solo ese ejercicio", () => {
+  const l = [
+    { id: "a", ejercicioId: "press", fecha: "2026-11-10", nivel: 3, articulacion: "hombro" },
+    { id: "b", ejercicioId: "press", fecha: "2026-11-20", nivel: 2, articulacion: "hombro" },
+    { id: "c", ejercicioId: "remo", fecha: "2026-11-22", nivel: 4, articulacion: "codo" },
+    { id: "d", ejercicioId: "press", fecha: "2026-10-01", nivel: 5, articulacion: "hombro" },
+  ];
+  assert.equal(molestiaReciente(l, "press", "2026-11-24").id, "a", "la de nivel 2 no cuenta; la de octubre es demasiado antigua");
+  assert.equal(molestiaReciente(l, "press", "2026-12-02"), null, "a los 22 días ya no avisa");
+  assert.equal(molestiaReciente(l, "remo", "2026-11-24").id, "c");
+  assert.equal(molestiaReciente(l, "sentadilla", "2026-11-24"), null);
+  assert.equal(molestiaReciente(l, "press", "2026-11-05"), null, "las anotaciones futuras no cuentan");
+});

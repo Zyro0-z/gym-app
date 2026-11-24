@@ -41,24 +41,9 @@ export async function renombrarEjercicio(app, id, nuevoNombre) {
     if (!ok) return false;
   }
   const nombre = destino ? destino.nombre : nuevoNombre.trim();
-  await actualizarSesiones(store, (s) => {
-    let c = false;
-    for (const e of s.ejercicios) if (e.ejercicioId === id || canon(e.nombre) === id) { e.ejercicioId = nid; e.nombre = nombre; c = true; }
-    return c;
-  });
   const nuevoCat = cat.filter((c) => c.id !== id && c.id !== nid);
   nuevoCat.push(destino ? destino : Object.assign({}, viejo || nuevoEjercicio(nombre, null), { id: nid, nombre }));
-  await store.guardarCatalogo(nuevoCat);
-  await store.guardarRutinas(store.estado.rutinas.map((r) => {
-    const vistos = new Set();
-    return Object.assign({}, r, { ejercicios: r.ejercicios.map((e) => (e.ejercicioId === id ? Object.assign({}, e, { ejercicioId: nid }) : e))
-      .filter((e) => (vistos.has(e.ejercicioId) ? false : vistos.add(e.ejercicioId))) });
-  }));
-  const b = store.estado.borrador;
-  if (b && b.ejercicios.some((e) => e.ejercicioId === id)) {
-    for (const e of b.ejercicios) if (e.ejercicioId === id) { e.ejercicioId = nid; e.nombre = nombre; }
-    await store.guardarBorrador(b);
-  }
+  await store.unirEjercicios(new Map([[id, { id: nid, nombre }]]), nuevoCat);
   return nid;
 }
 
@@ -72,19 +57,6 @@ export async function unirDuplicados(app) {
     cat = cat.filter((c) => !g.unir.some((d) => d.id === c.id)).map((c) => (c.id === g.conservar.id ? dest : c));
   }
   if (!n) return 0;
-  const destino = (e) => destinoDe.get(e.ejercicioId) || destinoDe.get(canon(e.nombre));
-  await actualizarSesiones(store, (s) => {
-    let c = false;
-    for (const e of s.ejercicios) { const d = destino(e); if (d) { e.ejercicioId = d.id; e.nombre = d.nombre; c = true; } }
-    return c;
-  });
-  await store.guardarCatalogo(cat);
-  await store.guardarRutinas(store.estado.rutinas.map((r) => {
-    const vistos = new Set();
-    return Object.assign({}, r, { ejercicios: r.ejercicios.map((e) => { const d = destinoDe.get(e.ejercicioId); return d ? Object.assign({}, e, { ejercicioId: d.id }) : e; })
-      .filter((e) => (vistos.has(e.ejercicioId) ? false : vistos.add(e.ejercicioId))) });
-  }));
-  const b = store.estado.borrador;
-  if (b && b.ejercicios.some((e) => destino(e))) { for (const e of b.ejercicios) { const d = destino(e); if (d) { e.ejercicioId = d.id; e.nombre = d.nombre; } } await store.guardarBorrador(b); }
+  await store.unirEjercicios(new Map([...destinoDe].map(([k, d]) => [k, { id: d.id, nombre: d.nombre }])), cat);
   return n;
 }

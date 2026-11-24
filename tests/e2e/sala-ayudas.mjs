@@ -1,0 +1,90 @@
+// Ayudas de sala: aviso de molestia reciente, ajuste del peso tras la primera serie, descarga sin pedir subir y propagación del peso.
+// Uso: node e2e/sala-ayudas.mjs [chromium|webkit]
+import { chromium, webkit } from "playwright";
+import assert from "node:assert/strict";
+import { servir } from "../serve.mjs";
+
+const motor = process.argv[2] || "chromium", nav = { chromium, webkit }[motor];
+const PUERTO = 8802;
+const srv = await servir(PUERTO);
+const b = await nav.launch();
+const p = await (await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: motor === "chromium" })).newPage();
+const errores = [];
+p.on("pageerror", (e) => errores.push(e.message));
+p.on("console", (m) => m.type() === "error" && errores.push(m.text()));
+const paso = (t) => console.log("·", t);
+const espera = (ms = 450) => p.waitForTimeout(ms);
+const estado = () => p.evaluate(() => JSON.parse(JSON.stringify(window.__gym.store.estado)));
+
+await p.clock.install({ time: new Date(2026, 10, 18, 18, 0) });
+await p.goto(`http://127.0.0.1:${PUERTO}/`);
+await p.waitForFunction(() => window.__gym);
+await p.evaluate(async () => {
+  const s = window.__gym.store;
+  const ej = (id, nombre, grupo) => ({ id, nombre, grupo, unilateral: false, tipoAncla: "peso", tipoMaterial: "barra", incremento: null, rangoReps: { min: 6, max: 10 }, top: false, estandar: null });
+  await s.guardarCatalogo([ej("pressbanca", "Press banca", "Pecho"), ej("remoconbarra", "Remo con barra", "Espalda")]);
+  await s.guardarRutinas([{ id: "torso", nombre: "Torso", ejercicios: [{ ejercicioId: "pressbanca", series: 3, rpe: 8 }, { ejercicioId: "remoconbarra", series: 2 }] }]);
+  for (const f of ["2026-11-09", "2026-11-12"])
+    await s.guardarSesion({ id: f + "-x", rutina: "Torso", fecha: f, inicio: "18:00", fin: "19:00", duracion: 60, ejercicios: [
+      { ejercicioId: "pressbanca", nombre: "Press banca", tipo: "peso", series: [0, 1, 2].map(() => ({ peso: 90, reps: 8, rpe: 8, tipo: "normal", hecha: true })) },
+      { ejercicioId: "remoconbarra", nombre: "Remo con barra", tipo: "peso", series: [{ peso: 60, reps: 8, tipo: "normal", hecha: true }, { peso: 60, reps: 8, tipo: "normal", hecha: true }] }] });
+  await s.guardarMolestias([
+    { id: "m1", fecha: "2026-11-13", articulacion: "hombro", lado: "der", nivel: 3, ejercicioId: "pressbanca" },
+    { id: "m2", fecha: "2026-11-17", articulacion: "codo", lado: "izq", nivel: 2, ejercicioId: "remoconbarra" },
+  ]);
+});
+await p.reload(); await p.waitForFunction(() => window.__gym); await espera(800);
+
+const empezar = async () => {
+  await p.getByRole("button", { name: /Empezar/ }).first().click(); await espera(600);
+  if (await p.locator(".hoja").count()) { await p.locator(".hoja .celda", { hasText: "Torso" }).click(); await espera(800); }
+};
+await empezar();
+const press = p.locator(".modal-completo .ej").nth(0), remo = p.locator(".modal-completo .ej").nth(1);
+
+paso("molestia reciente de nivel ≥ 3: aviso en ese ejercicio y no en el de nivel leve");
+assert.match(await press.locator(".ej-molestia").innerText(), /Hombro der\. · nivel 3, hace 5 días/);
+assert.equal(await remo.locator(".ej-molestia").count(), 0);
+
+paso("«Cambiar ›» abre el selector de equivalentes");
+await press.locator(".ej-molestia button").click(); await espera(500);
+assert.ok(await p.locator(".hoja").count(), "se abre el selector");
+await p.keyboard.press("Escape"); await espera(400);
+if (await p.locator(".hoja").count()) await p.locator(".hoja").getByRole("button", { name: /Cerrar|Cancelar/ }).first().click();
+await espera(300);
+
+paso("propagación: el peso de la serie 1 aparece como ayuda en las vacías sin escribirlo");
+await press.getByLabel("Repeticiones de la serie 1").fill("8");
+await press.getByLabel("Peso de la serie 1").fill("80");
+await espera(300);
+const ph = await press.getByLabel("Peso de la serie 2").getAttribute("placeholder");
+assert.equal(ph, "80", "ayuda con el peso de la serie anterior");
+assert.equal((await estado()).borrador.ejercicios[0].series[1].peso ?? "", "", "no se escribe en la serie");
+
+paso("autorregulación: RPE 10 con 80 × 8 (el habitual era 90 × 8 @8) propone bajar el peso para el RPE objetivo");
+await press.locator(".serie .check").first().click(); await espera(300);
+await press.locator(".tira-rpe:not([hidden]) .chip-rpe", { hasText: /^10$/ }).click(); await espera(500);
+const chip = press.locator(".chip-sugerencia");
+assert.equal(await chip.count(), 1);
+assert.match(await chip.innerText(), /75 kg × 8/);
+await chip.click(); await espera(400);
+const e = await estado();
+assert.equal(String(e.borrador.ejercicios[0].series[1].peso), "75");
+assert.equal(String(e.borrador.ejercicios[0].series[2].peso), "75");
+assert.equal(String(e.borrador.ejercicios[0].series[0].peso), "80", "la serie hecha no cambia");
+assert.equal(await press.locator(".chip-sugerencia").count(), 0, "con las series rellenas el chip desaparece");
+
+paso("semana de descarga: sin «Próxima vez» ni petición de subir, solo mantener");
+await p.evaluate(async () => { await window.__gym.store.guardarBorrador(null); await window.__gym.store.guardarAjustes((a) => { a.bloques = [{ inicio: "2026-11-16", fin: "2026-11-22", tipo: "Deload", grupos: [] }]; }); });
+await p.reload(); await p.waitForFunction(() => window.__gym); await espera(800);
+await empezar();
+const press2 = p.locator(".modal-completo .ej").nth(0);
+assert.ok(!/Próxima vez/.test(await press2.locator(".ej-info").innerText()), "sin «Próxima vez» en descarga");
+const sug = press2.locator(".chip-sugerencia");
+assert.equal(await sug.count(), 1);
+assert.match(await sug.innerText(), /90/);
+assert.match(await sug.getAttribute("aria-label"), /descarga/i);
+
+assert.deepEqual(errores, []);
+await b.close(); srv.close();
+console.log("OK sala-ayudas");

@@ -69,3 +69,17 @@ test("la progresión consciente del RPE consolida cuando el esfuerzo ya es máxi
   const sinRpe = { clave: "sube", pesoMax: 80, obj: { min: 6, max: 10 }, work: [{ reps: 10 }] };
   assert.equal(ajustarPorRpe({ peso: 82.5, reps: 6, motivo: "x" }, sinRpe, 8).peso, 82.5);
 });
+
+import { autorregulacion } from "../../src/core/prescripcion.js";
+
+test("autorregulación: propone peso solo si el e1RM de hoy se desvía ≥ 5 %", () => {
+  const e1 = e1rmAjustado(100, 5, 8);
+  assert.equal(autorregulacion({ peso: 100, reps: 5, rpe: 8 }, e1, 8), null, "mismo e1RM: ruido");
+  const baja = autorregulacion({ peso: 100, reps: 5, rpe: 10 }, e1, 8, 2.5);
+  assert.ok(baja && baja.desv < -0.05 && baja.peso < 100 && baja.reps === 5, "RPE 10 con el mismo peso: hoy rinde menos");
+  const sube = autorregulacion({ peso: 100, reps: 5, rpe: 6 }, e1, 8, 2.5);
+  assert.ok(sube && sube.desv > 0.05 && sube.peso > 100, "RPE 6 con el mismo peso: hoy rinde más");
+  assert.equal(autorregulacion({ peso: 100, reps: 5, rpe: 4 }, e1, 8), null, "RPE inválido");
+  assert.equal(autorregulacion({ peso: 0, reps: 5, rpe: 8 }, e1, 8), null, "sin peso");
+  assert.equal(autorregulacion({ peso: 100, reps: 5, rpe: 9 }, 0, 8), null, "sin e1RM previo");
+});

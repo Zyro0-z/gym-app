@@ -15,13 +15,17 @@ const kgTxt = (v) => fmt(v, Number.isInteger(v) ? 0 : v * 10 === Math.round(v * 
 
 /* ---------- Sugerencia de carga ---------- */
 
-/** Sugerencia para el ejercicio (solo durante el entrenamiento) o null. */
+/** ¿Cae hoy el ejercicio en una semana de descarga? `A` es el análisis. */
+export const enDescarga = (A, id) => { const b = A.C.bloqueProtector(A.C.grupoDe(id), A.hoy); return !!(b && b.esDeload); };
+
+/** Sugerencia para el ejercicio (solo durante el entrenamiento) o null. En descarga no pide subir: mantiene el peso de la última vez. */
 export function sugerenciaDe(id, rpeObjetivo = null) {
   if (!E.M || E.M.modo !== "entreno") return null;
   try {
     const A = E.app.store.analisis();
     if (!A) return null;
     const p = A.progresionDe(id);
+    if (p && !p.sinDatos && p.obj && p.pesoMax > 0 && enDescarga(A, id)) return { peso: p.pesoMax, reps: p.obj.min, motivo: "Semana de descarga: sin subir carga", descarga: true };
     return p ? ajustarPorRpe(sugerirCarga(p, A.incrementoDe(p)), p, rpeObjetivo) : null;
   } catch (e) { return null; }
 }

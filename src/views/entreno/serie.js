@@ -16,6 +16,34 @@ import { finDeRonda, calculadoraDiscos } from "./herramientas.js";
 import { CHIPS_RPE, esRpe, rpeTxt } from "../../core/rpe.js";
 
 let tiraAbierta = null;   // solo hay una tira de RPE desplegada a la vez
+const campos = new WeakMap();   // serie → { kgIn, antSeries } para repintar el peso sugerido de las siguientes
+
+/**
+ * Peso que heredan las series vacías de la anterior de trabajo. Solo en series rectas: si la vez pasada los pesos de las dos
+ * series eran distintos (Top Set + back-offs), se queda el de la vez pasada. Es solo el texto de ayuda: no escribe nada hasta marcar la serie.
+ */
+function pesoHeredado(e, j, antSeries) {
+  const s = e.series[j], ant = antSeries[j];
+  if (s.tipo === "calentamiento" || (e.tipo && e.tipo !== "peso")) return null;
+  for (let k = j - 1; k >= 0; k--) {
+    const t = e.series[k];
+    if (t.tipo === "calentamiento") continue;
+    const w = leerNumero(t.peso);
+    if (!(w > 0)) return null;
+    const a = antSeries[k];
+    if (ant && ant.peso > 0 && !(a && a.peso === ant.peso)) return null;
+    return w;
+  }
+  return null;
+}
+const pesoAyuda = (e, j, antSeries) => { const w = pesoHeredado(e, j, antSeries), a = antSeries[j]; return w ? aTexto(w) : a && a.peso > 0 ? aTexto(a.peso) : ""; };
+/** Tras cambiar un peso, actualiza la ayuda de las series vacías que quedan. */
+function repintarAyudas(e) {
+  e.series.forEach((s, k) => {
+    const c = campos.get(s);
+    if (c && !s.hecha && (s.peso === "" || s.peso == null)) c.kgIn.placeholder = pesoAyuda(e, k, c.antSeries);
+  });
+}
 /** Descanso tras una serie de `e`: el propio del ejercicio si lo tiene; el de Ajustes en otro caso. Con «No» en Ajustes (0) no hay descanso automático. */
 export function descansoDe(e) {
   const g = E.app.store.estado.ajustes.entreno.descanso ?? 90, c = E.app.store.estado.catalogo.find((x) => x.id === e.ejercicioId);
@@ -41,13 +69,14 @@ function prEnVivo(e, s) {
   return Object.assign(r, { peso, reps, dentroDelRuido: !!ruido && r.e1rm - r.e1rmPrevio < ruido.sd });
 }
 
-export function filaSerie(e, i, s, j, ant, paso) {
+export function filaSerie(e, i, s, j, ant, paso, antSeries = []) {
   const letra = letraTipo(s.tipo);
   const nNormal = e.series.slice(0, j + 1).filter((x) => x.tipo !== "calentamiento").length;
   const antTxt = ant ? (ant.peso > 0 ? fmt(ant.peso, Number.isInteger(ant.peso) ? 0 : 1) + " × " + ant.reps : ant.reps ? ant.reps + " reps" : "—") : "—";
   const kgIn = h("input", { class: "campo-serie num", type: "text", inputmode: "decimal", enterkeyhint: "next", autocomplete: "off", value: s.peso,
-    placeholder: ant && ant.peso > 0 ? aTexto(ant.peso) : "", "aria-label": "Peso de la serie " + (j + 1), dataset: { teclado: "1", paso: String(paso) },
-    onInput: (ev) => { s.peso = ev.target.value; guardarPronto(); } });
+    placeholder: pesoAyuda(e, j, antSeries), "aria-label": "Peso de la serie " + (j + 1), dataset: { teclado: "1", paso: String(paso) },
+    onInput: (ev) => { s.peso = ev.target.value; repintarAyudas(e); guardarPronto(); } });
+  campos.set(s, { kgIn, antSeries });
   if (!e.tipo || e.tipo === "peso") { kgIn.dataset.discos = "1"; kgIn.addEventListener("discos", () => { kgIn.blur(); calculadoraDiscos(e); }); }
   const repsIn = h("input", { class: "campo-serie num", type: "text", inputmode: "numeric", enterkeyhint: "next", autocomplete: "off", value: s.reps,
     placeholder: ant && ant.reps ? String(ant.reps) : "", "aria-label": "Repeticiones de la serie " + (j + 1), dataset: { teclado: "1", paso: "1" },
@@ -67,10 +96,11 @@ export function filaSerie(e, i, s, j, ant, paso) {
       "aria-label": "RPE " + rpeTxt(v) + (v === obj ? ", objetivo" : ""), onClick: () => {
         if (s.rpe === v) delete s.rpe; else s.rpe = v;
         seleccion(); pintarRpe(); pintarTira(); cerrarTira(); rpeBtn.setAttribute("aria-expanded", "false"); guardarYa(); resaltarActual();
+        if (s.hecha && s === e.series.find((x) => x.tipo !== "calentamiento")) pintarCuerpo();   // la primera serie de trabajo puede ajustar el peso de las demás
       } }, rpeTxt(v))),
     h("p", { class: "tira-pie" }, "10 es el fallo; cada punto menos, una repetición en reserva." + (obj ? " Objetivo: " + rpeTxt(obj) + "." : "")));
   const pintarTira = () => { for (const b of tira.querySelectorAll(".chip-rpe")) { const act = esRpe(s.rpe) && Number(b.dataset.v) === s.rpe; b.classList.toggle("activo", act); b.setAttribute("aria-checked", String(act)); } };
-  const abrirTira = () => { if (tiraAbierta !== tira) cerrarTira(); tira.hidden = false; tiraAbierta = tira; pintarTira(); rpeBtn.setAttribute("aria-expanded", "true"); };
+  const abrirTira = () => { if (tiraAbierta !== tira) cerrarTira(); tira.hidden = false; tiraAbierta = tira; pintarTira(); rpeBtn.setAttribute("aria-expanded", "true"); setTimeout(() => { if (tira.isConnected && !tira.hidden) tira.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, 60); };
   rpeBtn.setAttribute("aria-expanded", "false");
   rpeBtn.addEventListener("click", () => { if (tira.hidden) abrirTira(); else cerrarTira(); rpeBtn.setAttribute("aria-expanded", String(!tira.hidden)); });
   const check = h("button", { class: "check", "aria-label": "Serie hecha", "aria-pressed": String(!!s.hecha) }, icono("check", { grosor: 2.6 }));
@@ -80,7 +110,7 @@ export function filaSerie(e, i, s, j, ant, paso) {
     e.tipo === "reps" ? null : kgIn, repsIn, rpeBtn, check);
   check.addEventListener("click", () => {
     if (!s.hecha) {
-      if (e.tipo !== "reps" && !s.peso && kgIn.placeholder) s.peso = kgIn.value = kgIn.placeholder;
+      if (e.tipo !== "reps" && !s.peso && kgIn.placeholder) { s.peso = kgIn.value = kgIn.placeholder; repintarAyudas(e); }
       if (!s.reps && repsIn.placeholder) s.reps = repsIn.value = repsIn.placeholder;
       const r = leerNumero(s.reps), p = s.peso === "" ? 0 : leerNumero(s.peso);
       if (!(r > 0) || !Number.isFinite(p) || p < 0) { (r > 0 ? kgIn : repsIn).focus(); fila.classList.add("error"); setTimeout(() => fila.classList.remove("error"), 600); return; }

@@ -41,10 +41,21 @@ async function arrancar() {
   alCambiarTema(() => nav.refrescar());
   store.suscribir((tema) => {
     if (tema === "ajustes") { const ap = store.estado.ajustes.apariencia; aplicarApariencia({ tema: ap.tema, acento: ap.acento }); configurarHaptica(ap.haptica !== false); }
+    if (tema === "borrador" && document.body.classList.contains("con-modal")) return;   // el autoguardado al teclear no repinta el fondo; se repinta al cerrar el entreno
     nav.refrescar();
     marcarAvisos(nav);
   });
+  let ultimoDia = store.hoy();
+  const alVolver = () => {
+    if (document.visibilityState !== "visible") return;
+    if (store.hoy() !== ultimoDia) { ultimoDia = store.hoy(); nav.refrescar(); marcarAvisos(nav); }
+    store.reanudarNube();
+  };
+  document.addEventListener("visibilitychange", alVolver);
+  window.addEventListener("pageshow", alVolver);
+  window.addEventListener("online", () => store.reanudarNube());
   await nav.iniciar(location.hash);
+  store.reanudarNube();
   marcarAvisos(nav);
   iniciarEntreno(ctx);
   store.pedirPersistencia();

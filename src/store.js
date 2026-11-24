@@ -10,7 +10,7 @@
 //  · Sin Worker, o si falla, se calcula en el hilo principal sin error visible.
 import * as repos from "./data/repos.js";
 import { crearCopia, leerCopia, estadoCopia } from "./data/modelo.js";
-import { modeloSinEjercicio, borradorSin } from "./core/borrado.js";
+import { modeloSinEjercicio, borradorSin, modeloConEjerciciosUnidos } from "./core/borrado.js";
 import { analizar } from "./core/analisis.js";
 import { rehidratar } from "./core/rehidratar.js";
 import { hoyISO } from "./core/fechas.js";
@@ -25,7 +25,7 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
   const esperas = [];
   const subs = new Set();
   const nube = crearNube();
-  let tNube = 0;
+  let tNube = 0, nubePend = false;
 
   const avisar = (tema) => { for (const fn of [...subs]) { try { fn(tema); } catch (e) { console.error(e); } } };
   const cambio = (tema, analitico = true) => { if (analitico) version++; avisar(tema); };
@@ -82,11 +82,20 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     clearTimeout(tNube);
     const n = estado && estado.ajustes.nube;
     if (!n || !n.activa || !n.auto || !n.url) return;
+    nubePend = true;
     tNube = setTimeout(() => store.subirNube().catch((e) => console.warn("Copia en la nube:", e.message)), 5000);
   }
 
   const store = {
     get estado() { return estado; },
+    /** Sube la copia si quedó pendiente: iOS congela el temporizador de 5 s al bloquear el teléfono. Se llama al arrancar, al volver a la app y al recuperar la red. */
+    reanudarNube() {
+      const n = estado && estado.ajustes.nube;
+      if (!n || !n.activa || !n.auto || !n.url || store.nubeEstado.subiendo) return;
+      if (!nubePend && !(n.ultima && n.ultima.sesiones !== estado.sesiones.length)) return;
+      clearTimeout(tNube);
+      store.subirNube().catch((e) => console.warn("Copia en la nube:", e.message));
+    },
     /** Último resultado de la copia en la nube: { subiendo, error } (solo en memoria). */
     nubeEstado: { subiendo: false, error: null },
     hoy: () => hoyISO(reloj()),
@@ -153,6 +162,11 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
       await store.importar({ sesiones: [], catalogo: estado.catalogo, rutinas: [], pesajes: [], medidas: [], molestias: [], ajustes: estado.ajustes }, "borrar");
     },
     /** Borra un ejercicio de sesiones, rutinas, catálogo y entreno en curso en una sola operación; antes guarda una copia interna. */
+    /** Renombra o une ejercicios (Map: id viejo → { id, nombre }) en una sola operación; antes guarda una copia interna. */
+    async unirEjercicios(mapa, catalogo) {
+      const r = modeloConEjerciciosUnidos(estado, mapa, catalogo);
+      await store.importar(r.modelo, "unir", r.borrador);
+    },
     async borrarEjercicio(id) {
       await store.importar(modeloSinEjercicio(estado, id), "borrar", borradorSin(estado.borrador, id));
     },
@@ -182,6 +196,7 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
       try {
         const r = await subirSinPisar(nube, n, frase, store.textoCopia(), { forzar });
         await store.guardarAjustes((a) => { a.nube.ultima = { at: new Date(r.at).toISOString(), bytes: r.bytes, sesiones: estado.sesiones.length }; }, { analitico: false });
+        nubePend = false;
         store.nubeEstado = { subiendo: false, error: null }; avisar("nube");
         return r;
       } catch (e) { store.nubeEstado = { subiendo: false, error: e.message }; avisar("nube"); throw e; }

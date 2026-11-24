@@ -16,17 +16,27 @@ export function abrir() {
     r.onsuccess = () => {
       db = r.result;
       db.onversionchange = () => { db.close(); db = null; };
+      db.onclose = () => { db = null; };
       ok(db);
     };
     r.onerror = () => ko(r.error);
   });
 }
 
+/** Abre una transacción; si iOS cerró la conexión mientras la app estaba en segundo plano (InvalidStateError), la reabre una vez. */
+async function transaccion(almacenes, modo) {
+  try { return (await abrir()).transaction(almacenes, modo); }
+  catch (e) {
+    if (!e || e.name !== "InvalidStateError") throw e;
+    db = null;
+    return (await abrir()).transaction(almacenes, modo);
+  }
+}
+
 /** Ejecuta `fn(almacenes)` en una transacción; resuelve con lo que devuelva cuando se confirme. */
 export async function tx(almacenes, modo, fn) {
-  const d = await abrir();
+  const t = await transaccion(almacenes, modo);
   return new Promise((ok, ko) => {
-    const t = d.transaction(almacenes, modo);
     const st = {};
     for (const a of [].concat(almacenes)) st[a] = t.objectStore(a);
     let res;
@@ -39,8 +49,8 @@ export async function tx(almacenes, modo, fn) {
 
 const req = (r) => new Promise((ok, ko) => { r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); });
 
-export async function leerKV(clave) { const d = await abrir(); return req(d.transaction("kv").objectStore("kv").get(clave)); }
-export async function todasSesiones() { const d = await abrir(); return req(d.transaction("sesiones").objectStore("sesiones").getAll()); }
+export async function leerKV(clave) { const t = await transaccion("kv", "readonly"); return req(t.objectStore("kv").get(clave)); }
+export async function todasSesiones() { const t = await transaccion("sesiones", "readonly"); return req(t.objectStore("sesiones").getAll()); }
 export const escribirKV = (clave, valor) => tx("kv", "readwrite", (s) => { s.kv.put(valor, clave); });
 export const borrarKV = (clave) => tx("kv", "readwrite", (s) => { s.kv.delete(clave); });
 export const ponerSesion = (ses) => tx("sesiones", "readwrite", (s) => { s.sesiones.put(ses); });

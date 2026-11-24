@@ -22,6 +22,19 @@ export function cargaParaRpe(e1rm, reps, rpe, paso = 2.5) {
 }
 
 /**
+ * Autorregulación tras la primera serie de trabajo: si el e1RM de hoy (con su RPE) se aleja ≥ `umbral` del habitual,
+ * propone el peso que da `reps` al RPE objetivo. Con menos desvío es ruido de un día normal y devuelve null.
+ * @returns {{ e1rm:number, desv:number, peso:number, reps:number } | null}
+ */
+export function autorregulacion(serie, e1Previo, rpeObj, paso = 2.5, umbral = 0.05) {
+  if (!serie || !(serie.peso > 0) || !(serie.reps > 0) || !esRpe(serie.rpe) || !(e1Previo > 0) || !esRpe(rpeObj)) return null;
+  const e1 = e1rmAjustado(serie.peso, serie.reps, serie.rpe), desv = (e1 - e1Previo) / e1Previo;
+  if (Math.abs(desv) < umbral) return null;
+  const peso = cargaParaRpe(e1, serie.reps, rpeObj, paso);
+  return peso > 0 ? { e1rm: red(e1, 1), desv, peso, reps: serie.reps } : null;
+}
+
+/**
  * Back-offs a partir de la serie top. El e1RM sale de la propia serie; sin RPE se asume esfuerzo
  * máximo (RPE 10), lo que da cargas algo más ligeras (lado seguro). Por defecto los back-offs
  * van 1 punto de RPE por debajo de la top, con un máximo de RPE 9 (top a 10 → back-offs a 9).

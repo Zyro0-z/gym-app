@@ -6,7 +6,7 @@ import { icono } from "./iconos.js";
 import { seleccion } from "./haptica.js";
 import { leerNumero } from "../core/formato.js";
 
-let barra = null, campo = null, raiz = null, btnDiscos = null;
+let barra = null, campo = null, raiz = null, btnDiscos = null, btnMenos = null, btnMas = null, btnSig = null;
 
 function colocar() {
   if (!barra) return;
@@ -14,6 +14,8 @@ function colocar() {
   const abajo = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
   barra.style.transform = `translateY(${-abajo}px)`;
 }
+
+const pasoTxt = (n) => String(n).replace(".", ",");
 
 function pasoDe(el) { return Number(el.dataset.paso) || 1; }
 
@@ -63,13 +65,19 @@ export function barraTeclado(contenedor) {
       return b;
     };
     barra = h("div", { class: "barra-teclado", hidden: true },
-      btn(icono("menos"), () => ajustar(-1), "Restar", "", true), btn(icono("mas"), () => ajustar(1), "Sumar", "", true),
+      btnMenos = btn([icono("menos"), h("span", { class: "paso", "aria-hidden": "true" })], () => ajustar(-1), "Restar", "con-paso", true), btnMas = btn([icono("mas"), h("span", { class: "paso", "aria-hidden": "true" })], () => ajustar(1), "Sumar", "con-paso", true),
       btnDiscos = btn("Discos", () => { if (campo) campo.dispatchEvent(new Event("discos")); }, "Calculadora de discos", "discos"),
-      h("span", { class: "hueco" }), btn("Hecha", hecha, "Marcar la serie como hecha", "hecha"), btn("Siguiente", siguiente, "Siguiente campo", "siguiente"));
+      h("span", { class: "hueco" }), btn("Hecha", hecha, "Marcar la serie como hecha", "hecha"), btnSig = btn("Siguiente", siguiente, "Siguiente campo", "siguiente"));
     document.body.appendChild(barra);
     if (window.visualViewport) { visualViewport.addEventListener("resize", colocar); visualViewport.addEventListener("scroll", colocar); }
   }
-  const foco = (e) => { if (e.target.matches("input[data-teclado]")) { campo = e.target; barra.hidden = false; btnDiscos.hidden = !campo.dataset.discos; barra.classList.toggle("sin-hecha", !campo.closest(".serie")); document.body.classList.add("con-teclado"); colocar(); } };
+  const foco = (e) => { if (e.target.matches("input[data-teclado]")) { campo = e.target; barra.hidden = false; btnDiscos.hidden = !campo.dataset.discos; barra.classList.toggle("sin-hecha", !campo.closest(".serie")); document.body.classList.add("con-teclado"); colocar();
+    for (const b of [btnMenos, btnMas]) b.querySelector(".paso").textContent = pasoTxt(pasoDe(campo));
+    const pesoCampo = /^Peso/.test(campo.getAttribute("aria-label") || ""), repsSig = pesoCampo && campo.closest(".serie");
+    btnSig.textContent = repsSig ? "Reps →" : "Siguiente"; btnSig.setAttribute("aria-label", repsSig ? "Reps, siguiente campo" : "Siguiente campo");
+    const fila = campo.closest(".serie");
+    if (fila) setTimeout(() => { if (campo && fila.isConnected) fila.scrollIntoView({ block: "center", behavior: "smooth" }); }, 350);   // el teclado y la barra no tapan la serie
+  } };
   const fuera = (e) => { if (e.target === campo) setTimeout(() => { if (document.activeElement !== campo && !(document.activeElement && document.activeElement.matches("input[data-teclado]"))) { campo = null; barra.hidden = true; document.body.classList.remove("con-teclado"); } }, 0); };
   contenedor.addEventListener("focusin", foco);
   contenedor.addEventListener("focusout", fuera);

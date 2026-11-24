@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { modeloSinEjercicio, borradorSin } from "../../src/core/borrado.js";
+import { modeloSinEjercicio, borradorSin, modeloConEjerciciosUnidos } from "../../src/core/borrado.js";
 import { fusionarAjustes } from "../../src/core/musculos.js";
 import { leerTablas } from "../../src/core/estandares.js";
 
@@ -47,4 +47,18 @@ test("fusionarAjustes hereda también tipo de ancla, unilateral y modo de carga"
 });
 test("leerTablas rechaza niveles todos a cero", () => {
   assert.throws(() => leerTablas(JSON.stringify({ x: [{ pc: 80, niveles: [0, 0, 0, 0, 0] }] })), /formato/);
+});
+
+test("unir ejercicios cambia sesiones, rutinas sin repetir, molestias y borrador a la vez", () => {
+  const e = Object.assign(estado(), { borrador: { ejercicios: [{ ejercicioId: "a", nombre: "A", series: [] }] } });
+  const mapa = new Map([["a", { id: "b", nombre: "B" }]]);
+  const r = modeloConEjerciciosUnidos(e, mapa, [{ id: "b", nombre: "B" }]);
+  assert.deepEqual(r.modelo.sesiones.map((s) => s.ejercicios.map((x) => x.ejercicioId)), [["b", "b"], ["b"], ["b"]]);
+  assert.deepEqual(r.modelo.rutinas[0].ejercicios.map((x) => x.ejercicioId), ["b"]);
+  assert.deepEqual(r.modelo.molestias.map((m) => m.ejercicioId), ["b", "b"]);
+  assert.equal(r.borrador.ejercicios[0].nombre, "B");
+  assert.equal(e.sesiones[0].ejercicios[0].ejercicioId, "a", "no muta el estado");
+});
+test("sin borrador, unir devuelve borrador null", () => {
+  assert.equal(modeloConEjerciciosUnidos(estado(), new Map([["a", { id: "b", nombre: "B" }]]), []).borrador, null);
 });
