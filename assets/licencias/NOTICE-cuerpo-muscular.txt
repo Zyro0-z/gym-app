@@ -1,10 +1,5 @@
-assets/cuerpo-muscular.svg
+assets/cuerpo-muscular.svg, assets/cuerpo-frente.webp, assets/cuerpo-espalda.webp
 
-La geometría de las piezas procede de:
-  @mjcdev/react-body-highlighter — Copyright (c) 2022 ELABBASSI Hicham (MIT) — LICENSE-react-body-highlighter.txt
-  react-muscle-highlighter — Copyright (c) 2024 My Muscle Contributors (MIT) — LICENSE-react-muscle-highlighter.txt
-Ambas derivan de react-native-body-highlighter (HichamELBSI), también MIT.
-
-Cambios: las piezas se reasignan a los músculos de la app, se partieron unas pocas con un recorte (pectoral,
-deltoides, braquial y romboides) y se unieron las vistas frontal y trasera en un solo SVG. Lo genera
-tools/generar-cuerpo.mjs.
+Las dos imágenes del cuerpo (frente y espalda) se generaron con Gemini (Google) a partir de una descripción propia, junto con
+una versión segmentada por colores. Las regiones tocables se obtienen de esa segmentación con tools/cuerpo/generar.py
+(fuentes en tools/cuerpo/fuentes). No incorporan geometría ni arte de terceros.

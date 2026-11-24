@@ -105,7 +105,7 @@ src/
     dom.js, iconos.js, navegacion.js, controles.js, calor.js
     capas.js          hojas, alertas y modales; foco atrapado, Escape y foco devuelto
     graficas.js       barras y líneas SVG con resumen textual (describirSerie) en la etiqueta
-    cuerpo.js         mapa corporal monocromo: niveles, leyenda, valor al tocar, etiqueta textual
+    cuerpo.js         mapa corporal monocromo (imagen + regiones tocables): niveles, leyenda, valor al tocar, etiqueta textual
     instalar.js       tarjeta «Añadir a pantalla de inicio» (solo Safari de iPhone sin instalar, una vez)
     insignias.js      presentación; insignias/graficos.js (primitivas), registro.js (las 15 ligas),
                       montaje.js (composición y caché)
@@ -133,7 +133,7 @@ tests/
   bench/              rendimiento del análisis con 820 sesiones
   e2e/*.mjs           Playwright (todas.mjs las lanza todas con un motor)
   webkit.sh           ejecuta una prueba con WebKit en un contenedor Ubuntu (docker)
-tools/                estampar-version.mjs (CI), fixture-v2.mjs, generar-cuerpo.mjs, auditoria-a11y.mjs
+tools/                estampar-version.mjs (CI), fixture-v2.mjs, cuerpo/generar.py (mapa corporal), auditoria-a11y.mjs
   auditoria-a11y.mjs  auditoría de accesibilidad con Playwright (npm run a11y; en CI)
   a11y-pagina.mjs     comprobaciones que se ejecutan dentro de la página (contraste, objetivos,
                       nombres, foco, texto grande)

@@ -161,5 +161,5 @@ animaciones. El tamaño del texto sigue al del sistema (`-apple-system-body`).
 
 ## Licencias
 
-La geometría del diagrama corporal viene de dos librerías MIT ([aviso](assets/licencias/NOTICE-cuerpo-muscular.txt)). El resto
+Las imágenes del diagrama corporal se generaron con Gemini ([aviso](assets/licencias/NOTICE-cuerpo-muscular.txt)). El resto
 del código, los iconos y las insignias son propios.

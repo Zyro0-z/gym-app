@@ -90,7 +90,7 @@ export function vistaEjercicio([k], app) {
         const lista = (xs) => xs.map(nombreMusculo).join(", "), vista = vistaPara(ids);
         out.push(seccion({ cab: "Músculos", pie: "Oscuro con fibras: principal (1 serie). Claro con puntos: secundario (cuenta " + fmt((store.estado.ajustes.analisis || {}).fraccionSecundaria ?? 0.5, 2) + " serie). Se corrige en Ajustes › Ejercicios." },
           h("div", { class: "tarjeta fila", style: vista === "ambas" ? { gap: "12px", flexDirection: "column", alignItems: "stretch" } : { gap: "16px", alignItems: "center" } },
-            diagramaCuerpo([...(mc.p || []).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 2 })), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m)).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 1, textura: "puntos" }))],
+            diagramaCuerpo([...(mc.p || []).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 2 })), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m)).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 1 }))],
               { etiqueta: "Músculos de " + (e.nombre || "este ejercicio"), unidad: (v) => (v >= 2 ? "principal" : "secundario"), vista, mini: true }),
             h("div", { class: "pila", style: { flex: "1", minWidth: "0" } },
               mc.p && mc.p.length ? h("div", null, h("div", { class: "etiqueta" }, "Principales"), h("div", { class: "t-subhead" }, lista(mc.p))) : null,

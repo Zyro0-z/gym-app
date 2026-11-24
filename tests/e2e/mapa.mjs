@@ -36,21 +36,34 @@ const viewBox = () => p.locator(".diagrama-cuerpo svg").first().getAttribute("vi
 const marcadas = () => p.locator(".diagrama-cuerpo path.marcada").count();
 
 paso("por defecto se ven las dos caras y hay selector de vista");
-assert.equal(await viewBox(), "38 84 1376 1272");
+assert.equal(await viewBox(), "0 0 937 1050");
 assert.equal(await p.locator("[aria-label='Vista del mapa'] [role=radio]").count(), 3);
 
-paso("cada zona con datos lleva relieve y textura encima, sin duplicar ids");
-const capas = await p.evaluate(() => ({ zonas: document.querySelectorAll(".diagrama-cuerpo path[data-nivel]").length, relieves: document.querySelectorAll(".diagrama-cuerpo path.capa.relieve").length,
-  texturas: document.querySelectorAll(".diagrama-cuerpo path.capa.textura").length, ids: document.querySelectorAll(".diagrama-cuerpo svg [id]").length, unicos: new Set([...document.querySelectorAll("[id]")].map((x) => x.id)).size, todos: document.querySelectorAll("[id]").length }));
+paso("cada zona con datos tiene su capa de sombra y no hay ids repetidos");
+const capas = await p.evaluate(() => ({ zonas: document.querySelectorAll(".diagrama-cuerpo path[data-nivel]").length, regiones: document.querySelectorAll(".diagrama-cuerpo .musculos path").length,
+  sombras: document.querySelectorAll(".diagrama-cuerpo .sombra").length, unicos: new Set([...document.querySelectorAll("[id]")].map((x) => x.id)).size, todos: document.querySelectorAll("[id]").length }));
 assert.ok(capas.zonas >= 4);
-assert.equal(capas.relieves, capas.zonas); assert.equal(capas.texturas, capas.zonas);
+assert.equal(capas.sombras, capas.regiones);
 assert.equal(capas.unicos, capas.todos, "ids únicos en el documento");
 
 paso("Frente y Espalda recortan el mapa");
 await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Frente" }).click(); await espera(300);
-assert.equal(await viewBox(), "34 84 660 1272");
+assert.equal(await viewBox(), "0 0 465 1050");
 await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Espalda" }).click(); await espera(300);
-assert.equal(await viewBox(), "754 84 660 1272");
+assert.equal(await viewBox(), "465 0 472 1050");
+
+paso("tocar una zona (aunque cambie de cara) no mueve la página ni cambia el alto del mapa y del resumen");
+const medir = () => p.evaluate(() => {
+  const d = document.querySelector(".diagrama-cuerpo"); let y = 0;
+  for (let e = d; e; e = e.parentElement) y += e.scrollTop || 0;
+  return { y: Math.round(y + window.scrollY), top: Math.round(d.getBoundingClientRect().top), alto: Math.round(d.getBoundingClientRect().height), info: Math.round(document.querySelector(".diagrama-info").getBoundingClientRect().height), infoY: Math.round(document.querySelector(".diagrama-info").getBoundingClientRect().top) };
+});
+await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Ambas" }).click(); await espera(300);
+const antes = await medir();
+await p.locator(".diagrama-cuerpo path[data-nivel][id^='m-dorsal']").first().click({ force: true }); await espera(700);
+assert.deepEqual(await medir(), antes, "ni desplazamiento ni cambio de alto");
+assert.equal(await viewBox(), "465 0 472 1050", "el dorsal cambia a la cara trasera sin mover nada");
+await p.locator(".diagrama-cuerpo path[data-nivel][id^='m-dorsal']").first().click({ force: true }); await espera(300);
 
 paso("tocar una zona enfoca su músculo: resumen, resto atenuado y fila marcada");
 const dorsal = p.locator(".diagrama-cuerpo path[data-nivel][id^='m-dorsal']").first();
@@ -67,11 +80,11 @@ assert.equal(await p.locator(".celda.enfocada").count(), 0);
 paso("tocar una fila de la lista enfoca el músculo y cambia de cara si hace falta");
 await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Frente" }).click(); await espera(300);
 await p.locator(".celda.pulsable", { hasText: "Dorsal ancho" }).click(); await espera(400);
-assert.equal(await viewBox(), "754 84 660 1272", "el dorsal solo está en la espalda");
+assert.equal(await viewBox(), "465 0 472 1050", "el dorsal solo está en la espalda");
 assert.equal(await p.locator("[aria-label='Vista del mapa'] [role=radio][aria-checked=true]").innerText(), "Espalda");
 assert.ok((await marcadas()) >= 1);
 await p.locator(".celda.pulsable", { hasText: "Pecho medio e inferior" }).click(); await espera(400);
-assert.equal(await viewBox(), "34 84 660 1272");
+assert.equal(await viewBox(), "0 0 465 1050");
 
 paso("un toque a pocos píxeles de una zona también la enfoca");
 await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Ambas" }).click(); await espera(300);
@@ -94,13 +107,12 @@ assert.ok(acierto, "un toque fuera pero cerca enfoca la zona");
 paso("la vista elegida se recuerda al cambiar de periodo");
 await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Espalda" }).click(); await espera(200);
 await p.locator(".pestana.activa [aria-label=Periodo] [role=radio]").first().click(); await espera(900);
-assert.equal(await viewBox(), "754 84 660 1272");
+assert.equal(await viewBox(), "465 0 472 1050");
 
-paso("ficha del ejercicio: principal con fibras y secundario con puntos; las sesiones abren su detalle");
+paso("ficha del ejercicio: el principal se tiñe más fuerte que el secundario; las sesiones abren su detalle");
 await p.evaluate(() => window.__gym.nav.ir("ejercicio/pressbanca")); await espera(1200);
-const tex = await p.evaluate(() => [...document.querySelectorAll(".diagrama.compacto path.capa.textura")].map((x) => x.style.fill));
-assert.ok(tex.some((f) => /-p"?\)/.test(f)), "el secundario lleva puntos");
-assert.ok(tex.some((f) => /-[vhd]"?\)/.test(f)), "el principal lleva fibras");
+const niveles = await p.evaluate(() => [...document.querySelectorAll(".diagrama.compacto .musculos path[data-nivel]")].map((x) => Number(x.getAttribute("data-nivel"))));
+assert.ok(niveles.includes(4) && niveles.some((n) => n < 4), "principal en el nivel más alto y secundario en uno menor");
 await p.locator(".celda.pulsable", { hasText: /16 nov/i }).first().click(); await espera(600);
 assert.match(await p.locator("#app").innerText(), /Torso|Press banca/);
 

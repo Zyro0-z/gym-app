@@ -248,35 +248,28 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .calor-cab .mes { font-size: var(--f-headline); font-weight: 600; }
 
 /* ── diagrama corporal ── */
-.diagrama-cuerpo { display: block; width: 100%; max-width: 360px; margin: 0 auto; aspect-ratio: 1376 / 1272; }   /* alto reservado: el SVG llega después */
-.diagrama-cuerpo.una-vista { max-width: 190px; }
+.diagrama-cuerpo { display: block; width: 100%; max-width: 360px; margin: 0 auto; aspect-ratio: 937 / 1050; background: #000; border-radius: 16px; overflow: hidden; }   /* alto reservado: el SVG llega después */
+.diagrama-cuerpo.una-vista { max-width: 200px; }
 .diagrama.compacto .diagrama-cuerpo { max-width: 230px; }
-.diagrama.compacto .diagrama-cuerpo.una-vista { max-width: 96px; }
-.diagrama-cuerpo.una-vista.con-selector { max-width: 250px; }
+.diagrama.compacto .diagrama-cuerpo.una-vista { max-width: 110px; border-radius: 12px; }
+.diagrama-cuerpo.una-vista.con-selector { max-width: 360px; }
 .diagrama > .segmentado { margin: 0 auto 12px; max-width: 320px; }
-.diagrama-cuerpo svg { width: 100%; height: auto; filter: drop-shadow(0 0 .5px var(--label-3)) drop-shadow(0 1.5px 2px rgb(0 0 0 / .16)); }
-.diagrama-cuerpo svg path { fill: var(--fill); stroke: var(--label-3); stroke-width: 3.4px; transition: fill var(--dur-3) linear; }
-.diagrama-cuerpo svg .decor path { fill-opacity: .45; stroke-opacity: .55; }
-.diagrama-cuerpo svg .musculos path { cursor: pointer; }
-.diagrama-cuerpo svg .musculos path:not([data-nivel]) { stroke-width: 2.6px; stroke-opacity: .8; }
-.diagrama-cuerpo svg path.capa { stroke: none; pointer-events: none; transition: opacity var(--dur-3) linear; }
-.diagrama-cuerpo svg path.capa[data-n="1"] { opacity: .35; }
-.diagrama-cuerpo svg path.capa[data-n="2"] { opacity: .6; }
-.diagrama-cuerpo svg path.capa[data-n="3"] { opacity: .85; }
-.diagrama-cuerpo svg.con-foco path[data-nivel]:not(.marcada), .diagrama-cuerpo svg.con-foco path.capa.apagada { opacity: .28; }
-.diagrama-cuerpo svg .costuras path { fill: none; stroke-dasharray: 3 3; stroke-opacity: .7; pointer-events: none; }
-/* Monocromo: un tono (acento) en 4 niveles; contorno del acento para el contraste 3:1 */
-.diagrama-cuerpo svg path[data-nivel], .leyenda-niveles i { fill: var(--accent); background: var(--accent); stroke: var(--accent-ink); stroke-width: 4.2px; }
-[data-nivel="1"] { fill-opacity: .22; --op: .22; }
-[data-nivel="2"] { fill-opacity: .45; --op: .45; }
-[data-nivel="3"] { fill-opacity: .7; --op: .7; }
+.diagrama-cuerpo svg { display: block; width: 100%; height: auto; }
+.diagrama-cuerpo svg .musculos path { fill: transparent; stroke: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* Monocromo: un tono (--mapa, igual en claro y oscuro) en 4 niveles, multiplicado sobre la imagen para conservar las fibras */
+.diagrama-cuerpo svg .musculos path[data-nivel] { fill: var(--mapa); stroke: var(--mapa); stroke-width: 1px; stroke-linejoin: round; vector-effect: non-scaling-stroke; mix-blend-mode: multiply; transition: fill-opacity var(--dur-3) linear; }
+.diagrama-cuerpo svg .sombra { fill: #000; fill-opacity: 0; stroke: none; pointer-events: none; transition: fill-opacity var(--dur-3) linear; }
+.diagrama-cuerpo svg .sombra.on { fill-opacity: .62; }
+.diagrama-cuerpo svg .musculos path.marcada { stroke: #fff; stroke-width: 2px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+[data-nivel="1"] { fill-opacity: .4; --op: .4; }
+[data-nivel="2"] { fill-opacity: .62; --op: .62; }
+[data-nivel="3"] { fill-opacity: .82; --op: .82; }
 [data-nivel="4"] { fill-opacity: 1; --op: 1; }
-.diagrama-cuerpo svg path.marcada { stroke: var(--label); stroke-width: 8px; }
 .leyenda-niveles { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 12px; margin-top: 10px; font-size: var(--f-caption1); color: var(--label-2); }
 .leyenda-niveles .nivel { display: inline-flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }
-.leyenda-niveles i { width: 14px; height: 14px; border-radius: 4px; background: color-mix(in srgb, var(--accent) calc(var(--op) * 100%), transparent); box-shadow: inset 0 0 0 1px var(--accent-ink); }
-.diagrama-info { text-align: center; font-size: var(--f-footnote); color: var(--label-2); margin-top: 8px; min-height: 1.4em; }
-.diagrama-info .resumen { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; background: var(--fill-2); border-radius: 10px; padding: 4px 6px 4px 12px; color: var(--label); min-height: 44px; }
+.leyenda-niveles i { width: 14px; height: 14px; border-radius: 4px; background: color-mix(in srgb, var(--mapa) calc(var(--op) * 100%), transparent); box-shadow: inset 0 0 0 1px var(--mapa); }
+.diagrama-info { display: flex; align-items: center; justify-content: center; text-align: center; font-size: var(--f-footnote); color: var(--label-2); margin-top: 8px; min-height: 56px; }   /* alto fijo: elegir una zona no mueve nada */
+.diagrama-info .resumen { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; background: var(--fill-2); border-radius: 10px; padding: 4px 6px 4px 12px; color: var(--label); min-height: 44px; }
 .diagrama-info .resumen b { font-weight: 600; }
 .diagrama-info .resumen .btn { min-height: 44px; flex: none; }
 .celda.enfocada { background: color-mix(in srgb, var(--accent) 14%, var(--fill-2)); }

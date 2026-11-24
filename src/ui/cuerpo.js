@@ -1,44 +1,36 @@
-// Diagrama corporal: assets/cuerpo-muscular.svg (geometría MIT de react-muscle-highlighter; ver assets/licencias,
-// generado con tools/generar-cuerpo.mjs; una región por trozo de músculo, ids «m-<músculo>-<lado>-<n>») en línea. Monocromo: un solo tono (el acento) con 4 niveles de intensidad según el valor de cada
-// grupo, contorno del acento en las zonas con datos (contraste ≥ 3:1 en claro y oscuro), con relieve y fibras encima (cuerpo-capas.js),
-// leyenda con los rangos, y al tocar una zona (o cerca de ella) se enfoca el grupo: el resto se atenúa y aparece su resumen.
+// Diagrama corporal: assets/cuerpo-muscular.svg (dos imágenes, frente y espalda, con una región tocable por trozo de músculo,
+// ids «m-<músculo>-<lado>-<n>»; lo genera tools/cuerpo/generar.py) en línea. Monocromo: un solo tono (--mapa, el mismo en claro y
+// oscuro) con 4 niveles de intensidad según el valor de cada grupo, teñido sobre la imagen para conservar las fibras. Al tocar una
+// zona (o cerca de ella) se enfoca el grupo: el resto se atenúa y aparece su resumen en un hueco de altura fija, sin mover la página.
 // El SVG se parsea una vez y cada diagrama es una copia. La alternativa textual es la lista de grupos que acompaña al
 // diagrama y la etiqueta, que nombra los grupos de más a menos.
-import { h } from "./dom.js";
+import { h, s as sv } from "./dom.js";
 import { seleccion } from "./haptica.js";
 import { segmentado } from "./controles.js";
-import { definirCapas, capasDe } from "./cuerpo-capas.js";
 
-let plantilla = null, instancias = 0, vistaElegida = "ambas";
+let plantilla = null, vistaElegida = "ambas";
 const cargar = () => (plantilla ||= fetch("assets/cuerpo-muscular.svg").then((r) => { if (!r.ok) throw new Error("sin diagrama"); return r.text(); }).then((txt) => {
   const t = document.createElement("template");
-  t.innerHTML = txt.replace(/<!--[\s\S]*?-->/g, "").replace(/ width="\d+" height="\d+"/, "");
+  t.innerHTML = txt.replace(/<!--[\s\S]*?-->/g, "");
   return t.content.firstElementChild;
 }));
-
-/** Copia de la plantilla con los ids de los recortes (clipPath) propios: con dos diagramas en el documento el segundo usaría los del primero. */
-function copiar(base, n) {
-  const svg = base.cloneNode(true);
-  for (const e of svg.querySelectorAll("[id^='cp']")) e.id = "c" + n + e.id;
-  for (const e of svg.querySelectorAll("[clip-path]")) e.setAttribute("clip-path", e.getAttribute("clip-path").replace("#", "#c" + n));
-  return svg;
-}
 
 /** ¿La región `id` (sin «m-») encaja con el patrón (admite «*» final como prefijo)? */
 export const encaja = (id, patron) => (patron.endsWith("*") ? id.startsWith(patron.slice(0, -1)) : id === patron);
 
 /** Vistas en las que se dibuja cada músculo: f = frontal, e = trasera (el SVG lleva las dos una al lado de la otra). */
 export const VISTA_MUSCULO = {
-  "pecho-clavicular": "f", "pecho-esternal": "f", serrato: "f", oblicuos: "f", "recto-abdominal": "f", biceps: "f", braquial: "f",
-  "deltoide-anterior": "f", "deltoide-lateral": "f", "recto-femoral": "f", vastos: "f",
-  aductores: "fe", "triceps-lateral-medial": "fe", "trapecio-superior": "fe", antebrazo: "fe", soleo: "fe", gemelos: "fe",
+  "pecho-clavicular": "f", "pecho-esternal": "f", serrato: "f", "recto-abdominal": "f", biceps: "f", braquial: "f",
+  "deltoide-anterior": "f", "recto-femoral": "f",
+  oblicuos: "fe", "deltoide-lateral": "fe", vastos: "fe", aductores: "fe", "triceps-lateral-medial": "fe", "trapecio-superior": "fe",
+  antebrazo: "fe", gemelos: "fe", "gluteo-medio": "fe",
   "deltoide-posterior": "e", manguito: "e", dorsal: "e", redondo: "e", "trapecio-medio": "e", romboides: "e", erectores: "e",
-  "triceps-largo": "e", "gluteo-mayor": "e", "gluteo-medio": "e", isquiotibiales: "e",
+  "triceps-largo": "e", "gluteo-mayor": "e", isquiotibiales: "e", soleo: "e",
 };
 const VISTAS = {
-  ambas: { caja: "38 84 1376 1272", ar: 1376 / 1272 },
-  frente: { caja: "34 84 660 1272", ar: 660 / 1272 },
-  espalda: { caja: "754 84 660 1272", ar: 660 / 1272 },
+  ambas: { caja: "0 0 937 1050", ar: 937 / 1050 },
+  frente: { caja: "0 0 465 1050", ar: 465 / 1050 },
+  espalda: { caja: "465 0 472 1050", ar: 472 / 1050 },
 };
 /** Vista que muestra todos los músculos dados con el menor recorte: «frente», «espalda» o «ambas». */
 export function vistaPara(musculos) {
@@ -67,7 +59,7 @@ const OPCIONES_VISTA = [{ valor: "ambas", texto: "Ambas" }, { valor: "frente", t
 const DIST_CERCA = [0, 7, 14];   // px alrededor del dedo donde se busca una zona si se toca justo al lado
 
 /**
- * grupos: [{ nombre, tokens: ["chest-*", ...], valor, textura?: "fibras"|"puntos"|"ninguna" }]. unidad(v) → «13 series».
+ * grupos: [{ nombre, tokens: ["pecho-*", ...], valor }]. unidad(v) → «13 series». Un grupo secundario es solo un valor menor: se tiñe en un nivel más bajo.
  * Opciones: vista inicial; `selector` añade Ambas/Frente/Espalda (se recuerda entre repintados); `resumen(g)` → nodo extra en
  * la ficha del grupo enfocado; `alElegir(g|null)` avisa a la lista que acompaña al diagrama.
  * Devuelve el contenedor (el SVG se carga en segundo plano) con `.foco(nombre|null)` para enfocar un grupo desde fuera.
@@ -80,13 +72,16 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
   const info = h("div", { class: "diagrama-info", "aria-live": "polite" }, sinDatos);
   let vistaAct = selector ? vistaElegida : vista, svg = null, elegido = null;
   const el = h("div", { role: "img", "aria-label": texto });
-  const zonaDe = new Map(), capasDe_ = new Map();
+  const zonaDe = new Map(), sombras = new Map();
 
   function pintarVista() {
     const V = VISTAS[vistaAct] || VISTAS.ambas;
     el.className = "diagrama-cuerpo" + (mini ? " compacto" : "") + (V.ar < 1 ? " una-vista" : "") + (selector ? " con-selector" : "");
-    el.style.aspectRatio = String(V.ar);
-    if (svg) svg.setAttribute("viewBox", V.caja);
+    el.style.aspectRatio = String(selector ? VISTAS.ambas.ar : V.ar);   // con selector el alto no cambia al cambiar de cara: nada se mueve
+    if (svg) {
+      svg.setAttribute("viewBox", V.caja);
+      if (selector) svg.style.cssText = "height:100%;width:auto;margin:0 auto;aspect-ratio:" + V.ar;   // una cara: más estrecha, centrada y a la misma altura
+    }
   }
   pintarVista();
   const ponerVista = (v) => { vistaAct = v; if (selector) vistaElegida = v; pintarVista(); };
@@ -103,7 +98,7 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
     if (svg) {
       svg.classList.toggle("con-foco", !!g);
       for (const [q, x] of zonaDe) q.classList.toggle("marcada", !!g && x === g);
-      for (const [x, cs] of capasDe_) for (const c of cs) c.classList.toggle("apagada", !!g && x !== g);
+      for (const [q, c] of sombras) c.classList.toggle("on", !!g && zonaDe.get(q) !== g);
       if (g && selector) {
         const caras = new Set([...zonaDe].filter(([, x]) => x === g).map(([q]) => q.dataset.v));
         const v = caras.size === 1 ? (caras.has("f") ? "frente" : "espalda") : caras.size > 1 ? "ambas" : vistaAct;
@@ -124,20 +119,23 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
   };
 
   cargar().then((base) => {
-    const n = ++instancias;
-    svg = copiar(base, n);
+    svg = base.cloneNode(true);
     svg.removeAttribute("aria-label"); svg.setAttribute("aria-hidden", "true");
     el.replaceChildren(svg);
     pintarVista();
-    const pref = definirCapas(svg, n);
-    for (const p of svg.querySelectorAll("path[id^='m-']")) {
+    const capa = svg.querySelector(".musculos");
+    for (const p of [...capa.querySelectorAll("path[id^='m-']")]) {
       const id = p.id.slice(2);
+      const so = p.cloneNode(false);   // capa oscura que atenúa lo que no es el grupo enfocado
+      so.removeAttribute("id"); so.removeAttribute("data-v"); so.setAttribute("class", "sombra");
+      sombras.set(p, so);
       const g = grupos.find((x) => x.tokens.some((t) => encaja(id, t)));
       if (!g) continue;
       zonaDe.set(p, g);
       const nv = nivelDe(g.valor, max);
-      if (nv) { p.setAttribute("data-nivel", String(nv)); const l = capasDe_.get(g) || []; capasDe_.set(g, l.concat(capasDe(p, pref, base, g.textura))); }
+      if (nv) p.setAttribute("data-nivel", String(nv));
     }
+    capa.after(sv("g", { class: "sombras", "aria-hidden": "true" }, [...sombras.values()]));
     svg.addEventListener("click", (ev) => {
       const g = cercano(ev);
       seleccion();

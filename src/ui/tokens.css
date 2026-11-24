@@ -143,6 +143,16 @@
 :root[data-theme="dark"][data-accent="naranja"]  { --accent: #A66706; --accent-ink: #FF9F0A; }
 :root[data-theme="dark"][data-accent="verde"]    { --accent: #1F8839; --accent-ink: #30D158; }
 :root[data-theme="dark"][data-accent="grafito"]  { --accent: #757579; --accent-ink: #A5A5AA; }
+/* Color del mapa corporal y de su leyenda: el acento del tema claro también en oscuro, para que la escala de menos a más sea la misma */
+:root { --mapa: var(--accent); }
+:root[data-theme="dark"] { --mapa: #0071ED; }
+:root[data-theme="dark"][data-accent="indigo"]  { --mapa: #5856D6; }
+:root[data-theme="dark"][data-accent="morado"]  { --mapa: #A64ED3; }
+:root[data-theme="dark"][data-accent="rosa"]    { --mapa: #E0284B; }
+:root[data-theme="dark"][data-accent="rojo"]    { --mapa: #DE332A; }
+:root[data-theme="dark"][data-accent="naranja"] { --mapa: #AD6500; }
+:root[data-theme="dark"][data-accent="verde"]   { --mapa: #23873D; }
+:root[data-theme="dark"][data-accent="grafito"] { --mapa: #76767A; }
 
 @media (prefers-reduced-motion: reduce) {
   :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; --t-fast: 0ms; --spring: linear; --muelle: linear; }

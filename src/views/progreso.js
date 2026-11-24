@@ -190,7 +190,7 @@ function porMusculo(A, app, periodo, cambiar, modo, cambiarModo) {
   }
   const filasEl = new Map();
   const mapa = diagramaCuerpo(filas.map((f) => ({ nombre: f.nombre, tokens: [f.id + "-*"], valor: f.v })),
-    { etiqueta: "Series efectivas por músculo", unidad: txt, selector: true, alElegir: (g, desdeMapa) => marcarFila(filasEl, g && g.nombre, desdeMapa) });
+    { etiqueta: "Series efectivas por músculo", unidad: txt, selector: true, alElegir: (g) => marcarFila(filasEl, g && g.nombre) });
   const enfocar = (nombre) => { mapa.foco(nombre); verMapa(mapa); };
   return [...cab, asignar,
     seccion({ pie: "Series efectivas por músculo: principal = 1 serie, secundario = " + n1(V.fraccion) + ". Toca una zona o un músculo de la lista para enfocarlo." },
@@ -211,7 +211,7 @@ function musculos(A, app, periodo, cambiar, modo, cambiarModo) {
   const diagrama = diagramaCuerpo(filas.filter((f) => f.g.regiones && f.g.regiones.length).map((f) => ({ nombre: f.nombre, tokens: f.g.regiones, valor: f.ser })),
     { etiqueta: "Series por grupo muscular", unidad: (v) => plural(v, "serie", "series"), selector: true,
       resumen: (g) => h("button", { class: "btn texto", "aria-label": "Abrir " + g.nombre, onClick: () => app.nav.ir("grupo/" + encodeURIComponent(g.nombre)) }, "Abrir ›"),
-      alElegir: (g, desdeMapa) => marcarFila(filasEl, g && g.nombre, desdeMapa) });
+      alElegir: (g) => marcarFila(filasEl, g && g.nombre) });
   const semanas = A.semanas.slice(-8);
   const vpg = A.volumenPorGrupo;
   const datos = semanas.map((s, i) => ({ etiqueta: s.etiqueta, partes: vpg.map((g) => ({ valor: g.semanas[g.semanas.length - semanas.length + i] || 0, color: colorGrupo(grupos, g.grupo) })) }));
