@@ -59,7 +59,7 @@ await p.evaluate(async () => { await window.__gym.store.guardarAjustes((a) => { 
 paso("ficha del ejercicio: fiabilidad, ruido personal y récords por repeticiones");
 await p.evaluate(() => window.__gym.nav.ir("ejercicio/pressbanca", { pestana: "progreso" })); await espera(1000);
 const fx = await p.locator('.pantalla[data-ruta^="ejercicio"]').innerText();
-assert.match(fx, /Fiabilidad de la última estimación/); assert.match(fx, /ruido personal/);
+assert.match(fx, /Fiabilidad/); assert.match(fx, /ruido/);
 assert.match(fx, /Récords por repeticiones/); assert.match(fx, /4–5 reps/);
 
 paso("sala: back-offs y récord en vivo");

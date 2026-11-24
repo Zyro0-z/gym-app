@@ -115,7 +115,7 @@ export function graficaBarras({ datos, alto = 180, formato = fmtEje, detalle = n
     const y = (v) => ARRIBA + (alto - EJE_X - ARRIBA) * (1 - v / top);
     if (banda) svg.append(s("rect", { class: "banda", x: 0, width: ancho - EJE_Y + 4, y: y(banda[1]), height: Math.max(1, y(banda[0]) - y(banda[1])), rx: 4 }));
     rejilla(svg, ticks, y, ancho);
-    const zona = ancho - EJE_Y - 4, n = datos.length || 1, hueco = zona / n, bw = Math.max(4, Math.min(28, hueco * 0.62));
+    const zona = ancho - EJE_Y - 4, n = datos.length || 1, hueco = zona / n, bw = Math.max(4, Math.min(22, hueco * 0.55));
     const xs = [], ys = [];
     const cadaEt = Math.ceil(n / Math.max(1, Math.floor(zona / 48)));
     let ultEt = -99;
@@ -182,7 +182,7 @@ export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null
     }
     const camino = (ps) => ps.map((p, i) => (i ? "L" : "M") + x(p.x).toFixed(1) + " " + y(p.y).toFixed(1)).join("");
     const linea = camino(puntos);
-    if (area && puntos.length > 1) {
+    if (area && !banda && puntos.length > 1) {
       const id = "gl" + ++nGrad;
       svg.append(s("defs", null, s("linearGradient", { id, x1: 0, y1: 0, x2: 0, y2: 1 },
         s("stop", { offset: "0", "stop-color": "var(--accent)", "stop-opacity": ".28" }),
@@ -191,9 +191,11 @@ export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null
     }
     if (secundaria && secundaria.length > 1) svg.append(s("path", { class: "linea secundaria", d: camino(secundaria) }));
     if (puntos.length > 1) svg.append(s("path", { class: "linea", d: linea }));
-    if (conPuntos || puntos.length === 1) for (const p of puntos) svg.append(s("circle", { class: "punto", cx: x(p.x), cy: y(p.y), r: puntos.length > 40 ? 2 : 3 }));
-    el.appendChild(svg);
     const iMax = puntos.length > 2 ? puntos.reduce((m, p, i) => (p.y > puntos[m].y ? i : m), 0) : -1;
+    // con muchos datos un punto por dato es ruido: solo el último y el máximo
+    const aPintar = conPuntos || puntos.length === 1 ? (puntos.length > 12 ? puntos.filter((_, i) => i === puntos.length - 1 || i === iMax) : puntos) : [];
+    for (const p of aPintar) svg.append(s("circle", { class: "punto", cx: x(p.x), cy: y(p.y), r: 3.5 }));
+    el.appendChild(svg);
     seleccionable(el, svg, puntos.map((p) => x(p.x)), puntos.map((p) => y(p.y)), alto,
       (i) => ({ valor: formato(puntos[i].y), detalle: (puntos[i].detalle || "") + (i === iMax ? " · máximo del periodo" : "") }), ancho, iMax);
   }, etiqueta, describirSerie(puntos.map((p) => p.y), formato, (i) => puntos[i].detalle || (ejeX ? ejeX(puntos[i].x) : "")));
@@ -207,6 +209,8 @@ export function sparkline(valores, { ancho = 64, alto = 22 } = {}) {
   const lo = Math.min(...v), hi = Math.max(...v);
   const d = v.map((n, i) => (i ? "L" : "M") + ((i / (v.length - 1)) * (ancho - 4) + 2).toFixed(1) + " " + (alto - 2 - ((n - lo) / (hi - lo || 1)) * (alto - 4)).toFixed(1)).join("");
   svg.append(s("path", { d }));
+  const ult = v[v.length - 1];
+  svg.append(s("circle", { class: "fin", cx: ancho - 2, cy: (alto - 2 - ((ult - lo) / (hi - lo || 1)) * (alto - 4)).toFixed(1), r: 2.2 }));
   return svg;
 }
 

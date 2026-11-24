@@ -193,8 +193,8 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .grafica .eje { fill: var(--label-2); font-size: 11.5px; font-variant-numeric: tabular-nums; letter-spacing: 0; }
 .grafica .rejilla { stroke: var(--separator); stroke-width: .5; }
 .grafica .rejilla.base { stroke: var(--label-3); stroke-width: .75; }
-.grafica .barra { fill: var(--accent); }
-.grafica .barra.activa { fill: var(--accent-ink); }
+.grafica .barra { fill: color-mix(in srgb, var(--accent) 90%, transparent); }
+.grafica .barra.activa { fill: var(--accent); }
 .grafica .linea { fill: none; stroke: var(--accent); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
 .grafica .linea.secundaria { stroke: var(--label-3); stroke-width: 1.5; stroke-dasharray: 4 4; }
 .grafica .punto { fill: var(--accent); }
@@ -212,6 +212,7 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .grafica-vacia { display: grid; place-items: center; text-align: center; margin: 0; }
 .resumen-grafica .cifra { font-size: var(--f-title1); font-weight: 700; line-height: 1.214; }
 .sparkline { display: inline-block; vertical-align: middle; }
+.sparkline .fin { fill: var(--accent); }
 .sparkline path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ── anillo ── */
