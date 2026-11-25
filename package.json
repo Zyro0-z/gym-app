@@ -12,7 +12,8 @@
     "serve": "node tests/serve.mjs 8765",
     "bench": "node tests/bench/analisis.bench.mjs",
     "a11y": "node tools/auditoria-a11y.mjs chromium",
-    "demo": "node tools/demo.mjs gym-demo.json"
+    "demo": "node tools/demo.mjs gym-demo.json",
+    "demo:completo": "node tools/demo.mjs --completo gym-seed-completa.json"
   },
   "devDependencies": {
     "playwright": "1.65.1"
