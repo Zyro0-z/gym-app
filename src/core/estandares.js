@@ -25,3 +25,17 @@ export function leerTablas(texto) {
 
 /** Fusiona tablas nuevas sobre las existentes (la misma clave se sustituye). */
 export function fusionarTablas(actuales, nuevas) { return Object.assign({}, actuales || {}, nuevas); }
+
+/**
+ * Resuelve en bloque los avisos de liga de «Calidad de los datos» para los ejercicios `nombres`:
+ * «revisar» da por bueno el factor actual (el 1 por defecto: tu ejercicio es el de la tabla); «sin» los marca sin estándar.
+ * Devuelve un catálogo nuevo; no toca los demás ejercicios.
+ */
+export function resolverLigas(catalogo, nombres, modo) {
+  const ns = new Set(nombres);
+  return catalogo.map((c) => {
+    if (!ns.has(c.nombre)) return c;
+    if (modo === "sin") return Object.assign({}, c, { estandar: { sin: true } });
+    return c.estandar && !c.estandar.sin ? Object.assign({}, c, { estandar: Object.assign({}, c.estandar, { revisado: true }) }) : c;
+  });
+}
