@@ -5,7 +5,8 @@ import { fmt } from "./formato.js";
 import { MAX_DURACION_MIN, MAX_MIN_POR_SERIE, TOLERANCIA_MIN, REPS_UMBRAL_FIABILIDAD_1RM } from "./constantes.js";
 
 /** 1RM estimado (Epley; con 1 repetición, el propio peso). */
-export const epley = (w, r) => (w <= 0 || r <= 0 ? 0 : r === 1 ? w : w * (1 + r / 30));
+/** 1RM de Epley. Con 1 repetición es el propio peso; entre 1 y 2 (RIR a medios puntos) se interpola para que no haya salto. */
+export const epley = (w, r) => (w <= 0 || r <= 0 ? 0 : r <= 1 ? w : r < 2 ? w * (1 + (r - 1) / 15) : w * (1 + r / 30));
 export const pocoFiable = (reps) => Number(reps) > REPS_UMBRAL_FIABILIDAD_1RM;
 
 const CUENTA = { normal: true, fallo: true };

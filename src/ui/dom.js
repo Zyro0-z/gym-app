@@ -9,6 +9,7 @@ function aplicar(el, props) {
   if (!props) return el;
   for (const k in props) {
     const v = props[k];
+    if (v === false && (k === "spellcheck" || k === "draggable")) { el.setAttribute(k, "false"); continue; }   // atributos enumerados: «false» es un valor, no «sin atributo»
     if (v === undefined || v === null || v === false) continue;
     if (k === "class") el.setAttribute("class", Array.isArray(v) ? v.filter(Boolean).join(" ") : v);
     else if (k === "style" && typeof v === "object") { for (const p in v) if (v[p] !== null && v[p] !== undefined) { if (p.startsWith("--")) el.style.setProperty(p, v[p]); else el.style[p] = v[p]; } }

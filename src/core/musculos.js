@@ -64,6 +64,8 @@ export function baseDe(nombre) {
   const k = clave(nombre);
   if (POR_ID.has(k)) return POR_ID.get(k);
   if (ALIAS[k]) return POR_ID.get(canon(ALIAS[k])) || null;
+  const entre = (String(nombre).match(/\([^)]*\)/g) || []).join(" ");
+  if (/asist/i.test(canon(entre))) return null;   // «Dominadas supinas (asistidas)» no es «Dominadas supinas»: la carga se resta, no se suma
   const sinParentesis = clave(String(nombre).replace(/\([^)]*\)/g, ""));
   return sinParentesis !== k && POR_ID.has(sinParentesis) ? POR_ID.get(sinParentesis) : null;
 }

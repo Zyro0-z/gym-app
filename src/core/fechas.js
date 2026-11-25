@@ -37,10 +37,10 @@ export function menosMeses(iso, n) {
   return y + "-" + String(m).padStart(2, "0") + "-" + String(Math.min(d, ultimo)).padStart(2, "0");
 }
 
-/** Último día del mes de la fecha. */
+/** Último día del mes de la fecha («AAAA-MM-DD») o del mes («AAAA-MM»). */
 export const finDeMes = (iso) => {
   const y = +iso.slice(0, 4), m = +iso.slice(5, 7);
-  return iso.slice(0, 8) + String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, "0");
+  return iso.slice(0, 7) + "-" + String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, "0");
 };
 
 /** ¿Es una fecha ISO válida y real? Devuelve la fecha o null. */

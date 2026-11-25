@@ -90,8 +90,10 @@ La propuesta de descarga (`src/core/descarga.js`) aparece en Hoy y en esa pantal
 2. al comparar las **2 últimas semanas completas** con las **2 anteriores** (sin contar días de
    descarga) aparece alguna señal:
    - el mejor e1RM baja un **3 %** o más en al menos **2** ejercicios hechos en los dos tramos;
-   - el RPE medio sube **1** punto o más (con RPE anotado en los dos tramos);
-   - la media de sueño queda por debajo de **7 h** (con al menos 2 anotaciones).
+   - el RPE medio sube **1** punto o más (con al menos 6 series con RPE en cada tramo);
+   - la media de sueño queda por debajo de **7 h** (con al menos 2 anotaciones) y, si en las 2 semanas
+     anteriores también hay anotaciones, además baja 0,75 h o más respecto a ellas: dormir poco de forma
+     habitual no es una señal, bajar de tu normal sí.
 
 Los números en negrita se cambian en la propia pantalla. «Programar descarga» crea un bloque de
 descarga de lunes a domingo (esta semana si hoy es lunes; si no, la siguiente); «Ahora no» la calla

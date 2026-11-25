@@ -30,3 +30,10 @@ test("sin series suficientes en la sesión actual: null", () => {
   assert.equal(derivaEjercicio([ses(8, 8, 8), ses(8, 8)]), null);
   assert.equal(derivaEjercicio([]), null);
 });
+
+test("si sueles subir de serie a serie, el umbral no es negativo y una caída pequeña no es alarma", () => {
+  const sube = [ses(8, 8, 9), ses(8, 9, 9), ses(8, 8, 9), ses(8, 9, 10), ses(8, 8, 9)];
+  const d = derivaEjercicio([...sube, ses(8, 8, 8)]);
+  assert.ok(d.umbral >= 3, "umbral " + d.umbral);
+  assert.equal(d.alta, false);
+});

@@ -6,6 +6,7 @@ import { e1rmAjustado } from "./rpe.js";
 const mediana = (v) => { const s = v.slice().sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 const red = (x) => Math.round(x * 10) / 10;
 export const MIN_SERIES = 3, MIN_SESIONES_PERSONAL = 4, UMBRAL_GENERICO_PCT = 8;
+const MAD_A_SD = 1.4826, Z_DERIVA = 2;   // el MAD de una distribución normal es σ/1,4826; se avisa a partir de 2σ por encima de lo habitual
 
 /** Caída % del e1RM de la 1.ª a la última serie (positiva = caída). null con menos de 3 series con peso. */
 export function caidaSesion(series) {
@@ -26,6 +27,6 @@ export function derivaEjercicio(hist) {
   if (previas.length < MIN_SESIONES_PERSONAL)
     return { caida, personal: null, umbral: UMBRAL_GENERICO_PCT, alta: caida >= UMBRAL_GENERICO_PCT, generica: true };
   const med = mediana(previas), mad = mediana(previas.map((x) => Math.abs(x - med)));
-  const umbral = red(med + 1.5 * Math.max(mad, 1));
+  const umbral = red(Math.max(med, 0) + Z_DERIVA * MAD_A_SD * Math.max(mad, 1));   // nunca por debajo de 0: si sueles subir de serie a serie, una caída pequeña no es alarma
   return { caida, personal: { mediana: red(med), mad: red(mad), n: previas.length }, umbral, alta: caida > umbral, generica: false };
 }

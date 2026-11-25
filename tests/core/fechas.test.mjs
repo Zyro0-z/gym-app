@@ -41,3 +41,9 @@ test("nombres", () => {
   assert.equal(levenshtein("prensainclinda", "prensainclinada", 2), 1);
   assert.equal(levenshtein("abc", "xyzw", 2), 3);
 });
+
+test("finDeMes acepta fecha completa y mes «AAAA-MM»", () => {
+  assert.equal(finDeMes("2026-10-05"), "2026-10-31");
+  assert.equal(finDeMes("2026-10"), "2026-10-31");
+  assert.equal(finDeMes("2028-02"), "2028-02-29");
+});

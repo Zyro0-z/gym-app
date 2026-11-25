@@ -20,3 +20,11 @@ test("sin emojis", () => {
   const malos = todos.flatMap((f) => readFileSync(f, "utf8").split("\n").map((l, i) => [f, i + 1, l])).filter(([, , l]) => EMOJI.test(l));
   assert.deepEqual(malos.map(([f, n]) => f.slice(RAIZ.length) + ":" + n), []);
 });
+
+test("minutos redondea antes de partir en horas", async () => {
+  const { minutos } = await import("../../src/ui/textos.js");
+  assert.equal(minutos(119.6), "2 h 00 min");
+  assert.equal(minutos(59.6), "1 h 00 min");
+  assert.equal(minutos(75), "1 h 15 min");
+  assert.equal(minutos(44.4), "44 min");
+});

@@ -83,3 +83,11 @@ test("autorregulación: propone peso solo si el e1RM de hoy se desvía ≥ 5 %",
   assert.equal(autorregulacion({ peso: 0, reps: 5, rpe: 8 }, e1, 8), null, "sin peso");
   assert.equal(autorregulacion({ peso: 100, reps: 5, rpe: 9 }, 0, 8), null, "sin e1RM previo");
 });
+
+test("epley no da saltos entre 1 y 2 repeticiones", async () => {
+  const { epley } = await import("../../src/core/sesiones.js");
+  assert.equal(epley(100, 1), 100);
+  assert.ok(Math.abs(epley(100, 1.5) - 103.333333) < 1e-4);
+  assert.ok(Math.abs(epley(100, 2) - 106.666667) < 1e-4);
+  assert.ok(epley(100, 1.999) < epley(100, 2) && epley(100, 1.001) > 100);
+});

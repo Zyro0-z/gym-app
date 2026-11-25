@@ -97,13 +97,13 @@ export function instalar() {
   }
 
   function vista({ capa = null, rol = null, toast = false, descanso = false, estructura = true } = {}) {
-    const out = [], vistos = new Set();
+    const out = [], vistosTexto = new Set(), vistosGrafico = new Set(), vistosTactil = new Set();   // un set por pasada: un botón con texto también debe pasar la de objetivo táctil
     porTramos(() => {
       // Contraste de texto
       for (const el of document.querySelectorAll("body *")) {
-        if (vistos.has(el) || !conTexto(el) || el.closest("svg.insignia, .insignia, [disabled], [aria-disabled=true], option")) continue;
+        if (vistosTexto.has(el) || !conTexto(el) || el.closest("svg.insignia, .insignia, [disabled], [aria-disabled=true], option")) continue;
         if (!visible(el) || !encima(el)) continue;
-        vistos.add(el);
+        vistosTexto.add(el);
         const cs = getComputedStyle(el), esSvg = el instanceof SVGElement;
         const fg = leer(esSvg ? cs.fill : cs.color), bg = fondo(esSvg ? el.closest("svg").parentElement : el);
         if (!fg || !bg) continue;
@@ -115,8 +115,8 @@ export function instalar() {
       }
       // Contraste de gráficos y controles (3:1)
       for (const el of document.querySelectorAll(".grafica .barra, .grafica .linea:not(.secundaria), .grafica .punto, .diagrama-cuerpo path[data-nivel], .leyenda-niveles i, .anillo circle + circle, .interruptor .pista, .serie .check, .dia-sem .marca, .barrita > i")) {
-        if (vistos.has(el) || !visible(el) || !encima(el)) continue;
-        vistos.add(el);
+        if (vistosGrafico.has(el) || !visible(el) || !encima(el)) continue;
+        vistosGrafico.add(el);
         const cs = getComputedStyle(el);
         const bg = fondo(el instanceof SVGElement ? el.closest("svg").parentElement : el.parentElement);
         if (!bg) continue;
@@ -139,8 +139,8 @@ export function instalar() {
       for (const el of document.querySelectorAll(INTERACTIVOS)) {
         // Un control transparente (checkbox de un interruptor) también es zona táctil si su contenedor se ve
         const transparente = getComputedStyle(el).opacity === "0" && el.parentElement && visible(el.parentElement);
-        if (vistos.has(el) || el.disabled || !(visible(el) || transparente) || !encima(el)) continue;
-        vistos.add(el);
+        if (vistosTactil.has(el) || el.disabled || !(visible(el) || transparente) || !encima(el)) continue;
+        vistosTactil.add(el);
         if (el.tagName === "A" && el.parentElement && getComputedStyle(el).display === "inline" && conTexto(el.parentElement)) continue;   // enlace dentro de un texto
         const [w, hh] = zonaTactil(el);
         if (w < 43.5 || hh < 43.5) out.push({ tipo: "objetivo táctil < 44×44", donde: desc(el), texto: Math.round(w) + "×" + Math.round(hh) });

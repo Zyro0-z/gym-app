@@ -6,6 +6,7 @@ import { esRpe } from "../../core/rpe.js";
 import { molestiaReciente, nombreArticulacion } from "../../core/molestias.js";
 import { e1rmReciente, autorregulacion } from "../../core/prescripcion.js";
 import { E } from "./estado.js";
+import { esTop } from "./herramientas.js";
 
 /** «Molestia reciente · Hombro der. · nivel 3, hace 5 días  Cambiar ›»: solo con nivel ≥ 3 en los últimos 21 días. `cambiar` abre el selector de equivalentes. */
 export function avisoMolestia(e, cambiar) {
@@ -21,7 +22,7 @@ export function avisoMolestia(e, cambiar) {
 
 /** Chip con el peso para el RPE objetivo según el e1RM de hoy, tras la primera serie de trabajo hecha con RPE. `aplicar(a)` rellena las series vacías. */
 export function chipAutorregulacion(e, paso, aplicar) {
-  if (E.M.modo !== "entreno" || !esRpe(e.rpeObjetivo)) return null;
+  if (E.M.modo !== "entreno" || !esRpe(e.rpeObjetivo) || esTop(e.ejercicioId)) return null;
   const s1 = e.series.find((s) => s.tipo !== "calentamiento");
   if (!s1 || !s1.hecha || !esRpe(s1.rpe)) return null;
   if (!e.series.some((s) => !s.hecha && s.tipo !== "calentamiento" && (s.peso === "" || s.peso == null))) return null;

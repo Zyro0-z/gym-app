@@ -5,7 +5,7 @@
 .seccion.junta { margin-bottom: 20px; }
 .seccion-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 16px 7px; color: var(--label-2); font-size: var(--f-footnote); line-height: 1.385; }
 .seccion-cab.grande { color: var(--label); font-size: var(--f-title3); font-weight: 600; line-height: 1.25; padding: 0 0 8px; letter-spacing: -.022em; }
-.seccion-cab .accion { color: var(--accent-ink); font-size: var(--f-subhead); min-height: 32px; display: flex; align-items: center; }
+.seccion-cab .accion { color: var(--accent-ink); font-size: var(--f-subhead); min-height: 44px; margin-block: -6px; display: flex; align-items: center; }
 .seccion-pie { padding: 7px 16px 0; color: var(--label-2); font-size: var(--f-footnote); line-height: 1.385; }
 .lista { background: var(--cell); border-radius: var(--r-cell); overflow: hidden; }
 
@@ -92,11 +92,11 @@
   position: absolute; top: 2px; bottom: 2px; left: 2px; border-radius: 7px; background: var(--seg-pill);
   box-shadow: var(--shadow-pill), 0 0 0 .5px rgba(0,0,0,.04); z-index: -1; transition: transform var(--t-fast) var(--spring);
 }
-.segmentado button { position: relative; font-size: min(var(--f-footnote), 15px); font-weight: 500; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+.segmentado button { position: relative; font-size: min(var(--f-footnote), 15px); font-weight: 500; color: var(--label); white-space: nowrap; overflow: clip; overflow-clip-margin: 7px; text-overflow: ellipsis; padding: 0 6px; }   /* clip con margen: «hidden» recortaba la zona táctil ampliada */
 .segmentado button[aria-checked="true"] { font-weight: 600; }
 .segmentado button + button::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--separator); transition: opacity var(--dur-2); }
 .segmentado button[aria-checked="true"]::before, .segmentado button[aria-checked="true"] + button::before { opacity: 0; }
-.segmentado button::after { content: ""; position: absolute; inset: -5px 0; }
+.segmentado button::after { content: ""; position: absolute; inset: -7px 0; }
 
 /* ── stepper ── */
 .stepper { display: inline-flex; align-items: center; background: var(--fill-2); border-radius: 9px; height: 34px; flex: none; }
@@ -244,6 +244,7 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .calor .dia.futuro { background: none; color: var(--label-2); }
 .calor .dia.fuera { visibility: hidden; }
 .calor button.dia:active { opacity: .6; }
+.calor button.dia::before { content: ""; position: absolute; inset: -2px; }
 .calor-cab { display: flex; align-items: center; justify-content: space-between; margin: -6px -10px 8px; }
 .calor-cab .mes { font-size: var(--f-headline); font-weight: 600; }
 
@@ -260,7 +261,7 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .diagrama-cuerpo svg .musculos path[data-nivel] { fill: var(--mapa); stroke: var(--mapa); stroke-width: 1px; stroke-linejoin: round; vector-effect: non-scaling-stroke; mix-blend-mode: multiply; transition: fill-opacity var(--dur-3) linear; }
 .diagrama-cuerpo svg .sombra { fill: #000; fill-opacity: 0; stroke: none; pointer-events: none; transition: fill-opacity var(--dur-3) linear; }
 .diagrama-cuerpo svg .sombra.on { fill-opacity: .62; }
-.diagrama-cuerpo svg .musculos path.marcada { stroke: #fff; stroke-width: 2px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.diagrama-cuerpo svg .sombra.marca { stroke: #fff; stroke-width: 2px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }   /* el contorno va en la capa sin multiply: en blanco sobre multiply no se vería */
 [data-nivel="1"] { fill-opacity: .4; --op: .4; }
 [data-nivel="2"] { fill-opacity: .62; --op: .62; }
 [data-nivel="3"] { fill-opacity: .82; --op: .82; }
@@ -349,7 +350,7 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .serie.error { animation: temblor 300ms cubic-bezier(.36, .07, .19, .97); }
 @keyframes temblor { 20% { transform: translateX(-6px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
 .num-serie { height: 32px; border-radius: 8px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--label); background: var(--fill-2); position: relative; }
-.num-serie::after { content: ""; position: absolute; inset: -6px -4px; }
+.num-serie::after { content: ""; position: absolute; inset: -6px -5px; }
 .num-serie.tipo-calentamiento { color: var(--warn-ink); }
 .num-serie.tipo-fallo { color: var(--bad-ink); }
 .num-serie.tipo-descendente { color: var(--accent-ink); }

@@ -98,7 +98,7 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
     if (svg) {
       svg.classList.toggle("con-foco", !!g);
       for (const [q, x] of zonaDe) q.classList.toggle("marcada", !!g && x === g);
-      for (const [q, c] of sombras) c.classList.toggle("on", !!g && zonaDe.get(q) !== g);
+      for (const [q, c] of sombras) { const mia = !!g && zonaDe.get(q) === g; c.classList.toggle("on", !!g && !mia); c.classList.toggle("marca", mia); }
     }
     pintarInfo();
     if (alElegir) alElegir(g, usuario);

@@ -31,7 +31,7 @@ funcionando). Una vez, antes de desplegar:
 npx wrangler kv namespace create COPIAS
 ```
 
-Copia el `id` que imprime en `wrangler.toml` (`[[kv_namespaces]]`, en lugar de `PEGA_AQUI_EL_ID_DEL_KV`).
+Descomenta el bloque `[[kv_namespaces]]` de `wrangler.toml` y pega el `id` que imprime en lugar de `PEGA_AQUI_EL_ID_DEL_KV`.
 
 Cabe en el plan gratuito: KV permite 100 000 lecturas y 1 000 escrituras al día y 1 GB (valores de
 hasta 25 MiB; aquí el máximo es 8 MB). Cada petición hace una lectura (comprobar el token) y, al subir,

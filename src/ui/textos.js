@@ -24,6 +24,6 @@ export const capital = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);
 
 export const kg = (v) => kgCorto(Math.round(v * 10) / 10) + " kg";
 export const kgTotal = (v) => fmt(Math.round(v)) + " kg";
-export const minutos = (m) => (m >= 60 ? Math.floor(m / 60) + " h " + String(Math.round(m % 60)).padStart(2, "0") + " min" : Math.round(m) + " min");
+export const minutos = (m) => { const t = Math.round(m); return t >= 60 ? Math.floor(t / 60) + " h " + String(t % 60).padStart(2, "0") + " min" : t + " min"; };
 /** 1:05 · 12:30 (segundos → m:ss) */
 export const reloj = (seg) => { seg = Math.max(0, Math.round(seg)); const h = Math.floor(seg / 3600), m = Math.floor((seg % 3600) / 60), s = seg % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(s).padStart(2, "0"); };

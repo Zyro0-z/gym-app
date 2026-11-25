@@ -4,7 +4,6 @@
 // «meso-<id>») para que el análisis y la propuesta de descarga la respeten.
 import { fechaISO, lunesDe, masDias, numDia } from "./fechas.js";
 import { filasSemanas, cambioE1rm } from "./fatiga.js";
-import { media } from "./estadistica.js";
 
 export const SEMANAS_MIN_MESO = 2, SEMANAS_MAX_MESO = 16;
 export const idBloqueDe = (id) => "meso-" + id;
@@ -58,8 +57,9 @@ export function resumenMesociclo(A, m) {
   const lunes = lunesDeMeso(m), hoyLunes = lunesDe(A.hoy);
   const hechas = lunes.filter((w) => w <= hoyLunes);
   const filas = filasSemanas(A, hechas);
-  const conSesion = filas.filter((f) => f.sesiones > 0);
+  const conSesion = filas.filter((f) => f.sesiones > 0 && !f.descarga);   // la semana de descarga baja la carga a propósito: no cuenta como pérdida de fuerza
+  const conRpe = filas.filter((f) => f.rpe != null && f.nRpe > 0), nRpe = conRpe.reduce((a, f) => a + f.nRpe, 0);
   return { filas, semanasTotales: m.semanas,
     sesiones: filas.reduce((a, f) => a + f.sesiones, 0), series: filas.reduce((a, f) => a + f.series, 0), volumen: filas.reduce((a, f) => a + f.volumen, 0),
-    rpe: media(filas.filter((f) => f.rpe != null).map((f) => f.rpe)), e1rm: cambioE1rm(A, conSesion.map((f) => f.lunes)) };
+    rpe: nRpe ? conRpe.reduce((a, f) => a + f.rpe * f.nRpe, 0) / nRpe : null, e1rm: cambioE1rm(A, conSesion.map((f) => f.lunes)) };
 }

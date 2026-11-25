@@ -18,6 +18,11 @@ const kgTxt = (v) => fmt(v, Number.isInteger(v) ? 0 : v * 10 === Math.round(v * 
 /** ¿Cae hoy el ejercicio en una semana de descarga? `A` es el análisis. */
 export const enDescarga = (A, id) => { const b = A.C.bloqueProtector(A.C.grupoDe(id), A.hoy); return !!(b && b.esDeload); };
 
+/** ¿El ejercicio se entrena con «serie top» (una serie pesada y el resto más ligeras)? */
+export function esTop(id) {
+  try { const p = E.app.store.analisis().progresionDe(id); return !!(p && p.obj && p.obj.top); } catch (e) { return false; }
+}
+
 /** Sugerencia para el ejercicio (solo durante el entrenamiento) o null. En descarga no pide subir: mantiene el peso de la última vez. */
 export function sugerenciaDe(id, rpeObjetivo = null) {
   if (!E.M || E.M.modo !== "entreno") return null;
@@ -25,18 +30,20 @@ export function sugerenciaDe(id, rpeObjetivo = null) {
     const A = E.app.store.analisis();
     if (!A) return null;
     const p = A.progresionDe(id);
-    if (p && !p.sinDatos && p.obj && p.pesoMax > 0 && enDescarga(A, id)) return { peso: p.pesoMax, reps: p.obj.min, motivo: "Semana de descarga: sin subir carga", descarga: true };
-    return p ? ajustarPorRpe(sugerirCarga(p, A.incrementoDe(p)), p, rpeObjetivo) : null;
+    if (p && !p.sinDatos && p.obj && p.pesoMax > 0 && enDescarga(A, id)) return { peso: p.pesoMax, reps: p.obj.min, motivo: "Semana de descarga: sin subir carga", descarga: true, top: !!p.obj.top };
+    const sug = p ? ajustarPorRpe(sugerirCarga(p, A.incrementoDe(p)), p, rpeObjetivo) : null;
+    return sug && p.obj && p.obj.top ? Object.assign({}, sug, { top: true }) : sug;
   } catch (e) { return null; }
 }
 
-/** Pone la sugerencia en las series sin marcar que estén vacías (no toca lo ya escrito). */
+/** Pone la sugerencia en las series sin marcar que estén vacías (no toca lo ya escrito). Con serie top solo rellena la primera: el resto son back-offs y salen de «Añadir back-offs». */
 export function aplicarSugerencia(e, sug) {
   let n = 0;
   for (const s of e.series) {
     if (s.hecha || s.tipo === "calentamiento") continue;
     if (s.peso === "" || s.peso == null) { s.peso = aTexto(sug.peso); n++; }
     if (s.reps === "" || s.reps == null) s.reps = String(sug.reps);
+    if (sug.top) break;
   }
   return n;
 }
@@ -147,7 +154,8 @@ export function anadirBackoffs(e) {
   const paso = (cat && cat.incremento > 0 ? cat.incremento : 0) || E.app.store.estado.ajustes.entreno.pasoPeso || 2.5;
   const b = backoffs({ peso: leerNumero(top.peso), reps: leerNumero(top.reps), rpe: esRpe(top.rpe) ? top.rpe : undefined }, { n: 2, paso });
   if (!b.length) return null;
-  const vacias = e.series.filter((s) => !s.hecha && s.tipo !== "calentamiento" && s.peso === "" && s.reps === "");
+  const pesoTop = leerNumero(top.peso);
+  const vacias = e.series.filter((s) => !s.hecha && s.tipo !== "calentamiento" && (s.peso === "" || leerNumero(s.peso) === pesoTop));
   for (let i = 0; i < b.length; i++) {
     const dest = vacias[i] || (() => { const n = vacia(); e.series.push(n); return n; })();
     Object.assign(dest, { peso: aTexto(b[i].peso), reps: String(b[i].reps) });

@@ -195,3 +195,11 @@ test("tarjeta: totales, ejercicios principales, récords y «más»", () => {
   const v = datosTarjeta({ fecha: "2026-11-14", ejercicios: [] });
   assert.equal(v.titulo, "Entrenamiento"); assert.equal(v.series, 0); assert.equal(v.duracion, null);
 });
+
+test("resumen del mesociclo: la semana de descarga no cuenta como pérdida de fuerza", () => {
+  const inicio = masDias(HOY, -28);
+  const bl = [{ id: "d", inicio: masDias(inicio, 21), fin: masDias(inicio, 27), tipo: "deload", grupos: [] }];
+  const m = modelo((w) => ({ kg: w <= 1 ? 80 : 100, rpe: 8 }), { bloques: bl });
+  const R = resumenMesociclo(A(m), { id: "m", nombre: "X", inicio, semanas: 4, descarga: true });
+  assert.ok(R.e1rm.pct == null || R.e1rm.pct >= 0, "pct " + R.e1rm.pct);
+});

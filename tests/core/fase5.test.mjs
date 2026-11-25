@@ -69,7 +69,12 @@ test("descarga: sin señales, pospuesta, descartada o con descarga reciente no s
 test("descarga: RPE que sube y poco sueño son señales", () => {
   const P = propuestaDescarga(A(modelo((w) => ({ kg: 100, rpe: w <= 2 ? 9.5 : 8, sueno: w <= 2 ? 6 : 8 }))), {});
   assert.equal(P.proponer, true);
-  assert.deepEqual(P.motivos, ["El RPE medio ha subido de 8 a 9,5.", "Has dormido 6 h de media, menos de 7 h."]);
+  assert.deepEqual(P.motivos, ["El RPE medio ha subido de 8 a 9,5.", "Has dormido 6 h de media, 2 h menos que las 2 semanas anteriores."]);
+});
+
+test("descarga: dormir poco de forma habitual no es señal; solo una bajada respecto a tu normal", () => {
+  const habitual = propuestaDescarga(A(modelo(() => ({ kg: 100, rpe: 8, sueno: 6 }))), {});
+  assert.equal(habitual.proponer, false, "6 h siempre = tu normal");
 });
 
 test("comparar periodos: mismos días, sin % desde cero", () => {

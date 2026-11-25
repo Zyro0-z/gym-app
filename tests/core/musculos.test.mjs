@@ -43,3 +43,9 @@ test("liga: todas las entradas de LIGA corresponden a un ejercicio del catálogo
   const nombres = new Set(CATALOGO_BASE.map((c) => c.nombre));
   for (const n of Object.keys(LIGA)) assert.ok(nombres.has(n), "no está en el catálogo base: " + n);
 });
+
+test("un modificador «asistidas» entre paréntesis no se confunde con el ejercicio normal", () => {
+  assert.equal(baseDe("Dominadas (Asistidas)").modoCarga, "asistido");
+  assert.equal(baseDe("Dominadas supinas (asistidas)"), null);
+  assert.equal(baseDe("Press Banca (Barra)").nombre, "Press banca");
+});
