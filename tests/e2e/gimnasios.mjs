@@ -57,9 +57,9 @@ await p.evaluate(async () => { await window.__gym.store.guardarCatalogo(window._
 const ok = await p.evaluate(async () => { const m = await import("/src/data/modelo.js"); const c = m.crearCopia(window.__gym.store.estado); return m.leerCopia(JSON.stringify(c)).catalogo.find((x) => x.id === "dominadas"); });
 assert.equal(ok.modoCarga, "lastre"); assert.deepEqual(ok.musculos, { p: ["dorsal"], s: ["biceps"] });
 
-paso("Hoy ofrece cambiar de gimnasio cuando hay más de uno");
+paso("Hoy no muestra el gimnasio aunque haya más de uno");
 await p.evaluate(() => window.__gym.nav.ir("hoy", { pestana: "hoy" })); await espera(900);
-assert.equal(await p.locator(".chip-gimnasio").count() >= 1, true);
+assert.equal(await p.locator(".chip-gimnasio").count(), 0);
 
 paso("Por gimnasio: aparece al haber un ejercicio en dos gimnasios y lista cada uno");
 await p.evaluate(async () => {
