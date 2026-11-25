@@ -32,7 +32,7 @@ export function seccionAsignarMusculos(app, repintar) {
     app.toast(plural(r.cambiados, "ejercicio actualizado", "ejercicios actualizados")); repintar();
   } }));
   for (const ej of sin) celdas.push(celda({ titulo: ej.nombre, sub: "No está en el catálogo base: asigna sus músculos a mano", chevron: true, alPulsar: () => app.nav.ir("ejercicioCat/" + encodeURIComponent(ej.id)) }));
-  return seccion({ cab: "Músculos por asignar", pie: "Sin músculos, un ejercicio no cuenta en el mapa por músculos (pecho superior, dorsal, cabezas del deltoides…). También asigna la tabla de liga a los que no la tienen, si esa tabla está en Avanzado. Lo que ya editaste no se toca." }, lista(celdas));
+  return seccion({ cab: "Músculos por asignar", pie: "Sin músculos, un ejercicio no cuenta en el mapa. Lo que ya editaste no se toca." }, lista(celdas));
 }
 
 export function vistaMusculos(_p, app) {
@@ -50,17 +50,17 @@ export function vistaMusculos(_p, app) {
         return el;
       };
       poner(c,
-        V.filas.length ? seccion({ cab: "Mapa de la semana", pie: "Cada zona se colorea con las series efectivas de su músculo esta semana. Toca una zona para ver su valor." },
+        V.filas.length ? seccion({ cab: "Mapa de la semana" },
           h("div", { class: "tarjeta" }, mapaMusculosSemana(V))) : null,
-        V.filas.length ? seccion({ cab: "Esta semana", pie: "Principal = 1 serie, secundario = " + n1(V.fraccion) + ". La marca vertical es " + REFERENCIA + " series, la referencia de las revisiones dosis-respuesta para hipertrofia (más series, más ganancia hasta cierto punto); no es un objetivo obligatorio. Solo series de trabajo, sin calentamiento." },
+        V.filas.length ? seccion({ cab: "Esta semana", pie: "La marca vertical (" + REFERENCIA + " series) es una referencia orientativa para hipertrofia, no un objetivo obligatorio." },
           lista(V.filas.map((f) => celda({ titulo: f.nombre, sub: h("span", { class: "barra-objetivo" }, barra(f), h("span", { class: "num" }, "pasada " + n1(f.previa) + " · media 4 sem. " + n1(f.media4))),
             valor: h("span", { class: "num" }, n1(f.actual)), "aria-label": f.nombre + ": " + n1(f.actual) + " series efectivas esta semana, la pasada " + n1(f.previa) + ", media de 4 semanas " + n1(f.media4) })))) : null,
-        seccion({ cab: "Recuento", pie: "Con 1 cuentas solo series directas e indirectas completas; con 0 solo las del músculo principal. El 0,5 es una aproximación con apoyo preliminar (aún sin revisión por pares)." }, lista([
+        seccion({ cab: "Recuento", pie: "Con 1, las series cuentan completas en los secundarios; con 0, solo en el principal. El 0,5 es una aproximación." }, lista([
           celda({ titulo: "Peso de un músculo secundario", control: stepper({ valor: V.fraccion, min: 0, max: 1, paso: 0.25, formato: (v) => n1(v), etiqueta: "peso del músculo secundario",
             alCambiar: (v) => store.guardarAjustes((a) => { a.analisis = Object.assign({}, a.analisis, { fraccionSecundaria: v }); }).then(() => this.render(c)) }) }),
         ])),
         seccionAsignarMusculos(app, () => this.render(c)),
-        V.sinMusculos.length ? seccion({ cab: "Sin músculos asignados", pie: "No cuentan hasta que les asignes músculos." },
+        V.sinMusculos.length ? seccion({ cab: "Sin músculos asignados" },
           lista(V.sinMusculos.map((x) => celda({ titulo: x.nombre, valor: plural(x.series, "serie", "series") })))) : null);
     },
   };

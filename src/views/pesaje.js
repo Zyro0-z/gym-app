@@ -49,7 +49,7 @@ export function vistaPesajes(_p, app) {
     render(c) {
       const pes = store.estado.pesajes.slice().sort((a, b) => (a.fecha < b.fecha ? 1 : -1)), hoy = store.hoy();
       if (!pes.length) { poner(c, vacio({ icono: "bascula", titulo: "Sin pesajes", texto: "Apunta tu peso para ver la tendencia.", acciones: [{ texto: "Añadir pesaje", alPulsar: () => abrirPesaje(app) }] })); return; }
-      poner(c, seccion({ pie: "Toca uno para editarlo; desliza para borrarlo." }, lista(pes.map((p) => celda({ titulo: capital(fechaCorta(p.fecha, hoy)), valor: kg(p.kg), chevron: true,
+      poner(c, seccion({}, lista(pes.map((p) => celda({ titulo: capital(fechaCorta(p.fecha, hoy)), valor: kg(p.kg), chevron: true,
         alPulsar: () => abrirPesaje(app, p),
         alBorrar: async () => { await store.guardarPesajes(store.estado.pesajes.filter((x) => !(x.fecha === p.fecha && x.kg === p.kg))); app.toast("Pesaje borrado", { icono: "papelera" }); } })))));
     },

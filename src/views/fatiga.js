@@ -71,10 +71,10 @@ export function vistaFatiga(_p, app) {
       });
       poner(c,
         seccion({}, estado),
-        grafica ? seccion({ cab: "e1RM semana a semana", pie: "Mediana del cambio del mejor e1RM de cada ejercicio respecto a su semana anterior con datos." }, h("div", { class: "tarjeta" }, grafica)) : null,
-        seccion({ cab: "De un vistazo · 8 semanas", pie: "Todas con las mismas 8 semanas, de la más antigua a la más reciente. Un hueco es una semana sin dato." }, h("div", { class: "rejilla-mini" }, multiples(I))),
+        grafica ? seccion({ cab: "e1RM semana a semana", pie: "Mediana del cambio semanal del mejor e1RM por ejercicio" }, h("div", { class: "tarjeta" }, grafica)) : null,
+        seccion({ cab: "De un vistazo · 8 semanas" }, h("div", { class: "rejilla-mini" }, multiples(I))),
         seccionRpe(A),
-        seccion({ cab: "Semanas", pie: "RPE, sueño, energía y estrés salen de lo que anotas al entrenar (son opcionales). «—»: sin ejercicios que comparar." }, lista(filas)),
+        seccion({ cab: "Semanas", pie: "«—»: sin ejercicios que comparar" }, lista(filas)),
         regla(app, aj));
     },
   };
@@ -110,7 +110,7 @@ function seccionRpe(A) {
   if (!D.conRpe) return seccion({ cab: "Intensidad (RPE)", pie: "Anota el RPE de tus series (en el entrenamiento) para ver cómo se reparte el esfuerzo." }, h("div", { class: "tarjeta" }, h("p", { class: "etiqueta" }, "Sin series con RPE en las últimas 8 semanas.")));
   const semanas = semanasRpe(A, 8);
   const datos = semanas.map((s) => ({ etiqueta: ddmm(s.lunes), partes: BANDAS_RPE.map((b) => ({ valor: s.cuentas[b.id], color: b.color })) }));
-  return seccion({ cab: "Intensidad (RPE) · 8 semanas", pie: "Cobertura: " + fmt(D.cobertura * 100, 0) + " % de tus series de trabajo tienen RPE (" + D.conRpe + " de " + D.total + "). Con poca cobertura, el reparto no representa tu entrenamiento." },
+  return seccion({ cab: "Intensidad (RPE) · 8 semanas", pie: "Cobertura: " + fmt(D.cobertura * 100, 0) + " % de tus series de trabajo tienen RPE (" + D.conRpe + " de " + D.total + ")." },
     h("div", { class: "tarjeta" },
       h("div", { class: "franja", role: "img", "aria-label": "Reparto del RPE: " + D.bandas.filter((b) => b.n).map((b) => b.corto + " " + fmt(b.pct, 0) + " %").join(", ") }, D.bandas.filter((b) => b.n).map((b) => h("i", { style: { width: b.pct + "%", background: b.color } }))),
       h("div", { class: "leyenda" }, D.bandas.map((b) => h("span", null, h("i", { style: { background: b.color } }), b.corto + " · " + fmt(b.pct, 0) + " %"))),

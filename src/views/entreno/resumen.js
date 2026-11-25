@@ -74,7 +74,7 @@ export async function mostrarResumen(ses) {
             h("span", { class: "t-headline" }, prs.length === 1 ? "1 récord nuevo" : prs.length + " récords nuevos")),
           prs.map((p, i) => h("div", { class: "fila entre fila-pr", style: { "--i": Math.min(i, 6) } }, h("span", null, p.e.nombre), h("span", { class: "num c-2" }, p.rm ? "e1RM " + kg(p.rm) : kg(p.peso)))))) : null,
         ascensos.length ? seccion({ cab: "Ascenso de liga", pie: "Respecto a hace una semana." }, lista(ascensos.map((x) => celda({ izquierda: insignia(x.nivel, 32), titulo: x.nombre, valor: x.nivel.txt })))) : null,
-        deriva.length ? seccion({ cab: "Fatiga dentro de la sesión", pie: "Caída del e1RM de la primera a la última serie de trabajo. «Tu umbral» sale de tus propias sesiones del ejercicio (mediana + 1,5 desviaciones); con menos de 4 sesiones previas se usa un umbral genérico del " + UMBRAL_GENERICO_PCT + " %." },
+        deriva.length ? seccion({ cab: "Fatiga dentro de la sesión", pie: "Caída del e1RM de la primera a la última serie. Umbral: el tuyo (mediana + 1,5 desviaciones); con menos de 4 sesiones, " + UMBRAL_GENERICO_PCT + " %." },
           lista(deriva.map(({ nombre, d }) => celda({ titulo: nombre, sub: d.personal ? "Tu mediana " + fmt(d.personal.mediana, 1) + " % · umbral " + fmt(d.umbral, 1) + " %" : "Umbral genérico " + d.umbral + " %",
             valor: chip((d.caida > 0 ? "−" : "+") + fmt(Math.abs(d.caida), 1) + " %", d.alta ? "warn" : "ok") })))) : null,
         seccion({ cab: "Por ejercicio" }, lista(ses.ejercicios.map((e) => {
@@ -87,7 +87,7 @@ export async function mostrarResumen(ses) {
           return celda({ titulo: e.nombre, sub: plural(e.series.length, "serie", "series") + txtMejor,
             valor: dir ? chip(dir === "sube" ? "Mejor" : dir === "baja" ? "Peor" : "Igual", dir === "sube" ? "ok" : dir === "baja" ? "bad" : null, { icono: dir }) : null });
         }))),
-        seccion({ pie: "Una imagen con lo esencial de la sesión para enviar o publicar." }, lista([celda({ icono: "compartir", colorIcono: "var(--g-azul)", titulo: "Compartir tarjeta", estilo: "accion",
+        seccion({}, lista([celda({ icono: "compartir", colorIcono: "var(--g-azul)", titulo: "Compartir tarjeta", estilo: "accion",
           alPulsar: () => compartirTarjeta(E.app, datosTarjeta(ses, prs.map((p) => p.e.nombre))) })], { iconos: true })));
     },
   });

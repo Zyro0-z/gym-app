@@ -33,7 +33,7 @@ await p.locator(".pestana.activa .segmentado button", { hasText: "Resumen" }).fi
 let t = await p.locator(".pestana.activa .pantalla:not([hidden])").innerText();
 assert.ok(!/−100|-100/.test(t), "sin −100 %");
 assert.ok(!/Faltan \d/.test(t), "sin déficit a inicio de semana");
-assert.ok(t.includes("Semana en curso"), "dice «Semana en curso»");
+assert.ok(!t.includes("Semana en curso"), "sin etiqueta «Semana en curso»");
 
 paso("botón de volver: solo el chevrón, con el nombre completo para lectores");
 await p.evaluate(() => window.__gym.nav.ir("ejercicio/pressbanca")); await p.waitForTimeout(600);

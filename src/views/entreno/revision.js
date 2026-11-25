@@ -90,14 +90,14 @@ export async function terminar() {
           celda({ titulo: "Fin", control: campo("time", "fin", "Hora de fin") }),
           celda({ titulo: "Duración", valor: durEl }),
         ])),
-        seccion({ cab: "Ejercicios", pie: sinMarcar ? null : "Solo se guardan las series marcadas." }, lista(d.ejercicios.map((e) => {
+        seccion({ cab: "Ejercicios" }, lista(d.ejercicios.map((e) => {
           const n = e.series.filter((s) => s.hecha).length;
           return celda({ titulo: e.nombre, valor: n + " de " + e.series.length });
         }))),
         seccion({ cab: "Nota de la sesión" }, h("div", { class: "celda-area" }, notaSesion(d))),
         cambioRutina ? seccion({ cab: "Rutina «" + rutinaBase.nombre + "»", pie: cambioRutina.cambios.join(" · ") }, lista([
           celda({ titulo: "Actualizar la rutina con estos cambios", control: interruptor(false, (v) => { actualizarRutina = v; }, "Actualizar la rutina con estos cambios") })])) : null,
-        sinMarcar ? seccion({ pie: "Hay " + plural(sinMarcar, "serie sin marcar", "series sin marcar") + " con repeticiones. Por defecto no se guardan." }, lista([
+        sinMarcar ? seccion({ pie: plural(sinMarcar, "serie sin marcar", "series sin marcar") + " con repeticiones: por defecto no se guardan." }, lista([
           celda({ titulo: "Guardar también las sin marcar", control: interruptor(false, (v) => { r.conSinMarcar = v; }, "Guardar también las series sin marcar") })])) : null);
     },
   });

@@ -42,7 +42,6 @@ export function infoEjercicio(id) {
       if (p && !enDescarga(A, id)) { const t = A.proximaVez(p); if (t) partes.push("Próxima vez: " + t); }
       const ej = A.ejercicios.find((x) => x.k === id), r = ej && e1rmReciente(ej);
       if (r) {
-        partes.push("e1RM " + fmt(r.e1rm, 0) + " kg (" + r.confianza + ")");
         const obj = E.M.d.ejercicios.find((x) => x.ejercicioId === id);
         const reps = p && p.work[0] ? p.work[0].reps : c && c.rangoReps ? c.rangoReps.min : 0;
         if (obj && esRpe(obj.rpeObjetivo) && reps > 0) {

@@ -52,11 +52,11 @@ assert.equal(await viewBox(), "0 0 465 1050");
 await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Espalda" }).click(); await espera(300);
 assert.equal(await viewBox(), "465 0 472 1050");
 
-paso("tocar una zona no mueve la página ni cambia el alto del mapa y del resumen");
+paso("tocar una zona no mueve la página ni cambia el alto del mapa");
 const medir = () => p.evaluate(() => {
   const d = document.querySelector(".diagrama-cuerpo"); let y = 0;
   for (let e = d; e; e = e.parentElement) y += e.scrollTop || 0;
-  return { y: Math.round(y + window.scrollY), top: Math.round(d.getBoundingClientRect().top), alto: Math.round(d.getBoundingClientRect().height), info: Math.round(document.querySelector(".diagrama-info").getBoundingClientRect().height), infoY: Math.round(document.querySelector(".diagrama-info").getBoundingClientRect().top) };
+  return { y: Math.round(y + window.scrollY), top: Math.round(d.getBoundingClientRect().top), alto: Math.round(d.getBoundingClientRect().height) };
 });
 await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Ambas" }).click(); await espera(300);
 const antes = await medir();

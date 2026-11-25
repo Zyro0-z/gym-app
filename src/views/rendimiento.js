@@ -33,7 +33,7 @@ export function vistaRendimiento(_p, app) {
         return;
       }
       poner(c,
-        seccion({ pie: "Rendimiento = el mejor e1RM de cada ejercicio frente a la mediana de sus 5 sesiones anteriores, y la mediana de todos los ejercicios de la sesión. Las semanas de descarga no cuentan." },
+        seccion({ pie: "Mejor e1RM de cada ejercicio frente a la mediana de sus 5 sesiones anteriores. Las descargas no cuentan." },
           h("div", { class: "tarjeta" }, h("div", { class: "etiqueta" }, "Sesiones medidas"), h("div", { class: "cifra t-title1 c-accent" }, String(R.sesiones)),
             h("div", { class: "t-subhead c-2" }, R.conRecuperacion + " con datos de cómo venías"))),
         R.factores.map((f) => seccion({ cab: f.texto,

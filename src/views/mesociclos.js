@@ -36,7 +36,7 @@ function editarMesociclo(app, original = null) {
       exito(); app.toast("Mesociclo guardado");
     } },
     render(c) {
-      poner(c, seccion({ pie: "Empieza en lunes. Si lleva descarga, la última semana se programa como semana de descarga (también la verás en Bloques)." }, lista([
+      poner(c, seccion({ pie: "Empieza en lunes. Con descarga, la última semana lo es." }, lista([
         celda({ titulo: "Nombre", control: nombre }),
         celda({ titulo: "Primer lunes", control: fecha }),
         celda({ titulo: "Semanas", control: stepper({ valor: m.semanas, min: SEMANAS_MIN_MESO, max: SEMANAS_MAX_MESO, formato: (v) => String(v), etiqueta: "semanas", alCambiar: (v) => { m.semanas = v; } }) }),
@@ -56,7 +56,7 @@ export function vistaMesociclos(_p, app) {
       if (!l.length) { poner(c, vacio({ icono: "capas", titulo: "Sin mesociclos", texto: "Un mesociclo agrupa unas semanas de entrenamiento (por ejemplo 5 de carga y 1 de descarga) para comparar cómo te fue en cada una.",
         acciones: [{ texto: "Crear mesociclo", alPulsar: () => editarMesociclo(app) }] })); return; }
       const act = mesocicloActual(l, hoy);
-      poner(c, seccion({ cab: act ? "En curso" : "Mesociclos", pie: "Toca uno para ver sus semanas." }, lista(l.slice().reverse().map((m) => celda({
+      poner(c, seccion({ cab: act ? "En curso" : "Mesociclos" }, lista(l.slice().reverse().map((m) => celda({
         titulo: m.nombre, sub: fechaCorta(m.inicio, hoy) + " → " + fechaCorta(finDeMeso(m), hoy) + " · " + plural(m.semanas, "semana", "semanas") + (m.descarga ? " · con descarga" : ""),
         valor: chip(textoEstado(m, hoy), act && act.id === m.id ? "accent" : null), chevron: true, alPulsar: () => app.nav.ir("mesociclo/" + encodeURIComponent(m.id)) })))));
     },
@@ -81,7 +81,7 @@ export function vistaMesociclo([id], app) {
           h("div", { class: "t-subhead c-2" }, [plural(R.sesiones, "sesión", "sesiones"), kgTotal(R.volumen), "RPE medio " + rpeTxt(R.rpe)].join(" · ")),
           R.e1rm.ejercicios ? h("div", { class: "t-subhead", style: { marginTop: "6px" } }, "e1RM de la primera a la última semana con datos: ", h("b", { class: "num" }, pct(R.e1rm.pct)), h("span", { class: "c-2" }, " (mediana de " + plural(R.e1rm.ejercicios, "ejercicio", "ejercicios") + ")")) : null,
           R.filas.length > 1 ? h("div", { style: { marginTop: "12px" } }, graficaBarras({ datos: semanas, formato: (v) => plural(v, "serie", "series"), detalle: (d) => "semana del " + d.etiqueta + " · " + kgTotal(d.vol), etiqueta: "Series por semana del mesociclo", alto: 150 })) : null)),
-        seccion({ cab: "Semanas", pie: "RPE y e1RM salen de lo que anotas; «—» es que no hay dato." }, lista(R.filas.map((f, i) => celda({
+        seccion({ cab: "Semanas", pie: "«—»: sin dato" }, lista(R.filas.map((f, i) => celda({
           titulo: "Semana " + (i + 1) + (m.descarga && i === m.semanas - 1 ? " · descarga" : "") + " · " + ddmm(f.lunes), sub: f.sesiones ? [plural(f.series, "serie", "series"), "RPE " + rpeTxt(f.rpe), kgTotal(f.volumen)].join(" · ") : "Sin sesiones",
           valor: f.e1rmPct == null ? h("span", { class: "c-2" }, "—") : chip(pct(f.e1rmPct), f.e1rmPct >= 0.5 ? "ok" : f.e1rmPct <= -0.5 ? "bad" : null) })))),
         seccion({}, lista([celda({ titulo: "Borrar mesociclo", estilo: "destructiva", alPulsar: async () => {

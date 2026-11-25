@@ -1,7 +1,7 @@
 // Diagrama corporal: assets/cuerpo-muscular.svg (dos imágenes, frente y espalda, con una región tocable por trozo de músculo,
 // ids «m-<músculo>-<lado>-<n>»; lo genera tools/cuerpo/generar.py) en línea. Monocromo: un solo tono (--mapa, el mismo en claro y
 // oscuro) con 4 niveles de intensidad según el valor de cada grupo, teñido sobre la imagen para conservar las fibras. Al tocar una
-// zona (o cerca de ella) se enfoca el grupo: el resto se atenúa y aparece su resumen en un hueco de altura fija, sin mover la página.
+// zona (o cerca de ella) se enfoca el grupo: el resto se atenúa y aparece su resumen sobre la figura, sin mover la página.
 // El SVG se parsea una vez y cada diagrama es una copia. La alternativa textual es la lista de grupos que acompaña al
 // diagrama y la etiqueta, que nombra los grupos de más a menos.
 import { h, s as sv } from "./dom.js";
@@ -68,7 +68,7 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
   const max = Math.max(0, ...grupos.map((g) => g.valor || 0));
   const orden = grupos.filter((g) => g.valor > 0).sort((a, b) => b.valor - a.valor);
   const texto = orden.length ? etiqueta + ". De más a menos: " + orden.map((g) => g.nombre + ", " + unidad(g.valor)).join("; ") + "." : etiqueta + ". Sin datos en este periodo.";
-  const sinDatos = orden.length ? "Toca una zona para ver su valor." : "Sin datos en este periodo.";
+  const sinDatos = orden.length ? "" : "Sin datos en este periodo.";
   const info = h("div", { class: "diagrama-info", "aria-live": "polite" }, sinDatos);
   let vistaAct = selector ? vistaElegida : vista, svg = null, elegido = null;
   const el = h("div", { role: "img", "aria-label": texto });
@@ -143,7 +143,7 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
     h("span", { class: "etq" }, "Menos"),
     rangosNiveles(max).map((r) => h("span", { class: "nivel" }, h("i", { "data-nivel": String(r.nivel) }), r.desde === r.hasta ? String(r.desde) : r.desde + "–" + r.hasta)),
     h("span", { class: "etq" }, "Más")) : null;
-  const raiz = h("div", { class: "diagrama" + (mini ? " compacto" : "") }, sel, el, leyenda, info);
+  const raiz = h("div", { class: "diagrama" + (mini ? " compacto" : "") }, sel, h("div", { class: "diagrama-lienzo" }, el, info), leyenda);
   raiz.foco = (nombre) => foco(nombre ? grupos.find((g) => g.nombre === nombre) || null : null, false);
   return raiz;
 }

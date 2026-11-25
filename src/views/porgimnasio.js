@@ -26,7 +26,7 @@ export function vistaPorGimnasio(_p, app) {
             valor: h("span", { class: "num" }, kg(f.mediana) + (f.difPct != null ? " (" + pct(f.difPct) + ")" : "")),
             "aria-label": nombre(f.id) + ": mediana " + kg(f.mediana) + ", mejor " + kg(f.mejor) + ", " + plural(f.sesiones, "sesión", "sesiones") + (f.difPct != null ? ", " + pct(f.difPct) + " frente a la referencia" : ""),
           }))))),
-        seccion({ pie: "Las máquinas y poleas no marcan lo mismo en todos los sitios y una barra puede pesar distinto: una diferencia constante suele ser del material, no tuya." }, null));
+        seccion({ pie: "Máquinas, poleas y barras pesan distinto según el sitio: una diferencia constante suele ser del material." }, null));
     },
   };
 }

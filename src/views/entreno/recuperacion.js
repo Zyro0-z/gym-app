@@ -39,7 +39,7 @@ export function editarRecuperacion(d, alCambiar) {
     render(c) {
       const bloque = (k, titulo, control) => celda({ titulo, sub: typeof r[k] === "number" ? null : "Sin anotar", control });
       const pintar = () => poner(c,
-        seccion({ pie: "Todo es opcional. Sirve para el informe de fatiga y para saber cuándo te conviene una descarga." }, lista([
+        seccion({}, lista([
           bloque("sueno", "Sueño anoche", stepper({ valor: typeof r.sueno === "number" ? r.sueno : 7.5, min: 0, max: 14, paso: 0.5, formato: horas, sinValor: typeof r.sueno !== "number",
             etiqueta: "horas de sueño", alCambiar: (v) => { const nuevo = typeof r.sueno !== "number"; r.sueno = v; if (nuevo) pintar(); } })),
         ])),

@@ -119,7 +119,7 @@ export function calculadoraDiscos(e) {
     poner(res,
       h("div", { class: "discos-vista", "aria-hidden": "true" },
         h("span", { class: "discos-barra" }), r.porLado.map((d) => h("span", { class: "disco", style: { "--alto": Math.round(28 + 52 * Math.min(1, d / 25)) + "px" } }, kgTxt(d)))),
-      seccion({ cab: "Por lado", pie: r.falta > 0 ? "Con tus discos llegas a " + kgTxt(r.logrado) + " kg; faltan " + kgTxt(r.falta) + " kg." : "Barra de " + kgTxt(aj.barra ?? 20) + " kg en «" + aj.nombre + "». Se cambian en Ajustes › Entrenamiento." },
+      seccion({ cab: "Por lado", pie: r.falta > 0 ? "Con tus discos llegas a " + kgTxt(r.logrado) + " kg; faltan " + kgTxt(r.falta) + " kg." : "Barra de " + kgTxt(aj.barra ?? 20) + " kg en «" + aj.nombre + "»." },
         lista(grupos.length ? grupos.map((g) => celda({ titulo: kgTxt(g.kg) + " kg", valor: "× " + g.n })) : [celda({ titulo: "Solo la barra" })])));
   };
   campo.addEventListener("input", () => { const v = leerNumero(campo.value); total = Number.isFinite(v) ? v : 0; pintar(); });

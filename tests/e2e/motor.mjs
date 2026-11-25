@@ -66,7 +66,7 @@ paso("sala: back-offs y récord en vivo");
 await p.evaluate(() => window.__gym.nav.ir("hoy", { pestana: "hoy" })); await espera(600);
 await p.evaluate(() => window.__gym.entreno.empezar("Torso")); await espera(900);
 const press = p.locator(".modal-completo .ej").nth(0);
-assert.match(await press.locator(".ej-info").innerText(), /e1RM \d+ kg/);
+assert.match(await press.locator(".ej-info").innerText(), /\d+ reps @[\d,.]+ ≈ \d+(,\d)? kg/);
 await press.getByLabel("Peso de la serie 1").fill("107,5"); await press.getByLabel("Repeticiones de la serie 1").fill("5");
 await press.locator(".serie .check").first().click(); await espera(500);
 assert.match(await p.locator(".toast").innerText(), /Récord/);

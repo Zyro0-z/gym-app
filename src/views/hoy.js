@@ -72,7 +72,7 @@ export function elegirRutina(app) {
       poner(c,
         rs.length ? seccion({ cab: "Rutinas" }, lista(rs.map((r) => celda({ titulo: r.nombre, sub: plural(r.ejercicios.length, "ejercicio", "ejercicios") + " · " + plural(r.ejercicios.reduce((a, e) => a + (e.series || 0), 0), "serie", "series"),
           chevron: true, alPulsar: () => { app.cerrarHoja(); empezarEntreno(r.nombre); } })))) : null,
-        seccion({}, lista([celda({ titulo: "Entrenamiento libre", sub: "Sin rutina: añades los ejercicios sobre la marcha", chevron: true, alPulsar: () => { app.cerrarHoja(); empezarEntreno(null); } })])));
+        seccion({}, lista([celda({ titulo: "Entrenamiento libre", chevron: true, alPulsar: () => { app.cerrarHoja(); empezarEntreno(null); } })])));
     },
   });
 }
@@ -89,7 +89,7 @@ function tarjetaHoy(A, est, app) {
   }
   const t = A.hoyToca;
   const sig = siguienteRutina(A);
-  let encabezado = "Hoy toca", titulo, linea = "", extra = null, accion, repetir = null, cifra = null;
+  let encabezado = "Hoy", titulo, linea = "", extra = null, accion, repetir = null, cifra = null;
   if (t && !t.descanso && t.estado === "hecho") {
     encabezado = "Hoy";
     titulo = t.esperado;
@@ -124,7 +124,6 @@ function tarjetaHoy(A, est, app) {
     "aria-label": "Repetir la última sesión" + (repetir.rutina ? " de " + repetir.rutina : "") + ", del " + fechaCorta(repetir.fecha, A.hoy) },
     icono("repetir"), h("span", null, "Repetir última · " + fechaCorta(repetir.fecha, A.hoy))) : null;
   return h("div", { class: "seccion" }, h("div", { class: "tarjeta hoy-principal", role: "region", "aria-label": encabezado + ": " + titulo },
-    encabezado !== "Hoy" ? h("div", { class: "etiqueta" }, encabezado) : null,
     h("h2", { class: "t-title1", style: { margin: "2px 0 4px" } }, titulo),
     linea ? h("div", { class: "t-subhead c-2" }, linea) : null,
     cifra ? h("div", { class: "hoy-cifra" }, h("div", { class: "etiqueta" }, "Objetivo · " + cifra.nombre),
@@ -173,13 +172,12 @@ function semana(A, est) {
   const frac = objetivo ? hechas / objetivo : 0;
   const series = h("div", { class: "semana-anillo" },
     anillo({ frac, tam: 60, grosor: 7, ok: objetivo > 0 && hechas >= objetivo, etiqueta: objetivo ? hechas + " de " + objetivo + " series" : plural(hechas, "serie", "series") + " esta semana",
-      centro: h("div", { class: "centro-anillo" }, objetivo ? Math.round(frac * 100) + " %" : String(hechas), h("small", null, objetivo ? "objetivo" : "series")) }),
+      centro: h("div", { class: "centro-anillo" }, objetivo ? Math.round(frac * 100) + " %" : String(hechas)) }),
     h("div", { class: "semana-dato" }, objetivo ? [h("span", { class: "num t-headline" }, hechas + " de " + objetivo), h("span", { class: "c-2" }, " series")] : h("span", { class: "c-2" }, "esta semana")));
   const racha = h("div", { class: "fila", style: { gap: "8px" } },
     h("span", { class: r.viva ? "c-accent" : "c-3", style: { display: "flex" }, "aria-hidden": "true" }, icono("llama", { tam: 22 })),
     h("div", { class: "semana-dato" }, h("span", { class: "num t-headline" }, String(n)), h("span", { class: "c-2" }, (n === 1 ? " semana" : " semanas") + " de racha" + (!r.viva && r.racha ? " (la anterior, " + r.racha + ")" : ""))));
-  const leyenda = h("div", { class: "leyenda-semana", "aria-hidden": "true" }, h("span", null, h("i", { class: "m-hecho" }), "Entrenado"), h("span", null, h("i", { class: "m-previsto" }), "Previsto"), h("span", null, h("i", { class: "m-nada" }), "Descanso"));
-  return seccion({ cab: "Esta semana" }, h("div", { class: "tarjeta" }, tira, leyenda, h("div", { class: "semana-datos" }, series, racha)));
+  return seccion({}, h("div", { class: "tarjeta" }, tira, h("div", { class: "semana-datos" }, series, racha)));
 }
 
 function lineas(A, est, app) {
@@ -199,7 +197,7 @@ function lineas(A, est, app) {
 function avisoInstalar(def, c) {
   if (!mostrarInstalar()) return null;
   return h("div", { class: "seccion" }, avisoCompacto({ icono: "compartir", tono: "accent", titulo: "Añade la app a la pantalla de inicio", etiqueta: "Instalar la app",
-    texto: "En Safari, pulsa Compartir y elige «Añadir a pantalla de inicio». Abierta desde su icono funciona sin conexión, el sistema no borra sus datos y puede avisarte al terminar el descanso.",
+    texto: "En Safari: Compartir › Añadir a pantalla de inicio.",
     acciones: [{ texto: "Entendido", alPulsar: () => { marcarVisto(); def.render(c); } }] }));
 }
 

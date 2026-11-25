@@ -78,7 +78,7 @@ function semanasDe(A, k) {
 function resumen(A, app, semVol, cambiarSem) {
   const r = A.resumen, grupos = app.store.estado.ajustes.grupos;
   const fr = fraccionSemana(A.hoy), cmp = compararPeriodo(r.act.vol, r.prev.vol, fr);
-  const delta = cmp.tipo === "pct" ? chip(cmp.texto, cmp.mejora ? "ok" : "warn", { icono: cmp.mejora ? "sube" : "baja" }) : chip(cmp.texto, null);
+  const delta = cmp.tipo === "pct" ? chip(cmp.texto, cmp.mejora ? "ok" : "warn", { icono: cmp.mejora ? "sube" : "baja" }) : null;
   // Sin preferencia guardada, el primer periodo con volumen (para no abrir con una gráfica vacía)
   const deN = (k) => (k === 8 ? A.semanas.slice(-8) : semanasDe(A, k));
   let n = PERIODOS_VOL.some((p) => p.valor === semVol) ? +semVol : null, semanas;
@@ -86,8 +86,8 @@ function resumen(A, app, semVol, cambiarSem) {
   else for (const k of [8, 26, 52]) { n = k; semanas = deN(k); if (semanas.some((x) => x.vol > 0)) break; }
   const media = semanas.reduce((a, s) => a + s.vol, 0) / (semanas.length || 1);
   const out = [];
-  out.push(seccion({ pie: media > 0 ? "Toca una barra para ver su semana. Media del periodo: " + kgTotal(media) + " por semana." : null }, h("div", { class: "tarjeta" },
-    h("div", { class: "fila entre" }, h("div", { class: "etiqueta" }, "Volumen esta semana"), r.act.vol || r.prev.vol ? delta : null),
+  out.push(seccion({ pie: media > 0 ? "Media " + kgTotal(media) + " por semana" : null }, h("div", { class: "tarjeta" },
+    h("div", { class: "fila entre" }, h("div", { class: "etiqueta" }, "Volumen esta semana"), delta),
     h("div", { class: "cifra t-title1 c-accent" }, kgTotal(r.act.vol)),
     h("div", { class: "t-subhead c-2", style: { marginTop: "2px" } }, [plural(r.act.ser, "serie", "series"), plural(r.act.n, "sesión", "sesiones"), r.mediaDur ? "media " + minutos(r.mediaDur) : null].filter(Boolean).join(" · ")),
     h("div", { style: { margin: "14px 0 2px" } }, segmentado(PERIODOS_VOL, String(n), cambiarSem, { etiqueta: "Periodo de la gráfica" })),
@@ -99,7 +99,7 @@ function resumen(A, app, semVol, cambiarSem) {
   const so = A.seriesObjetivo;
   if (so && so.lista.length) {
     const tope = Math.max(...so.lista.map((o) => Math.max(o.max, o.hechas + o.previstas)), 1);
-    out.push(seccion({ cab: "Series por grupo · objetivo semanal", pie: so.lista.some((o) => o.previstas) ? "La barra clara son las series previstas hasta el domingo." : null },
+    out.push(seccion({ cab: "Series por grupo · objetivo semanal" },
       lista(so.lista.map((o) => {
         const est = o.cierre.estado;
         const marca = est === "enRango" || est === "llegara" ? chip(est === "llegara" ? "Llegarás" : "En rango", "ok", { icono: "check" })
@@ -193,7 +193,7 @@ function porMusculo(A, app, periodo, cambiar, modo, cambiarModo) {
     { etiqueta: "Series efectivas por músculo", unidad: txt, selector: true, alElegir: (g) => marcarFila(filasEl, g && g.nombre) });
   const enfocar = (nombre) => { mapa.foco(nombre); verMapa(mapa); };
   return [...cab, asignar,
-    seccion({ pie: "Series efectivas por músculo: principal = 1 serie, secundario = " + n1(V.fraccion) + ". Toca una zona o un músculo de la lista para enfocarlo." },
+    seccion({},
       h("div", { class: "tarjeta" }, mapa)),
     seccion({ cab: "Músculos, de más a menos series" }, lista(filas.map((f) => { const c = celda({ titulo: f.nombre, sub: f.grupo, valor: h("span", { class: "num" }, txt(f.v)), alPulsar: () => enfocar(f.nombre) }); filasEl.set(f.nombre, c); return c; }))),
     seccion({}, lista([celda({ titulo: "Comparar con semanas anteriores", sub: "Pasada, media de 4 semanas y peso del secundario", chevron: true, alPulsar: () => app.nav.ir("musculos") })]))];
@@ -218,7 +218,7 @@ function musculos(A, app, periodo, cambiar, modo, cambiarModo) {
   return [
     h("div", { class: "seccion junta" }, segmentado(MODOS_M, modo, cambiarModo, { etiqueta: "Detalle del mapa" })),
     h("div", { class: "seccion junta" }, segmentado(PERIODOS_M, periodo, cambiar, { etiqueta: "Periodo" })),
-    seccion({ pie: plural(b.total, "serie", "series") + " en el periodo. Más intensidad, más series. Toca una zona para enfocar su grupo." }, h("div", { class: "tarjeta" }, diagrama)),
+    seccion({ pie: plural(b.total, "serie", "series") + " en el periodo" }, h("div", { class: "tarjeta" }, diagrama)),
     seccion({ cab: "Grupos, de más a menos series" }, lista(filas.sort((a, z) => z.ser - a.ser).map((f) => { const c = celda({ punto: colorGrupo(grupos, f.nombre), titulo: f.nombre, sub: f.vol ? kgTotal(f.vol) : null,
       valor: h("span", { class: "num" }, plural(f.ser, "serie", "series")), chevron: true, alPulsar: () => app.nav.ir("grupo/" + encodeURIComponent(f.nombre)) }); filasEl.set(f.nombre, c); return c; }))),
     seccion({ cab: "Volumen por grupo · 8 semanas" }, h("div", { class: "tarjeta" },

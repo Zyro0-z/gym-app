@@ -42,7 +42,7 @@ export function editarMedidas(app, original = null) {
     render(c) {
       poner(c,
         seccion({}, lista([celda({ titulo: "Fecha", control: fecha })])),
-        seccion({ cab: "Centímetros", pie: "Mide siempre igual: a la misma hora y con la cinta en el mismo sitio. Deja vacío lo que no midas." },
+        seccion({ cab: "Centímetros", pie: "Mide siempre a la misma hora y con la cinta en el mismo sitio." },
           lista(MEDIDAS.map((m) => celda({ titulo: m.texto, control: h("span", { class: "fila", style: { gap: "6px" } }, campos[m.k], h("span", { class: "c-2" }, "cm")) })))));
     },
   });

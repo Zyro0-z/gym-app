@@ -88,7 +88,7 @@ export function vistaEjercicio([k], app) {
       if (mc && ((mc.p && mc.p.length) || (mc.s && mc.s.length))) {
         const ids = [...(mc.p || []), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m))];
         const lista = (xs) => xs.map(nombreMusculo).join(", "), vista = vistaPara(ids);
-        out.push(seccion({ cab: "Músculos", pie: "Oscuro con fibras: principal (1 serie). Claro con puntos: secundario (cuenta " + fmt((store.estado.ajustes.analisis || {}).fraccionSecundaria ?? 0.5, 2) + " serie). Se corrige en Ajustes › Ejercicios." },
+        out.push(seccion({ cab: "Músculos", pie: "Oscuro: principal · claro: secundario" },
           h("div", { class: "tarjeta fila", style: vista === "ambas" ? { gap: "12px", flexDirection: "column", alignItems: "stretch" } : { gap: "16px", alignItems: "center" } },
             diagramaCuerpo([...(mc.p || []).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 2 })), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m)).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 1 }))],
               { etiqueta: "Músculos de " + (e.nombre || "este ejercicio"), unidad: (v) => (v >= 2 ? "principal" : "secundario"), vista, mini: true }),
@@ -103,7 +103,7 @@ export function vistaEjercicio([k], app) {
           txt ? h("div", { class: "t-subhead c-2", style: { marginTop: "4px" } }, capital(txt)) : null)));
       }
       const mol = deEjercicio(store.estado.molestias || [], k);
-      out.push(seccion({ cab: "Molestias", pie: mol.length ? "Anotadas con este ejercicio. Si se repiten, bajar la carga o cambiar la variante suele ser mejor que insistir." : "Si notas una molestia con este ejercicio, anótala: así verás si se repite." },
+      out.push(seccion({ cab: "Molestias" },
         lista([...mol.slice(0, 3).map((m) => celda({ titulo: nombreArticulacion(m.articulacion), sub: capital(fechaCorta(m.fecha, A.hoy)) + (m.nota ? " · " + m.nota : ""), valor: chip("Nivel " + m.nivel, m.nivel >= 4 ? "bad" : m.nivel === 3 ? "warn" : null), alPulsar: () => anotarMolestia(app, {}, m) })),
           celda({ titulo: "Anotar molestia", estilo: "accion", alPulsar: () => anotarMolestia(app, { ejercicioId: k }) })])));
       const L = A.liga, le = L && L.ok ? L.ejercicios.get(k) : null;
@@ -121,7 +121,7 @@ export function vistaEjercicio([k], app) {
       if (mejorVol && mejorVol.vol) rec.push(celda({ titulo: "Volumen en una sesión", valor: kgTotal(mejorVol.vol) }));
       if (rec.length) out.push(seccion({ cab: "Récords" }, lista(rec)));
       const porRango = prPorRango(e);
-      if (porRango.length) out.push(seccion({ cab: "Récords por repeticiones", pie: "Más peso levantado en cada rango de repeticiones. Un rango sin registro no tiene récord que batir." },
+      if (porRango.length) out.push(seccion({ cab: "Récords por repeticiones" },
         lista(porRango.map((x) => celda({ titulo: x.rango.txt + (x.rango.id === "1" ? " repetición" : " reps"), sub: capital(fechaCorta(x.dia, A.hoy)), valor: serieTxt({ peso: x.peso, reps: x.reps }) })))));
       out.push(seccion({ cab: "Sesiones" }, lista(e.hist.slice().reverse().slice(0, 30).map((x) => celda({ titulo: capital(fechaCorta(x.dia, A.hoy)), sub: x.series.map(serieTxt).join(" · "),
         valor: x.mejorRM ? fmt(x.mejorRM, 1) : null, chevron: true,

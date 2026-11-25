@@ -70,11 +70,11 @@ export function vistaMolestias(_p, app) {
       }
       const R = resumenMolestias(l, hoy), E = porEjercicio(l, hoy);
       poner(c,
-        R.length ? seccion({ cab: "Últimos 30 días", pie: "El gráfico es el nivel medio por semana en 8 semanas. «Persistente»: 3 o más anotaciones de nivel 3 o más en 14 días; con eso conviene bajar la carga de lo que la provoca y, si sigue, consultarlo con un fisioterapeuta." },
+        R.length ? seccion({ cab: "Últimos 30 días", pie: "«Persistente»: 3 o más anotaciones de nivel 3 o más en 14 días; con eso conviene bajar la carga de lo que la provoca y, si sigue, consultarlo con un fisioterapeuta." },
           lista(R.map((r) => celda({ titulo: r.texto, sub: plural(r.n30, "anotación", "anotaciones") + " · máx. " + r.max30 + " · última " + fechaCorta(r.ultima, hoy),
             valor: h("span", { class: "valor-tend" }, sparkline(r.semanas.map((v) => (v == null ? 0 : v)), { ancho: 56, alto: 20 }), r.persistente ? chip("Persistente", "warn") : null),
             alPulsar: () => anotarMolestia(app, { articulacion: r.id }) })))) : null,
-        E.length ? seccion({ cab: "Ejercicios asociados · 60 días", pie: "Cuántas veces anotaste una molestia con ese ejercicio. Asociar no es culpar: puede ser la técnica, la carga o el día." },
+        E.length ? seccion({ cab: "Ejercicios asociados · 60 días" },
           lista(E.slice(0, 6).map((e) => celda({ titulo: nombreEj(cat, e.ejercicioId), sub: "máx. " + e.max, valor: String(e.n),
             alPulsar: cat.some((x) => x.id === e.ejercicioId) ? () => app.nav.ir("ejercicio/" + encodeURIComponent(e.ejercicioId)) : undefined, chevron: cat.some((x) => x.id === e.ejercicioId) }))) ) : null,
         seccion({ cab: "Historial" }, lista(ordenar(l).slice(0, 60).map((m) => celda({
