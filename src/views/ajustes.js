@@ -4,6 +4,7 @@ import { seccion, lista, celda, segmentado, interruptor } from "../ui/controles.
 import { icono } from "../ui/iconos.js";
 import { plural, fmt } from "../core/formato.js";
 import { canon } from "../core/nombres.js";
+import { MODULOS, activo } from "../data/modulos.js";
 import { temaEfectivo, paletaDe, ACENTOS_CALC, COLOR_PERSONAL, ESCALAS_MAPA, NOMBRES_ESCALA, escalaMapa, COLOR_MAPA_A, COLOR_MAPA_B } from "../ui/tema.js";
 
 export const VERSION = "3.0";
@@ -38,6 +39,7 @@ export function vistaAjustes(_p, app) {
           celda({ icono: "calendario", colorIcono: "var(--g-cian)", titulo: "Mesociclos", valor: (est.ajustes.mesociclos || []).length ? String(est.ajustes.mesociclos.length) : null, chevron: true, alPulsar: () => app.nav.ir("mesociclos") }),
           celda({ icono: "cuerpo", colorIcono: "var(--g-naranja)", titulo: "Grupos musculares", chevron: true, alPulsar: () => app.nav.ir("grupos") })),
         grupo("Sistema y datos",
+          celda({ icono: "capas", colorIcono: "var(--g-cian)", titulo: "Módulos", valor: (est.ajustes.ocultos || []).length ? plural(est.ajustes.ocultos.length, "oculto", "ocultos") : null, chevron: true, alPulsar: () => app.nav.ir("modulos") }),
           celda({ icono: "apariencia", colorIcono: "var(--g-azul)", titulo: "Apariencia", valor: (TNOM[ap.tema || "auto"] || "Automático") + " · " + (ANOM[ap.acento || "azul"] || "Azul"), chevron: true, alPulsar: () => app.nav.ir("apariencia") }),
           celda({ icono: "datos", colorIcono: "var(--g-rojo, var(--bad))", titulo: "Datos", valor: ec.avisar ? h("span", { class: "chip bad" }, h("span", { class: "punto" }), "Copia pendiente") : null, chevron: true, alPulsar: () => app.nav.ir("datos") }),
           celda({ icono: "escudo", colorIcono: "var(--g-naranja)", titulo: "Calidad de los datos", valor: problemas ? h("span", { class: "chip warn" }, h("span", { class: "punto" }), plural(problemas, "aviso", "avisos")) : null, chevron: true, alPulsar: () => app.nav.ir("calidad") }),
@@ -97,3 +99,18 @@ function selectorColor(nombre, valor, activo, alElegir, clase) {
   const inp = h("input", { type: "color", value: valor, "aria-label": nombre, onChange: (e) => alElegir(e.target.value) });
   return h("label", { class: clase + (activo ? " activo" : ""), style: { background: valor, "--elegido": valor }, "aria-checked": activo ? "true" : null }, inp, activo ? icono("check") : null);
 }
+
+/** Ajustes › Módulos: interruptor por función; apagarla quita su entrada de la interfaz, no sus datos. */
+export function vistaModulos(_p, app) {
+  const { store } = app;
+  const poner1 = (id, v) => store.guardarAjustes((a) => { const s = new Set(a.ocultos || []); if (v) s.delete(id); else s.add(id); a.ocultos = MODULOS.map((m) => m.id).filter((x) => s.has(x)); }, { analitico: false });
+  return {
+    titulo: "Módulos",
+    render(c) {
+      const aj = store.estado.ajustes, grupos = [...new Set(MODULOS.map((m) => m.grupo))];
+      poner(c, ...grupos.map((g, i) => seccion({ cab: g, pie: i === grupos.length - 1 ? "Ocultar un módulo no borra sus datos." : null },
+        lista(MODULOS.filter((m) => m.grupo === g).map((m) => celda({ titulo: m.texto, control: interruptor(activo(aj, m.id), (v) => poner1(m.id, v), m.texto) }))))));
+    },
+  };
+}
+vistaModulos.pestana = "ajustes";

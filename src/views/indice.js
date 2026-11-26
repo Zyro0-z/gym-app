@@ -4,7 +4,7 @@ import { vacio } from "../ui/controles.js";
 import { vistaHoy } from "./hoy.js";
 import { vistaProgreso } from "./progreso.js";
 import { vistaHistorial, vistaSesion } from "./historial.js";
-import { vistaAjustes, vistaApariencia } from "./ajustes.js";
+import { vistaAjustes, vistaApariencia, vistaModulos } from "./ajustes.js";
 import { vistaDatos } from "./datos.js";
 import { vistaGuia } from "./guia.js";
 import { vistaEjercicio, vistaGrupo } from "./ejercicio.js";
@@ -41,7 +41,7 @@ function vistaNoEncontrada() {
 
 export const VISTAS = {
   hoy: vistaHoy, progreso: vistaProgreso, historial: vistaHistorial, ajustes: vistaAjustes,
-  sesion: vistaSesion, apariencia: vistaApariencia, datos: vistaDatos, guia: vistaGuia,
+  sesion: vistaSesion, apariencia: vistaApariencia, modulos: vistaModulos, datos: vistaDatos, guia: vistaGuia,
   ejercicio: vistaEjercicio, grupo: vistaGrupo, ligas: vistaLigas, liga: vistaLiga,
   rutinas: vistaRutinas, rutina: vistaRutina, horario: vistaHorario, ejercicios: vistaEjercicios, ejercicioCat: vistaEjercicioCat,
   grupos: vistaGrupos, objetivos: vistaObjetivos, cuerpo: vistaCuerpo, bloques: vistaBloques, bloque: vistaBloque,

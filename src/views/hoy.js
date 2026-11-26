@@ -18,6 +18,7 @@ import { propuestaDescarga } from "../core/descarga.js";
 import { mesocicloActual, estadoMesociclo } from "../core/mesociclos.js";
 import { sparkline } from "../ui/graficas.js";
 import { sugerirCarga } from "../core/sugerencia.js";
+import { activo } from "../data/modulos.js";
 
 export function vistaHoy(_p, app) {
   const { store } = app;
@@ -43,7 +44,8 @@ export function vistaHoy(_p, app) {
         return;
       }
       const A = store.analisis();
-      poner(c, tarjetaHoy(A, est, app), avisoInstalar(def, c), avisoDescarga(A, app), semana(A, est), avisoCopia(app), lineas(A, est, app));
+      const on = (id) => activo(est.ajustes, id);
+      poner(c, tarjetaHoy(A, est, app), avisoInstalar(def, c), on("hoy.descarga") ? avisoDescarga(A, app) : null, on("hoy.semana") ? semana(A, est) : null, avisoCopia(app), lineas(A, est, app, on));
       if (est.borrador) {
         const t = c.querySelector("[data-reloj-hoy]");
         reloj1 = setInterval(() => { if (t && store.estado.borrador) t.textContent = reloj((Date.now() - store.estado.borrador.inicio) / 1000); }, 1000);
@@ -189,24 +191,24 @@ function semana(A, est) {
 }
 
 /** Última sesión y peso en dos teselas; debajo, «Otra rutina». */
-function lineas(A, est, app) {
+function lineas(A, est, app, on) {
   const s = sesionesOrdenadas(est)[0];
   const ult = est.pesajes.length ? est.pesajes.slice().sort((a, b) => (a.fecha < b.fecha ? 1 : -1))[0] : null;
   const tendencia = A.peso.puntos.slice(-14).map((p) => (p.media != null ? p.media : p.kg));
   const tot = s ? totalesSesion(s) : null;
-  const teselaSesion = s ? h("button", { class: "tesela", onClick: () => app.nav.ir("sesion/" + encodeURIComponent(s.id), { pestana: "historial" }),
+  const teselaSesion = s && on("hoy.ultima") ? h("button", { class: "tesela", onClick: () => app.nav.ir("sesion/" + encodeURIComponent(s.id), { pestana: "historial" }),
     "aria-label": "Última sesión: " + (s.rutina || "Entrenamiento libre") + ", " + lineaSesion(s) },
     h("div", { class: "kicker" }, "Última · " + capital(fechaRelativa(s.fecha, A.hoy))),
     h("div", null, h("div", { class: "tesela-tit" }, s.rutina || "Entrenamiento libre"),
       h("div", { class: "tesela-sub num" }, [tot.series + " ser", tot.vol ? fmt(tot.vol / 1000, 1) + " t" : null, s.duracion ? minutos(s.duracion) : null].filter(Boolean).join(" · ")))) : null;
-  const teselaPeso = h("div", { class: "tesela" },
+  const teselaPeso = !on("hoy.peso") ? null : h("div", { class: "tesela" },
     h("div", { class: "tesela-cab" }, h("span", { class: "kicker" }, "Peso"),
       h("button", { class: "btn-mas", "aria-label": "Añadir pesaje", onClick: () => abrirPesaje(app) }, icono("mas"))),
     h("div", { class: "tesela-peso" },
       h("div", null, h("div", { class: "tesela-val num" }, ult ? kgCorto(ult.kg) : "—", ult ? h("small", null, " kg") : null)),
       tendencia.length >= 3 ? sparkline(tendencia, { ancho: 46, alto: 22 }) : null));
   return h("div", { class: "seccion" },
-    h("div", { class: "teselas" }, teselaSesion, teselaPeso),
+    teselaSesion || teselaPeso ? h("div", { class: ["teselas", !(teselaSesion && teselaPeso) && "una"] }, teselaSesion, teselaPeso) : null,
     est.borrador ? null : lista([celda({ icono: "lista", colorIcono: "var(--g-naranja)", titulo: "Otra rutina", chevron: true, alPulsar: () => elegirRutina(app) })], { iconos: false }));
 }
 

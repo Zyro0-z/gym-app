@@ -1,6 +1,7 @@
 // Detalle de ejercicio (e1RM, próxima vez, estado, récords y sesiones) y detalle de grupo muscular.
 import { e1rmAjustado, esRpe, rpeTxt } from "../core/rpe.js";
 import { h, poner } from "../ui/dom.js";
+import { activo } from "../data/modulos.js";
 import { icono } from "../ui/iconos.js";
 import { seccion, lista, celda, vacio, chip, segmentado } from "../ui/controles.js";
 import { graficaLinea, graficaBarras } from "../ui/graficas.js";
@@ -89,7 +90,8 @@ export function vistaEjercicio([k], app) {
           e.hist.length < 3 ? h("div", { class: "etiqueta", style: { marginTop: "6px" } }, "Con 3 sesiones o más se calcula la tendencia.") : null)),
       ];
       const mc = cat() && cat().musculos;
-      if (mc && ((mc.p && mc.p.length) || (mc.s && mc.s.length))) {
+      const on = (id) => activo(store.estado.ajustes, id);
+      if (on("ficha.mapa") && mc && ((mc.p && mc.p.length) || (mc.s && mc.s.length))) {
         const sec = (mc.s || []).filter((m) => !(mc.p || []).includes(m));
         const lista = (xs) => xs.map(nombreMusculo).join(", ");
         out.push(seccion({}, h("div", { class: "tarjeta tarjeta-musc" },
@@ -99,22 +101,22 @@ export function vistaEjercicio([k], app) {
             mc.p && mc.p.length ? h("div", null, h("div", { class: "musc-et" }, "Principales"), h("div", { class: "musc-p" }, lista(mc.p))) : null,
             sec.length ? h("div", null, h("div", { class: "musc-et sec" }, "Secundarios"), h("div", { class: "musc-s" }, lista(sec))) : null))));
       }
-      if (p) {
+      if (p && on("ficha.proxima")) {
         const txt = A.proximaVez(p);
         if (txt) out.push(seccion({}, h("div", { class: "tarjeta tarjeta-prox" },
           h("div", null, h("div", { class: "tele-et acc" }, "Próxima sesión"), h("div", { class: "prox-txt" }, capital(txt))))));
       }
       const mol = deEjercicio(store.estado.molestias || [], k);
-      out.push(seccion({ cab: "Molestias" },
+      if (on("molestias")) out.push(seccion({ cab: "Molestias" },
         lista([...mol.slice(0, 3).map((m) => celda({ titulo: nombreArticulacion(m.articulacion), sub: capital(fechaCorta(m.fecha, A.hoy)) + (m.nota ? " · " + m.nota : ""), valor: chip("Nivel " + m.nivel, m.nivel >= 4 ? "bad" : m.nivel === 3 ? "warn" : null), alPulsar: () => anotarMolestia(app, {}, m) })),
           celda({ titulo: "Anotar molestia", estilo: "accion", alPulsar: () => anotarMolestia(app, { ejercicioId: k }) })])));
       const L = A.liga, le = L && L.ok ? L.ejercicios.get(k) : null;
       const estado = [];
       if (d) estado.push(celda({ titulo: "Semáforo", valor: chip(ESTADOS[d.estado].texto, tonoEstado(d.estado)) }));
       if (d && d.diasSinPR != null) estado.push(celda({ titulo: "Días sin récord", valor: String(d.diasSinPR) }));
-      const vle = ligaVigente(le);
+      const vle = on("ligas") ? ligaVigente(le) : null;
       if (vle) estado.push(celda({ titulo: "Liga", sub: vle.viejo ? "Última conocida" : capital(L.faltaTxt(le)), valor: h("span", { class: "valor-tend" }, insignia(vle.p.nivel, 20), vle.p.nivel.txt), chevron: true, alPulsar: () => app.nav.ir("liga/ejercicio/" + encodeURIComponent(k)) }));
-      else if (le && le.motivo) estado.push(celda({ titulo: "Liga", sub: capital(le.motivo) }));
+      else if (on("ligas") && le && le.motivo) estado.push(celda({ titulo: "Liga", sub: capital(le.motivo) }));
       if (estado.length) out.push(seccion({ cab: "Estado" }, lista(estado)));
       const rec = [];
       if (e.rmMax) rec.push(celda({ titulo: "e1RM", valor: kg(e.rmMax.st.oneRM) + " · " + fechaCorta(e.rmMax.dia, A.hoy) }));

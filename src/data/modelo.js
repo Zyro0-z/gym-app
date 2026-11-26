@@ -47,6 +47,7 @@ export const ACENTOS = ["azul", "indigo", "morado", "rosa", "rojo", "naranja", "
 export function ajustesBase() {
   return {
     version: 2,
+    ocultos: [],                                                       // módulos desactivados en Ajustes › Módulos (ids de data/modulos.js)
     apariencia: { tema: "auto", acento: "azul", haptica: true, acentoColor: "#3B82F6", mapa: "termico", mapaA: "#FFD27A", mapaB: "#E0467A" },
     entreno: { descanso: 90, presets: [30, 60, 90, 120, 180], pasoPeso: 2.5, sonido: true, pantallaEncendida: true,
       barra: 20, discos: [25, 20, 15, 10, 5, 2.5, 1.25, 0.5],        // calculadora de discos

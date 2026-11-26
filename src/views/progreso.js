@@ -16,6 +16,7 @@ import { kgTotal, kg, minutos, fechaCorta, capital } from "../ui/textos.js";
 import { abrirPesaje } from "./pesaje.js";
 import { tarjetaMedidas, editarMedidas } from "./medidas.js";
 import { ligaVigente } from "./ligas.js";
+import { activo } from "../data/modulos.js";
 import { elegirRutina } from "./hoy.js";
 import { n1, seccionAsignarMusculos } from "./musculos.js";
 import { marcarFila, verMapa } from "./mapa-enlace.js";
@@ -43,16 +44,20 @@ export function vistaProgreso(_p, app) {
   const { store } = app;
   const periodoMusculos = (A) => periodoGuardado() || ["sem", "30d"].find((x) => A.balance(x).total) || "all";
   let seg = leerPref("progreso", "resumen"), q = "", semVol = leerPref("periodo-volumen", null), periodo = leerPref("periodo-musculos", "sem"), rango = leerPref("rango-cuerpo", "3M"), modoM = leerPref("modo-musculos", "grupos");
+  const on = (id) => activo(store.estado.ajustes, id);
+  const vis = () => SEGMENTOS.filter((x) => x.valor === "resumen" || on("progreso." + x.valor));
+  const norm = () => { if (!vis().some((x) => x.valor === seg)) seg = "resumen"; };
   const def = {
     titulo: "Progreso",
     cabDerecha: () => {
+      norm();
       if (seg === "musculos") return micro(modoM === "musculos" ? PERIODOS_MM : PERIODOS_M, periodoMusculos(store.analisis() || { balance: () => ({}) }), (v) => { periodo = v; ponerPref("periodo-musculos", v); app.nav.repintarActual(); }, "Periodo");
-      const A = store.analisis(), L = A && A.liga, vg = L && L.ok ? ligaVigente(L.general) : null;
+      const A = store.analisis(), L = A && A.liga, vg = L && L.ok && on("ligas") ? ligaVigente(L.general) : null;
       return vg ? h("button", { class: "pastilla-liga", "aria-label": "Liga: " + vg.p.nivel.txt + ". Abrir ligas", onClick: () => app.nav.ir("ligas") }, insignia(vg.p.nivel, 20), h("span", null, vg.p.nivel.txt), icono("chevron", { tam: 12, grosor: 2.6 })) : null;
     },
-    secciones: { n: SEGMENTOS.length, indice: () => SEGMENTOS.findIndex((x) => x.valor === seg), ir: (i) => { seg = SEGMENTOS[i].valor; ponerPref("progreso", seg); } },
-    bajoTitulo: () => segmentado(SEGMENTOS, seg, (v) => { seg = v; ponerPref("progreso", v); app.nav.repintarActual(); }, { etiqueta: "Sección" }),
-    render(c) { def._c = c; pintarCuerpo(); },
+    secciones: { get n() { return vis().length; }, indice: () => { norm(); return vis().findIndex((x) => x.valor === seg); }, ir: (i) => { seg = vis()[i].valor; ponerPref("progreso", seg); } },
+    bajoTitulo: () => { norm(); return vis().length < 2 ? null : segmentado(vis(), seg, (v) => { seg = v; ponerPref("progreso", v); app.nav.repintarActual(); }, { etiqueta: "Sección" }); },
+    render(c) { norm(); def._c = c; pintarCuerpo(); },
   };
   function pintarCuerpo() {
     const c = def._c; if (!c) return;
@@ -136,18 +141,19 @@ function resumen(A, app, semVol, cambiarSem) {
   if (avisos.length) out.push(seccion({ cab: "Avisos" }, lista(avisos.map((d) => celda({ titulo: d.e.nombre, sub: d.diasSinPR != null ? plural(d.diasSinPR, "día", "días") + " sin récord" : null,
     valor: chip(ESTADOS[d.estado].texto, tonoEstado(d.estado)), chevron: true, alPulsar: () => app.nav.ir("ejercicio/" + encodeURIComponent(d.e.k)) })))));
 
-  const L = A.liga;
-  const vg = L && L.ok ? ligaVigente(L.general) : null;
+  const L = A.liga, mod = (id) => activo(app.store.estado.ajustes, id);
+  const vg = L && L.ok && mod("ligas") ? ligaVigente(L.general) : null;
   out.push(seccion({ cab: "Más análisis" }, lista([
     vg ? celda({ izquierda: insignia(vg.p.nivel, 32), titulo: "Liga", sub: vg.viejo ? "Última conocida" : null, valor: vg.p.nivel.txt, chevron: true, alPulsar: () => app.nav.ir("ligas") }) : null,
-    celda({ titulo: "Series por músculo", sub: "Volumen semanal efectivo, con recuento fraccional", chevron: true, alPulsar: () => app.nav.ir("musculos") }),
-    celda({ titulo: "Fatiga y descarga", sub: "Semana a semana: e1RM, RPE y recuperación", chevron: true, alPulsar: () => app.nav.ir("fatiga") }),
-    celda({ titulo: "Rendimiento y recuperación", sub: "Cómo rindes según el sueño, el estrés y la energía", chevron: true, alPulsar: () => app.nav.ir("rendimiento") }),
-    celda({ titulo: "Molestias articulares", sub: "Dónde, cuánto y con qué ejercicio", valor: (app.store.estado.molestias || []).length ? String(app.store.estado.molestias.length) : null, chevron: true, alPulsar: () => app.nav.ir("molestias") }),
-    celda({ titulo: "Mesociclos", sub: "Bloques de semanas y su resumen", chevron: true, alPulsar: () => app.nav.ir("mesociclos") }),
-    A.porGimnasio && A.porGimnasio.length ? celda({ titulo: "Por gimnasio", sub: "Tu e1RM en cada gimnasio, ejercicio a ejercicio", chevron: true, alPulsar: () => app.nav.ir("porGimnasio") }) : null,
-    celda({ titulo: "Comparar periodos", sub: "4 semanas, mes o 3 meses frente al anterior", chevron: true, alPulsar: () => app.nav.ir("comparar") }),
+    mod("musculos") && celda({ titulo: "Series por músculo", sub: "Volumen semanal efectivo, con recuento fraccional", chevron: true, alPulsar: () => app.nav.ir("musculos") }),
+    mod("fatiga") && celda({ titulo: "Fatiga y descarga", sub: "Semana a semana: e1RM, RPE y recuperación", chevron: true, alPulsar: () => app.nav.ir("fatiga") }),
+    mod("rendimiento") && celda({ titulo: "Rendimiento y recuperación", sub: "Cómo rindes según el sueño, el estrés y la energía", chevron: true, alPulsar: () => app.nav.ir("rendimiento") }),
+    mod("molestias") && celda({ titulo: "Molestias articulares", sub: "Dónde, cuánto y con qué ejercicio", valor: (app.store.estado.molestias || []).length ? String(app.store.estado.molestias.length) : null, chevron: true, alPulsar: () => app.nav.ir("molestias") }),
+    mod("mesociclos") && celda({ titulo: "Mesociclos", sub: "Bloques de semanas y su resumen", chevron: true, alPulsar: () => app.nav.ir("mesociclos") }),
+    mod("gimnasio") && A.porGimnasio && A.porGimnasio.length ? celda({ titulo: "Por gimnasio", sub: "Tu e1RM en cada gimnasio, ejercicio a ejercicio", chevron: true, alPulsar: () => app.nav.ir("porGimnasio") }) : null,
+    mod("comparar") && celda({ titulo: "Comparar periodos", sub: "4 semanas, mes o 3 meses frente al anterior", chevron: true, alPulsar: () => app.nav.ir("comparar") }),
   ].filter(Boolean))));
+  if (!out[out.length - 1].querySelector(".celda")) out.pop();
   return out;
 }
 
@@ -276,7 +282,7 @@ function cuerpo(A, app, rango, cambiar) {
       h("div", { style: { margin: "12px 0 4px" } }, segmentado(RANGOS, rango, cambiar, { etiqueta: "Rango" })),
       puntos.length ? graficaLinea({ puntos, secundaria: medias, formato: (v) => kg(v), ejeX: (n) => fechaCorta(deNum(n)), area: false, etiqueta: "Peso corporal" })
         : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Sin pesajes en este periodo."))),
-    medidas,
+    activo(store.estado.ajustes, "cuerpo.medidas") ? medidas : null,
     rp && rp.cambio ? h("p", { class: "seccion t-subhead" }, (rp.cambio.dif >= 0 ? "Has ganado " : "Has perdido ") + fmt(Math.abs(rp.cambio.dif), 1) + " kg desde el " + fechaCorta(rp.inicio, A.hoy) + ".") : null,
     seccion({ cab: "Pesajes", accion: { texto: "Añadir", alPulsar: () => abrirPesaje(app) } }, lista([celda({ titulo: "Todos los pesajes", sub: "Último: " + capital(fechaCorta(pes[0].fecha, A.hoy)), valor: String(pes.length), chevron: true, alPulsar: () => app.nav.ir("pesajes") })])),
   ];

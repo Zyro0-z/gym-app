@@ -90,6 +90,7 @@ const FICHEROS = [
   "src/ui/bloqueo.js",
   "src/ui/avisos.js",
   "src/views/ajustes.js",
+  "src/data/modulos.js",
   "src/views/comun.js",
   "src/views/datos.js",
   "src/views/editores.js",
