@@ -95,5 +95,5 @@ vistaApariencia.pestana = "ajustes";
 /** Círculo que abre el selector de color del sistema; guarda al soltar (evento `change`, no en cada arrastre). */
 function selectorColor(nombre, valor, activo, alElegir, clase) {
   const inp = h("input", { type: "color", value: valor, "aria-label": nombre, onChange: (e) => alElegir(e.target.value) });
-  return h("label", { class: clase, style: { background: valor }, "aria-checked": activo ? "true" : null }, inp, activo ? icono("check") : null);
+  return h("label", { class: clase + (activo ? " activo" : ""), style: { background: valor, "--elegido": valor }, "aria-checked": activo ? "true" : null }, inp, activo ? icono("check") : null);
 }
