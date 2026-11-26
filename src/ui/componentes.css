@@ -840,3 +840,34 @@ body.con-modal .aviso-actualizacion { display: none; }
 .tira-aviso.roja { --warn: var(--bad); --warn-ink: var(--bad-ink); }
 .pie-app { font-size: 11px; }
 .seccion-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--label-2); padding: 0 6px 5px; }
+
+/* ── Rediseño V2 · Ficha de ejercicio ── */
+.ficha-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.ficha-tags .ej-tag { display: inline-flex; align-items: center; gap: 5px; }
+.ficha-estado { margin-left: auto; display: inline-flex; }
+.ficha-estado .chip { margin: 0; }
+.tarjeta-ficha { padding: 13px 14px; }
+.tele-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.tele-2.uno { grid-template-columns: 1fr; }
+.tele { background: var(--cell-2); box-shadow: var(--borde-fino); border-radius: 13px; padding: 9px 11px; min-width: 0; }
+.tele.acc { background: color-mix(in srgb, var(--accent) 10%, var(--cell)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
+.tele-et { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--label-2); }
+.tele.acc .tele-et, .tele-et.acc { color: var(--accent-ink); }
+.tele-cifra { font-size: 26px; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; margin-top: 2px; }
+.tele-cifra small { font-size: 12px; font-weight: 600; color: var(--label-2); }
+.tele.acc .tele-cifra, .tele.acc .tele-cifra small { color: var(--accent-ink); }
+.tele-sub { font-size: 10.5px; color: var(--label-2); margin-top: 1px; }
+.ficha-ctl { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.leyenda-banda { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--label-2); min-width: 0; }
+.leyenda-banda i { width: 10px; height: 8px; border-radius: 2px; background: var(--graf-banda); flex: none; }
+.tarjeta-musc { display: grid; grid-template-columns: 134px 1fr; gap: 12px; align-items: center; padding: 11px 13px; }
+.tarjeta-musc .diagrama { width: 134px; }
+.tarjeta-musc .diagrama-lienzo { padding: 4px; border-radius: 13px; }
+.musc-lista { gap: 10px; min-width: 0; }
+.musc-et { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--accent-ink); margin-bottom: 2px; }
+.musc-et.sec { color: var(--label-2); }
+.musc-p { font-size: 13px; font-weight: 600; line-height: 1.3; }
+.musc-s { font-size: 12px; color: var(--label-2); line-height: 1.3; }
+.tarjeta-prox { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 11%, var(--cell)), var(--cell) 70%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent); }
+.prox-txt { font-size: 13.5px; font-weight: 700; margin-top: 2px; line-height: 1.3; }
+.ficha-tags .ej-tag { font-size: 11.5px; }

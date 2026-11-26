@@ -69,7 +69,7 @@ export function vistaProgreso(_p, app) {
 }
 
 /** Píldoras compactas de un solo grupo (periodo o modo); cada una lleva su nombre completo para lectores. */
-function micro(opciones, valor, cambiar, etiqueta) {
+export function micro(opciones, valor, cambiar, etiqueta) {
   return h("div", { class: "micro-pills", role: "group", "aria-label": etiqueta }, opciones.map((o) => h("button", { class: o.valor === valor && "on", "aria-pressed": String(o.valor === valor), "aria-label": o.texto, onClick: () => cambiar(o.valor) }, o.corto || o.texto)));
 }
 
