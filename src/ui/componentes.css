@@ -871,3 +871,29 @@ body.con-modal .aviso-actualizacion { display: none; }
 .tarjeta-prox { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 11%, var(--cell)), var(--cell) 70%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent); }
 .prox-txt { font-size: 13.5px; font-weight: 700; margin-top: 2px; line-height: 1.3; }
 .ficha-tags .ej-tag { font-size: 11.5px; }
+
+/* ── Rediseño V2 · ajustes de accesibilidad (zonas táctiles y contraste) ── */
+.micro-pills button { min-width: 38px; }
+.micro-pills button::after { inset: -9px -3px; }
+.dia-sem .marca { background: var(--label-2); opacity: .55; }
+.dia-sem.hecho .marca, .dia-sem.previsto .marca { opacity: 1; }
+.grafica .barra { fill: color-mix(in srgb, var(--accent) 72%, transparent); }
+.leyenda-niveles i { height: 8px; box-shadow: inset 0 0 0 1px var(--mapa); }
+.tarjeta-calor .calor .dia.n3 { background: color-mix(in srgb, var(--accent) 88%, transparent); }
+.ej-nombre { position: relative; }
+.ej-nombre::after { content: ""; position: absolute; inset: -4px 0; }
+.num-serie { width: 32px; color: var(--label); }
+.num-serie::after { inset: -6px -6px; }
+.serie.actual:not(.hecha) .num-serie { color: var(--accent-ink); }
+.serie.hecha .num-serie { color: var(--ok-ink); }
+.campo-serie { height: 44px; }
+.rpe-serie.sin-rpe { color: var(--label); font-weight: 500; }
+.tira-rpe .chip-rpe { position: relative; }
+.tira-rpe .chip-rpe::after { content: ""; position: absolute; inset: 0 -1px; }
+.dia-sem .marca { background: var(--label-icono); opacity: 1; }
+.grafica .barra { fill: color-mix(in srgb, var(--accent) 90%, transparent); }
+.tarjeta-calor .calor .dia.n3 { background: var(--accent); }
+.num-serie::after { inset: -8px -6px; }
+.serie.actual:not(.hecha) .num-serie { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.serie.hecha .num-serie { background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.serie.actual:not(.hecha) .rpe-serie.sin-rpe { background: color-mix(in srgb, var(--accent) 8%, transparent); }
