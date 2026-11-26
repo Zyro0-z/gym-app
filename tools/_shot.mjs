@@ -18,6 +18,8 @@ for (const tema of (temas.length?temas:["dark","light"])) {
     await p.evaluate(async()=>{const g=window.__gym; const r=g.store.estado.rutinas[0]; await g.entreno.empezar(r?r.nombre:null);});
     await p.waitForTimeout(700);
     const c = p.locator(".modal-completo .serie .check").first(); if (await c.count()) { await c.click(); await p.waitForTimeout(500); }
+  } else if (ruta === "ses1") {
+    await p.evaluate(()=>{const g=window.__gym; const s=g.store.estado.sesiones.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha))[0]; g.nav.ir("sesion/"+encodeURIComponent(s.id));});
   } else if (ruta === "ej1") {
     await p.evaluate(()=>{const g=window.__gym; const A=g.store.analisis(); const e=A.ejercicios.find(x=>/press banca/i.test(x.nombre))||A.ejercicios[0]; g.nav.ir("ejercicio/"+encodeURIComponent(e.k));});
   } else if (ruta.startsWith("tab:")) {
