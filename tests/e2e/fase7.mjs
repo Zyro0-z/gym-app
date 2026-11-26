@@ -45,7 +45,7 @@ await p.reload(); await p.waitForFunction(() => window.__gym); await espera(1000
 
 paso("Hoy: anillo de la semana con el porcentaje en el centro");
 await limpio();
-assert.ok(await p.locator(".semana-anillo .centro-anillo").count() >= 1); await foto("hoy");
+assert.ok(await p.locator(".semana-card .centro-anillo").count() >= 1); await foto("hoy");
 
 paso("Progreso › Fatiga: miniaturas de 8 semanas y reparto del RPE");
 await ir("fatiga", "progreso");

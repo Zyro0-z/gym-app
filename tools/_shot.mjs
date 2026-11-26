@@ -18,6 +18,10 @@ for (const tema of (temas.length?temas:["dark","light"])) {
     await p.evaluate(async()=>{const g=window.__gym; const r=g.store.estado.rutinas[0]; await g.entreno.empezar(r?r.nombre:null);});
     await p.waitForTimeout(700);
     const c = p.locator(".modal-completo .serie .check").first(); if (await c.count()) { await c.click(); await p.waitForTimeout(500); }
+  } else if (ruta.startsWith("tab:")) {
+    const [, id, seg] = ruta.split(":");
+    await p.locator(`.tabbar [data-tab=${id}]`).click(); await p.waitForTimeout(500);
+    if (seg) { await p.locator(".pestana.activa .segmentado button", { hasText: seg }).first().click(); await p.waitForTimeout(600); }
   } else if (ruta) await p.evaluate((r)=>window.__gym.nav.ir(r), ruta);
   await p.waitForTimeout(600);
   await p.screenshot({path:`${dir}/${tema}.png`});

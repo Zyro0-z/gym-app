@@ -48,9 +48,9 @@ await p.reload(); await p.waitForFunction(() => window.__gym); await espera(900)
 assert.equal(await inst.count(), 0, "no vuelve a salir");
 
 paso("Hoy: un solo botón relleno (Empezar) y «Repetir última» con la última sesión de la rutina");
-const principal = p.locator(".hoy-principal");
+const principal = p.locator(".hero");
 assert.equal(await p.locator(".pestana.activa .pantalla:not([hidden]) .btn:not(.texto):not(.gris)").count(), 1, "un único botón protagonista");
-assert.match(await principal.innerText(), /Repetir última · 12 nov/);
+assert.match(await principal.getByRole("button", { name: /Repetir la última sesión/ }).getAttribute("aria-label"), /del 12 nov/);
 await principal.getByRole("button", { name: /Repetir la última sesión de Torso/ }).click(); await espera(900);
 const bor = (await estado()).borrador;
 assert.equal(bor.rutina, "Torso");

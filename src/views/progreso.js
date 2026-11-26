@@ -45,6 +45,10 @@ export function vistaProgreso(_p, app) {
   let seg = leerPref("progreso", "resumen"), q = "", semVol = leerPref("periodo-volumen", null), periodo = leerPref("periodo-musculos", "sem"), rango = leerPref("rango-cuerpo", "3M"), modoM = leerPref("modo-musculos", "grupos");
   const def = {
     titulo: "Progreso",
+    cabDerecha: () => {
+      const A = store.analisis(), L = A && A.liga, vg = L && L.ok ? ligaVigente(L.general) : null;
+      return vg ? h("button", { class: "pastilla-liga", "aria-label": "Liga: " + vg.p.nivel.txt + ". Abrir ligas", onClick: () => app.nav.ir("ligas") }, insignia(vg.p.nivel, 20), h("span", null, vg.p.nivel.txt), icono("chevron", { tam: 12, grosor: 2.6 })) : null;
+    },
     bajoTitulo: () => segmentado(SEGMENTOS, seg, (v) => { seg = v; ponerPref("progreso", v); pintarCuerpo(); }, { etiqueta: "Sección" }),
     render(c) { def._c = c; pintarCuerpo(); },
   };
@@ -65,7 +69,7 @@ export function vistaProgreso(_p, app) {
 
 // ─────────── Resumen ───────────
 
-const PERIODOS_VOL = [{ valor: "8", texto: "8 semanas" }, { valor: "26", texto: "6 meses" }, { valor: "52", texto: "1 año" }];
+const PERIODOS_VOL = [{ valor: "8", texto: "8 semanas", corto: "8S" }, { valor: "26", texto: "6 meses", corto: "6M" }, { valor: "52", texto: "1 año", corto: "1A" }];
 
 /** Resumen: una gráfica principal (volumen semanal con periodo) y debajo el detalle, en listas. */
 // Semanas de 6 meses y 1 año, una vez por análisis (cambiar de periodo no recalcula)
@@ -86,26 +90,32 @@ function resumen(A, app, semVol, cambiarSem) {
   else for (const k of [8, 26, 52]) { n = k; semanas = deN(k); if (semanas.some((x) => x.vol > 0)) break; }
   const media = semanas.reduce((a, s) => a + s.vol, 0) / (semanas.length || 1);
   const out = [];
-  out.push(seccion({ pie: media > 0 ? "Media " + kgTotal(media) + " por semana" : null }, h("div", { class: "tarjeta" },
-    h("div", { class: "fila entre" }, h("div", { class: "etiqueta" }, "Volumen esta semana"), delta),
-    h("div", { class: "cifra t-title1 c-accent" }, kgTotal(r.act.vol)),
-    h("div", { class: "t-subhead c-2", style: { marginTop: "2px" } }, [plural(r.act.ser, "serie", "series"), plural(r.act.n, "sesión", "sesiones"), r.mediaDur ? "media " + minutos(r.mediaDur) : null].filter(Boolean).join(" · ")),
-    h("div", { style: { margin: "14px 0 2px" } }, segmentado(PERIODOS_VOL, String(n), cambiarSem, { etiqueta: "Periodo de la gráfica" })),
+  const sesPrev = [1, 2, 3, 4, 5, 6, 7].filter((d) => { const rt = A.C.horario.get(d); return rt && canon(rt) !== "descanso"; }).length;
+  const enCurso = sesPrev > 0 && r.act.n < sesPrev ? h("span", { class: "chip-estado info num" }, "En curso · " + r.act.n + "/" + sesPrev + " sesiones") : null;
+  const micro = h("div", { class: "micro-pills", role: "group", "aria-label": "Periodo de la gráfica" }, PERIODOS_VOL.map((p) => h("button", { class: p.valor === String(n) && "on", "aria-pressed": String(p.valor === String(n)), "aria-label": p.texto, onClick: () => cambiarSem(p.valor) }, p.corto)));
+  out.push(seccion({}, h("div", { class: "tarjeta tarjeta-vol" },
+    h("div", { class: "vol-cab" },
+      h("div", null, h("div", { class: "kicker" }, "Volumen esta semana"), h("div", { class: "vol-cifra num" }, kgTotal(r.act.vol))), micro),
+    h("div", { class: "vol-meta" }, enCurso || delta, h("span", { class: "num" }, [plural(r.act.ser, "serie", "series"), enCurso ? null : plural(r.act.n, "sesión", "sesiones"), r.mediaDur ? "media " + minutos(r.mediaDur) : null].filter(Boolean).join(" · "))),
     semanas.some((x) => x.vol > 0)
-      ? graficaBarras({ datos: semanas.map((s, i) => ({ etiqueta: s.etiqueta, valor: s.vol, ser: s.ser, activa: i === semanas.length - 1 })), formato: (v) => kgTotal(v),
+      ? graficaBarras({ alto: 150, datos: semanas.map((s, i) => ({ etiqueta: s.etiqueta, valor: s.vol, ser: s.ser, activa: i === semanas.length - 1 })), formato: (v) => kgTotal(v), media, etiquetaMedia: "Media " + kgTotal(media),
         detalle: (d) => "semana del " + d.etiqueta + " · " + plural(d.ser, "serie", "series"), etiqueta: "Volumen semanal, " + PERIODOS_VOL.find((p) => +p.valor === n).texto })
       : h("p", { class: "etiqueta grafica-vacia", style: { height: "180px" } }, "Sin sesiones en este periodo."))));
 
   const so = A.seriesObjetivo;
   if (so && so.lista.length) {
     const tope = Math.max(...so.lista.map((o) => Math.max(o.max, o.hechas + o.previstas)), 1);
-    out.push(seccion({ cab: "Series por grupo · objetivo semanal" },
-      lista(so.lista.map((o) => {
-        const est = o.cierre.estado;
-        const marca = est === "enRango" || est === "llegara" ? chip(est === "llegara" ? "Llegarás" : "En rango", "ok", { icono: "check" })
-          : est === "noLlega" ? (estadoObjetivoSemana(o.cierre, fr).tipo === "deficit" ? chip("Faltan " + o.cierre.faltan, "warn") : chip("En curso", null)) : est === "encima" ? chip("Por encima", "warn") : est === "deload" ? chip("Descarga", "accent") : null;
-        return celda({ punto: colorGrupo(grupos, o.grupo), titulo: o.grupo, sub: h("span", { class: "barra-objetivo" }, barraObjetivo(o, tope), h("span", { class: "num" }, o.hechas + (o.previstas ? " + " + o.previstas : "") + " de " + o.min + "–" + o.max)),
-          valor: marca, alPulsar: () => app.nav.ir("grupo/" + encodeURIComponent(o.grupo)) });
+    out.push(seccion({}, h("div", { class: "tarjeta tarjeta-grupos" },
+      h("div", { class: "fila entre" }, h("span", { class: "kicker" }, "Series por grupo · objetivo semanal"), h("span", { class: "pie-mini" }, "Franja = rango")),
+      so.lista.map((o) => {
+        const est = o.cierre.estado, col = colorGrupo(grupos, o.grupo);
+        const marca = est === "enRango" || est === "llegara" ? chip(est === "llegara" ? "Llegarás" : "En rango", "ok", { icono: "check", relleno: true })
+          : est === "noLlega" ? (estadoObjetivoSemana(o.cierre, fr).tipo === "deficit" ? chip("Faltan " + o.cierre.faltan, "warn", { relleno: true }) : chip("En curso", null, { relleno: true })) : est === "encima" ? chip("Por encima", "warn", { relleno: true }) : est === "deload" ? chip("Descarga", "accent", { relleno: true }) : null;
+        return h("button", { class: "fila-grupo", "aria-label": o.grupo + ": " + o.hechas + (o.previstas ? " más " + o.previstas + " previstas" : "") + " de " + o.min + " a " + o.max + " series", onClick: () => app.nav.ir("grupo/" + encodeURIComponent(o.grupo)) },
+          h("span", { class: "fg-top" },
+            h("span", { class: "fg-nombre" }, h("i", { class: "punto-grupo", style: { background: col } }), o.grupo),
+            h("span", { class: "fg-nums num" }, h("b", null, o.hechas + (o.previstas ? "+" + o.previstas : "")), " / " + o.min + "–" + o.max, marca)),
+          barraObjetivo(o, tope, col));
       }))));
   }
 
@@ -133,8 +143,8 @@ function resumen(A, app, semVol, cambiarSem) {
   return out;
 }
 
-function barraObjetivo(o, tope) {
-  const el = h("span", { class: "barra-obj", "aria-hidden": "true" });
+function barraObjetivo(o, tope, col) {
+  const el = h("span", { class: "barra-obj", "aria-hidden": "true", style: col ? { "--g": col } : null });
   el.append(h("i", { class: "banda", style: { left: (o.min / tope * 100) + "%", width: ((o.max - o.min) / tope * 100) + "%" } }),
     h("i", { class: "previstas", style: { width: ((o.hechas + o.previstas) / tope * 100) + "%" } }),
     h("i", { class: "hechas", style: { width: (o.hechas / tope * 100) + "%" } }));

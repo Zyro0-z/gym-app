@@ -105,7 +105,7 @@ function rejilla(svg, ticks, y, ancho) {
  * Barras. datos: [{ etiqueta, valor, activa, partes: [{ valor, color }] }]
  * formato(v) para la burbuja; detalle(d, i) texto secundario; banda [min, max] opcional.
  */
-export function graficaBarras({ datos, alto = 180, formato = fmtEje, detalle = null, banda = null, etiqueta = "", seleccionar = true }) {
+export function graficaBarras({ datos, alto = 180, formato = fmtEje, detalle = null, banda = null, etiqueta = "", seleccionar = true, media = null, etiquetaMedia = "" }) {
   return contenedor(alto, (el, ancho) => {
     const svg = s("svg", { width: ancho, height: alto, viewBox: `0 0 ${ancho} ${alto}` });
     const total = (d) => (d.partes ? d.partes.reduce((a, p) => a + (p.valor || 0), 0) : d.valor || 0);
@@ -138,6 +138,11 @@ export function graficaBarras({ datos, alto = 180, formato = fmtEje, detalle = n
       if (poner) ultEt = i;
       if (poner) svg.append(s("text", { class: "eje", x: cx, y: alto - 4, "text-anchor": "middle" }, d.etiqueta || ""));
     });
+    if (media > 0) {
+      const ym = y(media), tw = 8 + 5.4 * etiquetaMedia.length;
+      svg.append(s("line", { class: "media", x1: 0, x2: ancho - EJE_Y + 4, y1: ym, y2: ym }));
+      if (etiquetaMedia) { svg.append(s("rect", { class: "media-fondo", x: 0, y: ym - 19, width: tw, height: 15, rx: 4.5 })); svg.append(s("text", { class: "media-txt", x: 5, y: ym - 8.5 }, etiquetaMedia)); }
+    }
     el.appendChild(svg);
     if (seleccionar && datos.length) seleccionable(el, svg, xs, ys, alto, (i) => ({ valor: formato(total(datos[i])), detalle: detalle ? detalle(datos[i], i) : datos[i].etiqueta }), ancho);
   }, etiqueta, describirSerie(datos.map((d) => (d.partes ? d.partes.reduce((a, p) => a + (p.valor || 0), 0) : d.valor)), formato, (i) => datos[i].etiqueta || ""));
