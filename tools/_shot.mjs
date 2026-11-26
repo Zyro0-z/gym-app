@@ -24,6 +24,7 @@ for (const tema of (temas.length?temas:["dark","light"])) {
     if (seg) { await p.locator(".pestana.activa .segmentado button", { hasText: seg }).first().click(); await p.waitForTimeout(600); }
   } else if (ruta) await p.evaluate((r)=>window.__gym.nav.ir(r), ruta);
   await p.waitForTimeout(600);
+  if (process.env.CLICK) { await p.locator(process.env.CLICK).first().click({ force: true }); await p.waitForTimeout(800); }
   await p.screenshot({path:`${dir}/${tema}.png`});
 }
 await b.close(); srv.close?.();

@@ -29,8 +29,8 @@ await p.evaluate(async () => {
 await p.reload(); await p.waitForFunction(() => window.__gym); await espera(800);
 await p.getByRole("tab", { name: /Progreso/ }).click(); await espera();
 await p.getByText("Músculos", { exact: true }).first().click(); await espera();
-await p.getByText("Músculos", { exact: true }).nth(1).click(); await espera();
-await p.getByText("8 semanas", { exact: true }).click(); await espera();
+await p.getByRole("button", { name: "Músculos", exact: true }).click(); await espera();
+await p.getByRole("button", { name: "8 semanas", exact: true }).click(); await espera();
 
 paso("sin músculos asignados el mapa lo explica y ofrece asignarlos");
 let txt = await p.locator("#app").innerText();

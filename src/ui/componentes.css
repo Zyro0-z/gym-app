@@ -255,7 +255,6 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .diagrama.compacto .diagrama-lienzo { max-width: 230px; }
 .diagrama.compacto .diagrama-cuerpo.una-vista { max-width: 110px; border-radius: 12px; }
 .diagrama-cuerpo.una-vista.con-selector { max-width: 360px; }
-.diagrama > .segmentado { margin: 0 auto 12px; max-width: 320px; }
 .diagrama-cuerpo svg { display: block; width: 100%; height: auto; }
 .diagrama-cuerpo svg .musculos path { fill: transparent; stroke: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 /* Monocromo: un tono (--mapa, igual en claro y oscuro) en 4 niveles, multiplicado sobre la imagen para conservar las fibras */
@@ -762,3 +761,24 @@ body.con-modal .aviso-actualizacion { display: none; }
 .fila-grupo .barra-obj .previstas { background: color-mix(in srgb, var(--g, var(--accent)) 38%, transparent); }
 .fila-grupo .barra-obj .hechas { background: var(--g, var(--accent)); }
 .fila-grupo .barra-obj { overflow: visible; }
+
+/* ── Rediseño V2 · Mapa corporal ── */
+.diagrama-lienzo { max-width: none; background: #000; border-radius: 17px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08), inset 0 0 36px rgba(0, 0, 0, .85); overflow: hidden; }
+.diagrama-cuerpo { max-width: 300px; margin: 0 auto; border-radius: 0; background: transparent; }
+.diagrama-cuerpo svg { transition: transform var(--dur-4, .35s) cubic-bezier(.32, .72, 0, 1); }
+.con-ficha .diagrama-lienzo { padding: 10px 6px 10px; transition: padding-bottom .35s cubic-bezier(.32, .72, 0, 1); }
+.con-ficha .diagrama-lienzo.con-foco { padding-bottom: 66px; }
+.con-ficha .diagrama-lienzo.con-foco .diagrama-cuerpo svg { transform: translateY(-6px); }
+.diagrama.compacto .diagrama-lienzo { max-width: 230px; padding: 0; }
+.diagrama-info { left: 8px; right: 8px; bottom: 8px; opacity: 0; transition: opacity .25s linear; }
+.diagrama-lienzo.con-foco .diagrama-info { opacity: 1; }
+.diagrama-info .resumen { background: rgba(19, 22, 30, .94); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent); border-radius: 12px; padding: 4px 6px 4px 12px; font-size: 13px; }
+.diagrama-info .resumen b { font-weight: 700; }
+.diagrama-info .resumen .txt { overflow: hidden; text-overflow: ellipsis; }
+.diagrama-info .resumen .btn { min-height: 44px; padding: 0 12px; margin: 0; width: auto; border-radius: 8px; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent-ink); font-size: 11.5px; font-weight: 700; }
+.leyenda-niveles { justify-content: space-between; flex-wrap: nowrap; gap: 5px; margin-top: 9px; padding: 0 2px; font-size: 10px; }
+.leyenda-niveles i { width: 13px; height: 6px; border-radius: 3px; box-shadow: none; background: color-mix(in srgb, var(--mapa) calc(var(--op) * 100%), transparent); }
+.leyenda-niveles .nivel { gap: 4px; }
+.mapa-filtros { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+.tarjeta-mapa { padding: 12px 13px; }
+.celda.enfocada { background: color-mix(in srgb, var(--accent) 12%, var(--cell)); }

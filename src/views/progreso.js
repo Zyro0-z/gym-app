@@ -46,10 +46,11 @@ export function vistaProgreso(_p, app) {
   const def = {
     titulo: "Progreso",
     cabDerecha: () => {
+      if (seg === "musculos") return micro(modoM === "musculos" ? PERIODOS_MM : PERIODOS_M, periodoMusculos(store.analisis() || { balance: () => ({}) }), (v) => { periodo = v; ponerPref("periodo-musculos", v); app.nav.repintarActual(); }, "Periodo");
       const A = store.analisis(), L = A && A.liga, vg = L && L.ok ? ligaVigente(L.general) : null;
       return vg ? h("button", { class: "pastilla-liga", "aria-label": "Liga: " + vg.p.nivel.txt + ". Abrir ligas", onClick: () => app.nav.ir("ligas") }, insignia(vg.p.nivel, 20), h("span", null, vg.p.nivel.txt), icono("chevron", { tam: 12, grosor: 2.6 })) : null;
     },
-    bajoTitulo: () => segmentado(SEGMENTOS, seg, (v) => { seg = v; ponerPref("progreso", v); pintarCuerpo(); }, { etiqueta: "Sección" }),
+    bajoTitulo: () => segmentado(SEGMENTOS, seg, (v) => { seg = v; ponerPref("progreso", v); app.nav.repintarActual(); }, { etiqueta: "Sección" }),
     render(c) { def._c = c; pintarCuerpo(); },
   };
   function pintarCuerpo() {
@@ -61,10 +62,15 @@ export function vistaProgreso(_p, app) {
     }
     if (seg === "resumen") poner(c, resumen(A, app, semVol, (v) => { semVol = v; ponerPref("periodo-volumen", v); pintarCuerpo(); }));
     else if (seg === "ejercicios") poner(c, ejercicios(A, app, q, (v) => { q = v; }));
-    else if (seg === "musculos") poner(c, musculos(A, app, periodoMusculos(A), (v) => { periodo = v; ponerPref("periodo-musculos", v); pintarCuerpo(); }, modoM, (v) => { modoM = v; ponerPref("modo-musculos", v); pintarCuerpo(); }));
+    else if (seg === "musculos") poner(c, musculos(A, app, periodoMusculos(A), modoM, (v) => { modoM = v; ponerPref("modo-musculos", v); app.nav.repintarActual(); }));
     else poner(c, cuerpo(A, app, rango, (v) => { rango = v; ponerPref("rango-cuerpo", v); pintarCuerpo(); }));
   }
   return def;
+}
+
+/** Píldoras compactas de un solo grupo (periodo o modo); cada una lleva su nombre completo para lectores. */
+function micro(opciones, valor, cambiar, etiqueta) {
+  return h("div", { class: "micro-pills", role: "group", "aria-label": etiqueta }, opciones.map((o) => h("button", { class: o.valor === valor && "on", "aria-pressed": String(o.valor === valor), "aria-label": o.texto, onClick: () => cambiar(o.valor) }, o.corto || o.texto)));
 }
 
 // ─────────── Resumen ───────────
@@ -179,23 +185,23 @@ function ejercicios(A, app, q, guardarQ) {
 
 // ─────────── Músculos ───────────
 
-const PERIODOS_M = [{ valor: "sem", texto: "Semana" }, { valor: "30d", texto: "30 días" }, { valor: "all", texto: "Todo" }];
+const PERIODOS_M = [{ valor: "sem", texto: "Semana", corto: "7D" }, { valor: "30d", texto: "30 días", corto: "30D" }, { valor: "all", texto: "Todo" }];
 
 const MODOS_M = [{ valor: "grupos", texto: "Grupos" }, { valor: "musculos", texto: "Músculos" }];
 
-const PERIODOS_MM = [{ valor: "sem", texto: "Semana" }, { valor: "30d", texto: "4 semanas" }, { valor: "all", texto: "8 semanas" }];
+const PERIODOS_MM = [{ valor: "sem", texto: "Semana", corto: "7D" }, { valor: "30d", texto: "4 semanas", corto: "4S" }, { valor: "all", texto: "8 semanas", corto: "8S" }];
 
 /** Vista por músculo concreto (clavicular, esternal, cabezas del deltoides y del tríceps, trapecio alto y medio, erectores…): series efectivas por periodo. */
-function porMusculo(A, app, periodo, cambiar, modo, cambiarModo) {
+function porMusculo(A, app, periodo, modo, cambiarModo) {
   const V = A.volumenMusculos(), k = periodo === "sem" ? 1 : periodo === "30d" ? 4 : V.semanas.length;
   const filas = V.filas.map((f) => ({ ...f, v: Math.round(f.porSemana.slice(-k).reduce((a, b) => a + b, 0) * 100) / 100 })).filter((f) => f.v > 0).sort((a, z) => z.v - a.v);
   const txt = (v) => n1(v) + (v === 1 ? " serie" : " series");
-  const cab = [h("div", { class: "seccion junta" }, segmentado(MODOS_M, modo, cambiarModo, { etiqueta: "Detalle del mapa" })),
-    h("div", { class: "seccion junta" }, segmentado(PERIODOS_MM, periodo, cambiar, { etiqueta: "Periodo" }))];
+  const filtros = () => h("div", { class: "mapa-filtros" }, micro(MODOS_M, modo, cambiarModo, "Detalle del mapa"), h("span", { class: "pie-mini num" }, n1(filas.reduce((a, f) => a + f.v, 0)) + " series efectivas"));
+  const cab = [];
   const asignar = seccionAsignarMusculos(app, () => app.nav.repintarActual());
   if (!filas.length) {
     const sinMus = V.sinMusculos.length > 0;
-    return [...cab, vacio({ icono: "pesa", titulo: sinMus ? "Ejercicios sin músculos asignados" : "Sin series en este periodo",
+    return [seccion({}, h("div", { class: "tarjeta tarjeta-mapa" }, filtros())), vacio({ icono: "pesa", titulo: sinMus ? "Ejercicios sin músculos asignados" : "Sin series en este periodo",
       texto: sinMus ? "Tus ejercicios no tienen músculos asignados, así que el mapa no puede repartir las series." : "Cuando entrenes aparecerá aquí cada músculo." }), asignar];
   }
   const filasEl = new Map();
@@ -204,13 +210,13 @@ function porMusculo(A, app, periodo, cambiar, modo, cambiarModo) {
   const enfocar = (nombre) => { mapa.foco(nombre); verMapa(mapa); };
   return [...cab, asignar,
     seccion({},
-      h("div", { class: "tarjeta" }, mapa)),
+      h("div", { class: "tarjeta tarjeta-mapa" }, filtros(), mapa)),
     seccion({ cab: "Músculos, de más a menos series" }, lista(filas.map((f) => { const c = celda({ titulo: f.nombre, sub: f.grupo, valor: h("span", { class: "num" }, txt(f.v)), alPulsar: () => enfocar(f.nombre) }); filasEl.set(f.nombre, c); return c; }))),
     seccion({}, lista([celda({ titulo: "Comparar con semanas anteriores", sub: "Pasada, media de 4 semanas y peso del secundario", chevron: true, alPulsar: () => app.nav.ir("musculos") })]))];
 }
 
-function musculos(A, app, periodo, cambiar, modo, cambiarModo) {
-  if (modo === "musculos") return porMusculo(A, app, periodo, cambiar, modo, cambiarModo);
+function musculos(A, app, periodo, modo, cambiarModo) {
+  if (modo === "musculos") return porMusculo(A, app, periodo, modo, cambiarModo);
   const grupos = app.store.estado.ajustes.grupos;
   const b = A.balance(periodo);
   const okDia = periodo === "sem" ? (d) => claveSemana(d) === claveSemana(A.hoy) : periodo === "30d" ? (d) => d >= masDias(A.hoy, -29) : () => true;
@@ -226,9 +232,7 @@ function musculos(A, app, periodo, cambiar, modo, cambiarModo) {
   const vpg = A.volumenPorGrupo;
   const datos = semanas.map((s, i) => ({ etiqueta: s.etiqueta, partes: vpg.map((g) => ({ valor: g.semanas[g.semanas.length - semanas.length + i] || 0, color: colorGrupo(grupos, g.grupo) })) }));
   return [
-    h("div", { class: "seccion junta" }, segmentado(MODOS_M, modo, cambiarModo, { etiqueta: "Detalle del mapa" })),
-    h("div", { class: "seccion junta" }, segmentado(PERIODOS_M, periodo, cambiar, { etiqueta: "Periodo" })),
-    seccion({ pie: plural(b.total, "serie", "series") + " en el periodo" }, h("div", { class: "tarjeta" }, diagrama)),
+    seccion({}, h("div", { class: "tarjeta tarjeta-mapa" }, h("div", { class: "mapa-filtros" }, micro(MODOS_M, modo, cambiarModo, "Detalle del mapa"), h("span", { class: "pie-mini num" }, plural(b.total, "serie", "series") + " en el periodo")), diagrama)),
     seccion({ cab: "Grupos, de más a menos series" }, lista(filas.sort((a, z) => z.ser - a.ser).map((f) => { const c = celda({ punto: colorGrupo(grupos, f.nombre), titulo: f.nombre, sub: f.vol ? kgTotal(f.vol) : null,
       valor: h("span", { class: "num" }, plural(f.ser, "serie", "series")), chevron: true, alPulsar: () => app.nav.ir("grupo/" + encodeURIComponent(f.nombre)) }); filasEl.set(f.nombre, c); return c; }))),
     seccion({ cab: "Volumen por grupo · 8 semanas" }, h("div", { class: "tarjeta" },
