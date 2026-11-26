@@ -35,7 +35,7 @@ export function celda(o) {
     class: ["celda", pulsable && "pulsable", o.estilo], role: pulsable ? undefined : "listitem",
     onClick: pulsable ? (e) => o.alPulsar(e) : null, "aria-disabled": o.deshabilitada ? "true" : null, dataset: o.dataset,
   },
-    o.icono ? h("span", { class: "celda-icono", style: { background: o.colorIcono || "var(--tab-off)" } }, icono(o.icono)) : null,
+    o.icono ? h("span", { class: "celda-icono", style: { "--c": o.colorIcono || "var(--tab-off)" } }, icono(o.icono)) : null,
     o.punto ? h("span", { class: "celda-punto", style: { background: o.punto } }) : null,
     o.izquierda || null,
     h("span", { class: ["celda-texto", o.sub && "dos"] },

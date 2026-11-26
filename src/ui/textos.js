@@ -9,6 +9,9 @@ export const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "a
 
 /** «domingo, 15 de noviembre» */
 export const fechaLarga = (iso) => DIAS[diaSemana(iso) - 1] + ", " + +iso.slice(8, 10) + " de " + MESES[+iso.slice(5, 7) - 1];
+/** «Jueves · 26 nov» */
+export const fechaCabecera = (iso) => capitalizar(DIAS[diaSemana(iso) - 1]) + " · " + +iso.slice(8, 10) + " " + MESES_CORTOS[+iso.slice(5, 7) - 1];
+const capitalizar = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 /** «12 nov» (con el año si no es el actual) */
 export const fechaCorta = (iso, hoy = null) => +iso.slice(8, 10) + " " + MESES_CORTOS[+iso.slice(5, 7) - 1] + (hoy && hoy.slice(0, 4) !== iso.slice(0, 4) ? " " + iso.slice(0, 4) : "");
 /** «hoy», «ayer», «vie», «12 nov» según la distancia. */

@@ -43,7 +43,7 @@ await empezar();
 const press = p.locator(".modal-completo .ej").nth(0), remo = p.locator(".modal-completo .ej").nth(1);
 
 paso("molestia reciente de nivel ≥ 3: aviso en ese ejercicio y no en el de nivel leve");
-assert.match(await press.locator(".ej-molestia").innerText(), /Hombro der\. · nivel 3, hace 5 días/);
+assert.match(await press.locator(".ej-molestia").innerText(), /Hombro der\. · Nivel 3 \(hace 5 días\)/);
 assert.equal(await remo.locator(".ej-molestia").count(), 0);
 
 paso("«Cambiar ›» abre el selector de equivalentes");

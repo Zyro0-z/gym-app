@@ -1,5 +1,6 @@
 // Ayudas en la sala: aviso de molestia reciente y ajuste del peso según cómo ha ido la primera serie.
 import { h } from "../../ui/dom.js";
+import { icono } from "../../ui/iconos.js";
 import { fmt, leerNumero } from "../../core/formato.js";
 import { numDia } from "../../core/fechas.js";
 import { esRpe } from "../../core/rpe.js";
@@ -8,7 +9,7 @@ import { e1rmReciente, autorregulacion } from "../../core/prescripcion.js";
 import { E } from "./estado.js";
 import { esTop } from "./herramientas.js";
 
-/** «Molestia reciente · Hombro der. · nivel 3, hace 5 días  Cambiar ›»: solo con nivel ≥ 3 en los últimos 21 días. `cambiar` abre el selector de equivalentes. */
+/** «(!) Hombro der. · Nivel 3 (hace 5 días)  Cambiar ›»: solo con nivel ≥ 3 en los últimos 21 días. `cambiar` abre el selector de equivalentes. */
 export function avisoMolestia(e, cambiar) {
   if (E.M.modo !== "entreno") return null;
   const { store } = E.app, hoy = store.hoy(), m = molestiaReciente(store.estado.molestias || [], e.ejercicioId, hoy);
@@ -16,8 +17,8 @@ export function avisoMolestia(e, cambiar) {
   const d = numDia(hoy) - numDia(m.fecha), cuando = d <= 0 ? "hoy" : d === 1 ? "ayer" : "hace " + d + " días";
   const lado = m.lado === "izq" ? " izq." : m.lado === "der" ? " der." : "";
   return h("div", { class: "ej-molestia", role: "group", "aria-label": "Molestia reciente: " + nombreArticulacion(m.articulacion) + lado + ", nivel " + m.nivel + ", " + cuando },
-    h("span", null, h("b", null, "Molestia reciente · "), nombreArticulacion(m.articulacion) + lado + " · nivel " + m.nivel + ", " + cuando),
-    h("button", { class: "btn texto", "aria-label": "Cambiar " + e.nombre + " por un ejercicio equivalente", onClick: cambiar }, "Cambiar ›"));
+    h("span", { class: "m-txt" }, icono("aviso", { tam: 15, grosor: 2.2 }), h("span", null, h("b", null, nombreArticulacion(m.articulacion) + lado), " · Nivel " + m.nivel + " (" + cuando + ")")),
+    h("button", { class: "m-act", "aria-label": "Cambiar " + e.nombre + " por un ejercicio equivalente", onClick: cambiar }, "Cambiar ›"));
 }
 
 /** Chip con el peso para el RPE objetivo según el e1RM de hoy, tras la primera serie de trabajo hecha con RPE. `aplicar(a)` rellena las series vacías. */

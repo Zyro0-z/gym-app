@@ -39,7 +39,7 @@ assert.equal(await p.evaluate(() => window.__gym.store.estado.sesiones.length), 
 
 paso("Hoy avisa de la copia sin exportar; «Posponer 3 días» la quita");
 await p.locator(".tabbar [data-tab=hoy]").click(); await espera(600);
-const filaCopia = p.locator(".celda", { hasText: "Guarda una copia" });
+const filaCopia = p.locator(".tira-aviso", { hasText: "Copia pendiente" });
 assert.equal(await filaCopia.count(), 1);
 await filaCopia.click(); await espera(400);
 await p.getByRole("button", { name: "Posponer 3 días" }).click(); await espera(500);

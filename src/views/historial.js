@@ -5,8 +5,10 @@ import { resumenRecuperacion } from "./entreno/recuperacion.js";
 import { h, poner } from "../ui/dom.js";
 import { seccion, lista, celda, vacio } from "../ui/controles.js";
 import { mapaCalor } from "../ui/calor.js";
-import { capital, mesAnio, DIAS_CORTOS, fechaCorta, kg } from "../ui/textos.js";
-import { claveMes, diaSemana, menosMeses } from "../core/fechas.js";
+import { capital, mesAnio, DIAS_CORTOS, fechaCorta, kg, kgTotal } from "../ui/textos.js";
+import { icono } from "../ui/iconos.js";
+import { canon } from "../core/nombres.js";
+import { claveMes, diaSemana, menosMeses, numDia, finDeMes } from "../core/fechas.js";
 import { plural } from "../core/formato.js";
 import { lineaSesion, sesionesOrdenadas, totalesSesion, abrirSesionDelDia } from "./comun.js";
 import { editarSesion } from "./entreno.js";
@@ -23,7 +25,8 @@ export function vistaHistorial(_p, app) {
   const { store } = app;
   let mes = null, cuantas = TANDA;
   return {
-    titulo: "Historial",
+    titulo: "Historial", sobre: "Diario de entrenamientos",
+    cabDerecha: () => { const n = store.estado.sesiones.length; return n ? h("span", { class: "pastilla-liga solo-info neutra num" }, plural(n, "sesión", "sesiones")) : null; },
     render(c) {
       const est = store.estado, hoy = store.hoy();
       const ses = sesionesOrdenadas(est);
@@ -33,27 +36,47 @@ export function vistaHistorial(_p, app) {
       for (const s of ses) porDia.set(s.fecha, (porDia.get(s.fecha) || 0) + totalesSesion(s).series);
       const primero = claveMes(ses[ses.length - 1].fecha), ultimo = claveMes(hoy > ses[0].fecha ? hoy : ses[0].fecha);
       const A = store.analisis();
-      const nivel = (iso) => { const n = porDia.get(iso) || 0; return n ? (n < 10 ? 1 : n < 18 ? 2 : n < 26 ? 3 : 4) : 0; };
-      const enMes = ses.filter((s) => claveMes(s.fecha) === mes).length;
-      const calor = h("div", { class: "tarjeta" }, mapaCalor({
+      // Cuatro niveles relativos a tus propios días (cuartiles de series), para que una sesión ligera y un pico se distingan
+      const vals = [...porDia.values()].sort((a, b) => a - b), cuartil = (q) => vals[Math.min(vals.length - 1, Math.floor(q * vals.length))] || 0;
+      const q1 = cuartil(0.25), q2 = cuartil(0.5), q3 = cuartil(0.75);
+      const nivel = (iso) => { const n = porDia.get(iso) || 0; return n ? (n <= q1 ? 1 : n <= q2 ? 2 : n <= q3 ? 3 : 4) : 0; };
+      const delMes = ses.filter((s) => claveMes(s.fecha) === mes), enMes = delMes.length;
+      const volMes = delMes.reduce((a, s) => a + totalesSesion(s).vol, 0);
+      const finTrans = Math.min(numDia(finDeMes(mes + "-01")), numDia(hoy)) - numDia(mes + "-01") + 1, semanas = Math.max(1, finTrans) / 7;
+      const kpi = (et, v) => h("div", { class: "hm-kpi" }, h("span", null, et), h("b", { class: "num" }, v));
+      const calor = h("div", { class: "tarjeta tarjeta-calor" }, h("div", { class: "hm-kpis" }, kpi("Sesiones", String(enMes)), kpi("Volumen", volMes ? fmt(volMes / 1000, 1) + " t" : "—"), kpi("Frecuencia", enMes ? fmt(enMes / semanas, 1) + " /sem" : "—")), mapaCalor({
         mes, nivel, hoy, deload: (iso) => A.C.bloquesActivos(iso).some((b) => b.esDeload),
         etiquetaDia: (iso, n) => fechaCorta(iso) + (n ? ", entrenado" : ""),
         alPulsar: (iso) => abrirSesionDelDia(app, ses.filter((x) => x.fecha === iso), capital(fechaCorta(iso))),
         alCambiarMes: (d) => { mes = claveMes(menosMeses(mes + "-01", -d)); this.render(c); },
         puedeAntes: mes > primero, puedeDespues: mes < ultimo,
-      }), h("div", { class: "etiqueta", style: { marginTop: "12px" } }, plural(enMes, "sesión", "sesiones") + " en " + mesAnio(mes)));
+      }));
       const grupos = new Map();
       for (const s of ses.slice(0, cuantas)) { const k = claveMes(s.fecha); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(s); }
       const quedan = ses.length - cuantas;
       poner(c, h("div", { class: "seccion" }, calor),
-        [...grupos].map(([k, lst]) => seccion({ cab: capital(mesAnio(k)) }, lista(lst.map((s) => celda({
-          titulo: s.rutina || "Entrenamiento libre", sub: lineaSesion(s), valor: h("span", { class: "t-subhead" }, DIAS_CORTOS[diaSemana(s.fecha) - 1] + " " + +s.fecha.slice(8)), chevron: true,
-          alPulsar: () => app.nav.ir("sesion/" + encodeURIComponent(s.id)),
-        }))))),
+        [...grupos].map(([k, lst]) => seccion({ cab: capital(mesAnio(k)) }, h("div", { class: "lista lista-sesiones" }, lst.map((s) => filaSesion(s, est, app))))),
         quedan > 0 ? h("div", { class: "seccion" }, h("button", { class: "btn gris", onClick: () => { cuantas += TANDA; this.render(c); } },
           h("span", null, "Ver sesiones anteriores (" + quedan + ")"))) : null);
     },
   };
+}
+
+const COLORES_RUTINA = ["--g-azul", "--g-verde", "--g-naranja", "--g-rosa", "--g-morado", "--g-indigo", "--g-cian", "--g-amarillo"];
+const colorRutina = (n) => { let x = 0; for (const ch of canon(n || "libre")) x = (x * 31 + ch.charCodeAt(0)) >>> 0; return "var(" + COLORES_RUTINA[x % COLORES_RUTINA.length] + ")"; };
+
+/** Fila de una sesión: barra de color por rutina, título, resumen, RPE medio, gimnasio y fecha. */
+function filaSesion(s, est, app) {
+  const rpes = s.ejercicios.flatMap((e) => e.series).filter((x) => x.hecha !== false && esRpe(x.rpe)).map((x) => x.rpe);
+  const rpeMedio = rpes.length ? rpes.reduce((a, b) => a + b, 0) / rpes.length : null;
+  const gim = s.gimnasio && gimnasiosDe(est.ajustes).length > 1 ? nombreGimnasio(est.ajustes, s.gimnasio) : null;
+  const meta = lineaSesion(s) + (rpeMedio ? " · @" + fmt(rpeMedio, 1) : "");
+  const d = diaSemana(s.fecha) - 1;
+  return h("button", { class: "fila-sesion", onClick: () => app.nav.ir("sesion/" + encodeURIComponent(s.id)), "aria-label": (s.rutina || "Entrenamiento libre") + ", " + capital(fechaCorta(s.fecha, est.ajustes ? app.store.hoy() : undefined)) + ", " + meta },
+    h("i", { class: "barra-rutina", style: { background: colorRutina(s.rutina) } }),
+    h("span", { class: "fs-main" }, h("span", { class: "fs-tit" }, h("b", null, s.rutina || "Entrenamiento libre"), gim ? h("em", { class: "fs-gim" }, gim) : null), h("span", { class: "fs-meta num" }, meta)),
+    h("span", { class: "fs-fecha" }, h("span", null, DIAS_CORTOS[d]), h("b", { class: "num" }, String(+s.fecha.slice(8)))),
+    icono("chevron", { tam: 12, grosor: 2.6 }));
 }
 
 /** Detalle de una sesión, con la comparación frente a la anterior de la misma rutina. */

@@ -3,10 +3,10 @@
 :root {
   color-scheme: light;
   --bg: #FFFFFF;
-  --bg-grouped: #F2F2F7;
+  --bg-grouped: #F4F5F8;
   --cell: #FFFFFF;
-  --cell-2: #F2F2F7;
-  --cell-pressed: #D1D1D6;
+  --cell-2: #EDF0F5;
+  --cell-pressed: #E2E6EF;
   --fill: rgba(120, 120, 128, .2);
   --fill-2: rgba(120, 120, 128, .12);
   --label: #000000;
@@ -20,6 +20,8 @@
   --sheet-bg: #F2F2F7;
   --veil: rgba(0, 0, 0, .4);
   --shadow-sheet: 0 -2px 24px rgba(0, 0, 0, .12);
+  --borde-card: 0 4px 16px rgba(15, 23, 42, .045);
+  --borde-fino: inset 0 0 0 .5px rgba(60, 60, 67, .16);
   --shadow-pill: 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04);
   /* Estados: --ok/--warn/--bad para gráficos e iconos (3:1); *-ink para texto (4,5:1) */
   --ok: #2A9F47;
@@ -66,11 +68,11 @@
   --gutter: 16px;
   --r-control: 10px;
   --r-cell: 12px;
-  --r-card: 16px;
+  --r-card: 20px;
   --r-sheet: 10px;
   --tap: 44px;
   --nav-h: 44px;
-  --tab-h: 49px;
+  --tab-h: 72px;
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-l: env(safe-area-inset-left, 0px);
@@ -92,28 +94,30 @@
 /* ── oscuro ── */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #000000;
-  --bg-grouped: #000000;
-  --cell: #1C1C1E;
-  --cell-2: #2C2C2E;
-  --cell-pressed: #3A3A3C;
+  --bg: #08090C;
+  --bg-grouped: #08090C;
+  --cell: #11141B;
+  --cell-2: #191D27;
+  --cell-pressed: #232836;
   --fill: rgba(120, 120, 128, .36);
   --fill-2: rgba(120, 120, 128, .24);
-  --label: #FFFFFF;
-  --label-2: rgba(235, 235, 245, .62);
-  --label-3: rgba(235, 235, 245, .3);
-  --label-icono: rgba(235, 235, 245, .4);
-  --separator: rgba(84, 84, 88, .6);
-  --bar-bg: rgba(22, 22, 22, .94);
-  --sheet-bg: #1C1C1E;
+  --label: #F6F7FA;
+  --label-2: #97A1B5;
+  --label-3: #5D677C;
+  --label-icono: #7A859B;
+  --separator: rgba(255, 255, 255, .09);
+  --bar-bg: rgba(20, 23, 31, .9);
+  --sheet-bg: #11141B;
   --veil: rgba(0, 0, 0, .5);
   --shadow-sheet: none;
   --shadow-pill: none;
-  --tab-off: #8E8E93;
-  --seg-pill: #636366;
-  --chevron: #5A5A5F;
-  --hud: rgba(58, 58, 60, .96);
-  --alert-bg: rgba(44, 44, 46, .94);
+  --borde-card: inset 0 0 0 1px rgba(255, 255, 255, .075), inset 0 1px 0 rgba(255, 255, 255, .065);
+  --borde-fino: inset 0 0 0 1px rgba(255, 255, 255, .075);
+  --tab-off: #8E96A8;
+  --seg-pill: #2B3245;
+  --chevron: #5D677C;
+  --hud: rgba(35, 40, 54, .96);
+  --alert-bg: rgba(25, 29, 39, .94);
   --ok: #30D158;
   --warn: #FF9F0A;
   --bad: #FF453A;
@@ -126,7 +130,7 @@
   --g-morado: #BF5AF2; --g-indigo: #5E5CE6; --g-amarillo: #FFD60A; --g-cian: #64D2FF;
 }
 /* En oscuro, las celdas de una hoja suben un nivel (la hoja ya es #1C1C1E) */
-:root[data-theme="dark"] .hoja { --cell: #2C2C2E; --cell-2: #3A3A3C; --cell-pressed: #48484A; }
+:root[data-theme="dark"] .hoja { --cell: #191D27; --cell-2: #232836; --cell-pressed: #2E3547; }
 
 /* ── acentos (Ajustes › Apariencia) ── */
 :root[data-accent="indigo"]   { --accent: #5856D6; --accent-ink: #5553D0; }

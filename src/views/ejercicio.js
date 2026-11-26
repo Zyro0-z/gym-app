@@ -11,17 +11,18 @@ import { canon } from "../core/nombres.js";
 import { numDia, deNum, menosMeses, claveSemana } from "../core/fechas.js";
 import { ESTADOS } from "../core/estancamiento.js";
 import { kg, kgTotal, fechaCorta, capital } from "../ui/textos.js";
-import { tonoEstado, iconoTend, flechaEstado, pctTxt } from "./progreso.js";
+import { tonoEstado, iconoTend, flechaEstado, pctTxt, micro } from "./progreso.js";
 import { ligaVigente } from "./ligas.js";
 import { e1rmReciente, ruidoE1rm, prPorRango, bandaRuido } from "../core/prescripcion.js";
 import { deEjercicio, nombreArticulacion } from "../core/molestias.js";
 import { anotarMolestia } from "./molestias.js";
 import { nombreMusculo } from "../core/musculos.js";
-import { diagramaCuerpo, vistaPara } from "../ui/cuerpo.js";
+import { diagramaCuerpo } from "../ui/cuerpo.js";
 import { abrirSesionDelDia } from "./comun.js";
 
-const RANGOS = [{ valor: "1M", texto: "1M" }, { valor: "3M", texto: "3M" }, { valor: "6M", texto: "6M" }, { valor: "Todo", texto: "Todo" }];
+const RANGOS = [{ valor: "1M", texto: "1 mes", corto: "1M" }, { valor: "3M", texto: "3 meses", corto: "3M" }, { valor: "6M", texto: "6 meses", corto: "6M" }, { valor: "Todo", texto: "Todo", corto: "Todo" }];
 const MATERIAL = { maquina: "máquina", máquina: "máquina", polea: "polea", mancuerna: "mancuerna", barra: "barra" };
+const flecha = (ic) => (ic === "sube" ? "↑ " : ic === "baja" ? "↓ " : "→ ");
 const serieTxt = (st) => (st.peso > 0 ? fmt(st.peso, Number.isInteger(st.peso) ? 0 : 1) + "×" + st.reps : st.reps + " reps");
 
 /** Mejor e1RM ajustado por RPE de la última sesión del ejercicio con alguna serie con RPE, o null. */
@@ -53,9 +54,12 @@ export function vistaEjercicio([k], app) {
     derecha: () => [h("button", { class: "btn-barra", "aria-label": "Cómo se calcula", onClick: () => comoSeCalcula(app) }, icono("info"))],
     bajoTitulo: () => {
       const e = buscar(), c = cat(), grupos = store.estado.ajustes.grupos;
-      const g = (e && e.grupo) || (c && c.grupo);
-      const partes = [g, c && c.tipoMaterial ? MATERIAL[c.tipoMaterial] || c.tipoMaterial : null, c && c.rangoReps ? c.rangoReps.min + "–" + c.rangoReps.max + " reps" : null, c && c.unilateral ? "por lado" : null].filter(Boolean);
-      return h("div", { class: "fila", style: { gap: "8px" } }, g ? h("span", { class: "celda-punto", style: { background: colorGrupo(grupos, g) } }) : null, h("span", { class: "t-subhead c-2" }, partes.join(" · ")));
+      const g = (e && e.grupo) || (c && c.grupo), dg = e ? store.analisis().diagnostico.get(k) : null;
+      const tags = [c && c.tipoMaterial ? MATERIAL[c.tipoMaterial] || c.tipoMaterial : null, c && c.rangoReps ? c.rangoReps.min + "–" + c.rangoReps.max + " reps" : null, c && c.unilateral ? "por lado" : null].filter(Boolean);
+      return h("div", { class: "ficha-tags" },
+        g ? h("span", { class: "ej-tag" }, h("i", { class: "punto-grupo", style: { background: colorGrupo(grupos, g) } }), g) : null,
+        ...tags.map((t) => h("span", { class: "ej-tag" }, t)),
+        dg ? h("span", { class: "ficha-estado" }, chip(ESTADOS[dg.estado].texto, tonoEstado(dg.estado), { relleno: true })) : null);
     },
     render(c) {
       const A = store.analisis(), e = buscar();
@@ -67,40 +71,38 @@ export function vistaEjercicio([k], app) {
       const t = d && d.tend, ic = iconoTend(t);
       const ajustado = rmConRpe(store.estado.sesiones, k);
       const rec1 = e1rmReciente(e), ruido = ruidoE1rm(e.hist);
-      const fiabilidad = rec1 ? "Fiabilidad " + rec1.confianza + " (" + rec1.reps + " reps" + (rec1.rpe != null ? " @" + rpeTxt(rec1.rpe) : ", sin RPE") + ")"
-        + (ruido ? " · ruido ±" + fmt(ruido.sd, 1) + " kg (" + fmt(ruido.pct, 1) + "\u00a0%)" : " · con 5 sesiones se mide tu ruido personal") + "." : null;
-      const grafica = hist.length ? graficaLinea({ puntos: hist.map((x) => ({ x: numDia(x.dia), y: x.mejorRM, detalle: capital(fechaCorta(x.dia, A.hoy)) + " · " + x.mejorRMReps + " reps" })),
+      const grafica = hist.length ? graficaLinea({ alto: 160, puntos: hist.map((x) => ({ x: numDia(x.dia), y: x.mejorRM, detalle: capital(fechaCorta(x.dia, A.hoy)) + " · " + x.mejorRMReps + " reps" })),
         formato: (v) => kg(v), ejeX: (n) => fechaCorta(deNum(n)), etiqueta: "e1RM por sesión",
         banda: ruido && hist.length > 2 ? bandaRuido(e.hist, ruido.sd).filter((b) => b.dia >= desde).map((b) => ({ x: numDia(b.dia), lo: b.lo, hi: b.hi })) : null }) : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Sin sesiones en este periodo.");
+      const pctChip = t && ic ? pctTxt(t.pct) : null;
+      const sub1 = (pctChip ? flecha(ic) + pctChip : "") + (ruido ? (pctChip ? " · " : "") + "ruido ±" + fmt(ruido.sd, 1) + " kg" : "");
       const out = [
-        seccion({}, h("div", { class: "tarjeta" },
-          h("div", { class: "fila entre" }, h("div", null, h("div", { class: "etiqueta" }, "e1RM de la última sesión"), h("div", { class: "cifra t-title1 c-accent" }, fmt(actual, 1), h("span", { class: "ud" }, " kg"))),
-            t && ic ? chip(pctTxt(t.pct), ic === "sube" ? "ok" : ic === "baja" ? "bad" : null, { icono: ic }) : null),
-          ajustado ? h("div", { class: "etiqueta", style: { marginTop: "4px" } }, "Ajustado por RPE: ", h("span", { class: "num", style: { color: "var(--label)", fontWeight: "600" } }, fmt(ajustado.kg, 1) + " kg"),
-            " (" + fmt(ajustado.st.peso, Number.isInteger(ajustado.st.peso) ? 0 : 1) + " × " + ajustado.st.reps + " @" + rpeTxt(ajustado.st.rpe) + ")") : null,
-          fiabilidad ? h("div", { class: "etiqueta", style: { marginTop: "4px" } }, fiabilidad) : null,
-          h("div", { style: { margin: "12px 0 4px" } }, segmentado(RANGOS, rango, (v) => { rango = v; this.render(c); }, { etiqueta: "Rango" })),
+        seccion({}, h("div", { class: "tarjeta tarjeta-ficha" },
+          h("div", { class: "tele-2" + (ajustado ? "" : " uno") },
+            h("div", { class: "tele" }, h("div", { class: "tele-et" }, "e1RM última sesión"), h("div", { class: "tele-cifra num" }, fmt(actual, 1), h("small", null, " kg")), sub1 ? h("div", { class: "tele-sub num" }, sub1) : null),
+            ajustado ? h("div", { class: "tele acc" }, h("div", { class: "tele-et" }, "Ajustado por RPE"), h("div", { class: "tele-cifra num" }, fmt(ajustado.kg, 1), h("small", null, " kg")),
+              h("div", { class: "tele-sub num" }, fmt(ajustado.st.peso, Number.isInteger(ajustado.st.peso) ? 0 : 1) + " × " + ajustado.st.reps + " @" + rpeTxt(ajustado.st.rpe) + (rec1 ? " · Fiabilidad " + rec1.confianza : ""))) : null),
+          h("div", { class: "ficha-ctl" },
+            ruido && hist.length > 2 ? h("span", { class: "leyenda-banda" }, h("i"), "Franja ±" + fmt(ruido.sd, 1) + " kg (ruido personal)") : h("span"),
+            micro(RANGOS, rango, (v) => { rango = v; this.render(c); }, "Rango")),
           grafica,
-          ruido && hist.length > 2 ? h("div", { class: "etiqueta", style: { marginTop: "6px" } }, "Franja: tu ruido de ±" + fmt(ruido.sd, 1) + " kg alrededor de la media de las últimas 5 sesiones. Un punto dentro de la franja no es un cambio real.") : null,
           e.hist.length < 3 ? h("div", { class: "etiqueta", style: { marginTop: "6px" } }, "Con 3 sesiones o más se calcula la tendencia.") : null)),
       ];
       const mc = cat() && cat().musculos;
       if (mc && ((mc.p && mc.p.length) || (mc.s && mc.s.length))) {
-        const ids = [...(mc.p || []), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m))];
-        const lista = (xs) => xs.map(nombreMusculo).join(", "), vista = vistaPara(ids);
-        out.push(seccion({ cab: "Músculos", pie: "Oscuro: principal · claro: secundario" },
-          h("div", { class: "tarjeta fila", style: vista === "ambas" ? { gap: "12px", flexDirection: "column", alignItems: "stretch" } : { gap: "16px", alignItems: "center" } },
-            diagramaCuerpo([...(mc.p || []).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 2 })), ...(mc.s || []).filter((m) => !(mc.p || []).includes(m)).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 1 }))],
-              { etiqueta: "Músculos de " + (e.nombre || "este ejercicio"), unidad: (v) => (v >= 2 ? "principal" : "secundario"), vista, mini: true }),
-            h("div", { class: "pila", style: { flex: "1", minWidth: "0" } },
-              mc.p && mc.p.length ? h("div", null, h("div", { class: "etiqueta" }, "Principales"), h("div", { class: "t-subhead" }, lista(mc.p))) : null,
-              mc.s && mc.s.length ? h("div", null, h("div", { class: "etiqueta" }, "Secundarios"), h("div", { class: "t-subhead c-2" }, lista(mc.s))) : null))));
+        const sec = (mc.s || []).filter((m) => !(mc.p || []).includes(m));
+        const lista = (xs) => xs.map(nombreMusculo).join(", ");
+        out.push(seccion({}, h("div", { class: "tarjeta tarjeta-musc" },
+          diagramaCuerpo([...(mc.p || []).map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 2 })), ...sec.map((m) => ({ nombre: nombreMusculo(m), tokens: [m + "-*"], valor: 1 }))],
+            { etiqueta: "Músculos de " + (e.nombre || "este ejercicio"), unidad: (v) => (v >= 2 ? "principal" : "secundario"), vista: "ambas", mini: true }),
+          h("div", { class: "pila musc-lista" },
+            mc.p && mc.p.length ? h("div", null, h("div", { class: "musc-et" }, "Principales"), h("div", { class: "musc-p" }, lista(mc.p))) : null,
+            sec.length ? h("div", null, h("div", { class: "musc-et sec" }, "Secundarios"), h("div", { class: "musc-s" }, lista(sec))) : null))));
       }
       if (p) {
         const txt = A.proximaVez(p);
-        out.push(seccion({ cab: "Próxima vez" }, h("div", { class: "tarjeta" },
-          h("div", { class: "fila", style: { gap: "8px" } }, p.clave === "sube" ? h("span", { class: "c-ok", style: { display: "flex" } }, icono("flecha-arriba", { tam: 20, grosor: 2.2 })) : null, h("div", { class: "t-headline" }, p.estado)),
-          txt ? h("div", { class: "t-subhead c-2", style: { marginTop: "4px" } }, capital(txt)) : null)));
+        if (txt) out.push(seccion({}, h("div", { class: "tarjeta tarjeta-prox" },
+          h("div", null, h("div", { class: "tele-et acc" }, "Próxima sesión"), h("div", { class: "prox-txt" }, capital(txt))))));
       }
       const mol = deEjercicio(store.estado.molestias || [], k);
       out.push(seccion({ cab: "Molestias" },

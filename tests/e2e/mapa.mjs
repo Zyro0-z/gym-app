@@ -1,4 +1,4 @@
-// Mapa corporal en Progreso › Músculos: vistas Ambas/Frente/Espalda, foco con resumen, toque cercano y enlace con la lista.
+// Mapa corporal en Progreso › Músculos: vista única Ambas, foco con resumen, toque cercano y enlace con la lista.
 // Uso: node e2e/mapa.mjs [chromium|webkit]
 import { chromium, webkit } from "playwright";
 import assert from "node:assert/strict";
@@ -30,14 +30,14 @@ await p.evaluate(async () => {
 await p.reload(); await p.waitForFunction(() => window.__gym); await espera(800);
 await p.locator(".tabbar [data-tab=progreso]").click(); await espera(800);
 await p.locator(".pestana.activa .segmentado [role=radio]", { hasText: "Músculos" }).click(); await espera(900);
-await p.locator(".pestana.activa .segmentado [role=radio]", { hasText: /^Músculos$/ }).nth(1).click(); await espera(1200);
+await p.locator(".pestana.activa .mapa-filtros button", { hasText: /^Músculos$/ }).click(); await espera(1200);
 
 const viewBox = () => p.locator(".diagrama-cuerpo svg").first().getAttribute("viewBox");
 const marcadas = () => p.locator(".diagrama-cuerpo path.marcada").count();
 
-paso("por defecto se ven las dos caras y hay selector de vista");
+paso("se ven las dos caras y no hay selector de vista");
 assert.equal(await viewBox(), "0 0 937 1050");
-assert.equal(await p.locator("[aria-label='Vista del mapa'] [role=radio]").count(), 3);
+assert.equal(await p.locator("[aria-label='Vista del mapa'] [aria-label=Frente], [aria-label='Vista del mapa'] [aria-label=Espalda]").count(), 0);
 
 paso("cada zona con datos tiene su capa de sombra y no hay ids repetidos");
 const capas = await p.evaluate(() => ({ zonas: document.querySelectorAll(".diagrama-cuerpo path[data-nivel]").length, regiones: document.querySelectorAll(".diagrama-cuerpo .musculos path").length,
@@ -46,19 +46,12 @@ assert.ok(capas.zonas >= 4);
 assert.equal(capas.sombras, capas.regiones);
 assert.equal(capas.unicos, capas.todos, "ids únicos en el documento");
 
-paso("Frente y Espalda recortan el mapa");
-await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Frente" }).click(); await espera(300);
-assert.equal(await viewBox(), "0 0 465 1050");
-await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Espalda" }).click(); await espera(300);
-assert.equal(await viewBox(), "465 0 472 1050");
-
 paso("tocar una zona no mueve la página ni cambia el alto del mapa");
 const medir = () => p.evaluate(() => {
   const d = document.querySelector(".diagrama-cuerpo"); let y = 0;
   for (let e = d; e; e = e.parentElement) y += e.scrollTop || 0;
   return { y: Math.round(y + window.scrollY), top: Math.round(d.getBoundingClientRect().top), alto: Math.round(d.getBoundingClientRect().height) };
 });
-await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Ambas" }).click(); await espera(300);
 const antes = await medir();
 await p.locator(".diagrama-cuerpo path[data-nivel][id^='m-dorsal']").first().click({ force: true }); await espera(700);
 assert.deepEqual(await medir(), antes, "ni desplazamiento ni cambio de alto");
@@ -77,17 +70,13 @@ await dorsal.click({ force: true }); await espera(300);
 assert.equal(await marcadas(), 0, "volver a tocar lo quita");
 assert.equal(await p.locator(".celda.enfocada").count(), 0);
 
-paso("tocar una fila de la lista enfoca el músculo sin cambiar de cara");
-await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Frente" }).click(); await espera(300);
+paso("tocar una fila de la lista enfoca el músculo");
 await p.locator(".celda.pulsable", { hasText: "Dorsal ancho" }).click(); await espera(400);
-assert.equal(await viewBox(), "0 0 465 1050", "la cara no cambia sola");
-assert.equal(await p.locator("[aria-label='Vista del mapa'] [role=radio][aria-checked=true]").innerText(), "Frente");
 assert.ok((await marcadas()) >= 1);
 await p.locator(".celda.pulsable", { hasText: "Pecho medio e inferior" }).click(); await espera(400);
-assert.equal(await viewBox(), "0 0 465 1050");
+assert.equal(await viewBox(), "0 0 937 1050");
 
 paso("un toque a pocos píxeles de una zona también la enfoca");
-await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Ambas" }).click(); await espera(300);
 await p.locator(".diagrama-info .resumen").count() && await p.evaluate(() => document.querySelector(".diagrama-cuerpo svg").dispatchEvent(new MouseEvent("click", { clientX: 1, clientY: 1, bubbles: true }))); await espera(200);
 assert.equal(await marcadas(), 0, "un toque lejos de todo quita el foco");
 const candidatos = await p.evaluate(() => {
@@ -103,11 +92,6 @@ for (const c of candidatos) {
   if (/Pecho medio e inferior/.test(t)) { acierto = true; break; }
 }
 assert.ok(acierto, "un toque fuera pero cerca enfoca la zona");
-
-paso("la vista elegida se recuerda al cambiar de periodo");
-await p.locator("[aria-label='Vista del mapa'] [role=radio]", { hasText: "Espalda" }).click(); await espera(200);
-await p.locator(".pestana.activa [aria-label=Periodo] [role=radio]").first().click(); await espera(900);
-assert.equal(await viewBox(), "465 0 472 1050");
 
 paso("ficha del ejercicio: el principal se tiñe más fuerte que el secundario; las sesiones abren su detalle");
 await p.evaluate(() => window.__gym.nav.ir("ejercicio/pressbanca")); await espera(1200);

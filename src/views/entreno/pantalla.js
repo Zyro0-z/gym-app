@@ -192,7 +192,7 @@ export function pintarCab() {
         h("button", { class: "btn-barra", "aria-label": "Minimizar", onClick: () => { guardarYa(); cerrarModal(); } }, icono("chevron-abajo")),
         h("button", { class: "btn-barra", "aria-label": "Descanso", onClick: elegirDescanso }, icono("cronometro"))),
       h("div", { class: "centro" }, h("div", { class: "titulo" }, d.rutina || "Entrenamiento"), h("div", { class: "sub num" }, h("span", { dataset: { reloj: "1" } }, reloj((Date.now() - d.inicio) / 1000)), h("span", { dataset: { progreso: "1" } }))),
-      h("div", { class: "der" }, h("button", { class: "btn-barra fuerte", onClick: terminar }, "Terminar")),
+      h("div", { class: "der" }, h("button", { class: "btn-barra fuerte terminar", onClick: terminar }, "Terminar")),
       h("div", { class: "progreso-cab", "aria-hidden": "true" }, h("span")));
     pintarProgresoCab();
   } else {

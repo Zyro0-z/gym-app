@@ -6,9 +6,8 @@
 // diagrama y la etiqueta, que nombra los grupos de más a menos.
 import { h, s as sv } from "./dom.js";
 import { seleccion } from "./haptica.js";
-import { segmentado } from "./controles.js";
 
-let plantilla = null, vistaElegida = "ambas";
+let plantilla = null;
 const cargar = () => (plantilla ||= fetch("assets/cuerpo-muscular.svg").then((r) => { if (!r.ok) throw new Error("sin diagrama"); return r.text(); }).then((txt) => {
   const t = document.createElement("template");
   t.innerHTML = txt.replace(/<!--[\s\S]*?-->/g, "");
@@ -55,12 +54,11 @@ export function rangosNiveles(max) {
   return out;
 }
 
-const OPCIONES_VISTA = [{ valor: "ambas", texto: "Ambas" }, { valor: "frente", texto: "Frente" }, { valor: "espalda", texto: "Espalda" }];
 const DIST_CERCA = [0, 7, 14];   // px alrededor del dedo donde se busca una zona si se toca justo al lado
 
 /**
  * grupos: [{ nombre, tokens: ["pecho-*", ...], valor }]. unidad(v) → «13 series». Un grupo secundario es solo un valor menor: se tiñe en un nivel más bajo.
- * Opciones: vista inicial; `selector` añade Ambas/Frente/Espalda (se recuerda entre repintados); `resumen(g)` → nodo extra en
+ * Opciones: vista inicial (solo las miniaturas usan una cara); `selector` reserva el alto de «Ambas» y el hueco de la ficha bajo la figura; `resumen(g)` → nodo extra en
  * la ficha del grupo enfocado; `alElegir(g|null)` avisa a la lista que acompaña al diagrama.
  * Devuelve el contenedor (el SVG se carga en segundo plano) con `.foco(nombre|null)` para enfocar un grupo desde fuera.
  */
@@ -70,7 +68,7 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
   const texto = orden.length ? etiqueta + ". De más a menos: " + orden.map((g) => g.nombre + ", " + unidad(g.valor)).join("; ") + "." : etiqueta + ". Sin datos en este periodo.";
   const sinDatos = orden.length ? "" : "Sin datos en este periodo.";
   const info = h("div", { class: "diagrama-info", "aria-live": "polite" }, sinDatos);
-  let vistaAct = selector ? vistaElegida : vista, svg = null, elegido = null;
+  let raiz = null, vistaAct = selector ? "ambas" : vista, svg = null, elegido = null;
   const el = h("div", { role: "img", "aria-label": texto });
   const zonaDe = new Map(), sombras = new Map();
 
@@ -84,8 +82,6 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
     }
   }
   pintarVista();
-  const ponerVista = (v) => { vistaAct = v; if (selector) vistaElegida = v; pintarVista(); };
-  const sel = selector ? segmentado(OPCIONES_VISTA, vistaAct, ponerVista, { etiqueta: "Vista del mapa" }) : null;
 
   function pintarInfo() {
     if (!elegido) { info.replaceChildren(sinDatos); return; }
@@ -95,6 +91,7 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
   /** Enfoca un grupo (null lo quita): las demás zonas se atenúan. La cara que se ve solo la cambia el selector, nunca un toque. */
   function foco(g, usuario) {
     elegido = g;
+    if (raiz) raiz.querySelector(".diagrama-lienzo").classList.toggle("con-foco", !!g);
     if (svg) {
       svg.classList.toggle("con-foco", !!g);
       for (const [q, x] of zonaDe) q.classList.toggle("marcada", !!g && x === g);
@@ -143,7 +140,7 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
     h("span", { class: "etq" }, "Menos"),
     rangosNiveles(max).map((r) => h("span", { class: "nivel" }, h("i", { "data-nivel": String(r.nivel) }), r.desde === r.hasta ? String(r.desde) : r.desde + "–" + r.hasta)),
     h("span", { class: "etq" }, "Más")) : null;
-  const raiz = h("div", { class: "diagrama" + (mini ? " compacto" : "") }, sel, h("div", { class: "diagrama-lienzo" }, el, info), leyenda);
+  raiz = h("div", { class: "diagrama" + (mini ? " compacto" : "") + (selector ? " con-ficha" : "") }, h("div", { class: "diagrama-lienzo" }, el, info), leyenda);
   raiz.foco = (nombre) => foco(nombre ? grupos.find((g) => g.nombre === nombre) || null : null, false);
   return raiz;
 }

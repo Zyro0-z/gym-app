@@ -2,6 +2,7 @@
 // Se guarda en la sesión (recuperacion) y alimenta el informe de fatiga y la propuesta de descarga.
 import { h, poner } from "../../ui/dom.js";
 import { seccion, lista, celda, segmentado, stepper } from "../../ui/controles.js";
+import { icono } from "../../ui/iconos.js";
 import { fmt } from "../../core/formato.js";
 import { E } from "./estado.js";
 import { guardarYa } from "./pantalla.js";
@@ -19,10 +20,12 @@ export function resumenRecuperacion(r) {
   return p.length ? p.join(" · ") : null;
 }
 
-/** Celda que abre la hoja. `alCambiar` repinta quien la muestra. */
+/** Píldora «Cómo llegas hoy · 7 h de sueño …  Editar ›» que abre la hoja. `alCambiar` repinta quien la muestra. */
 export function celdaRecuperacion(d, alCambiar) {
-  return seccion({ cab: "Recuperación" }, lista([celda({ titulo: "Cómo llegas hoy", valor: resumenRecuperacion(d.recuperacion) || "Sin anotar", chevron: true,
-    alPulsar: () => editarRecuperacion(d, alCambiar) })]));
+  const r = resumenRecuperacion(d.recuperacion);
+  return h("button", { class: "checkin-pill", onClick: () => editarRecuperacion(d, alCambiar) },
+    h("span", { class: "ci-txt" }, icono("rayo", { tam: 14, grosor: 2.2 }), h("b", null, "Cómo llegas hoy"), h("span", { class: "ci-val" }, r || "Sin anotar")),
+    h("span", { class: "ci-acto" }, (r ? "Editar" : "Anotar") + " ›"));
 }
 
 export function editarRecuperacion(d, alCambiar) {

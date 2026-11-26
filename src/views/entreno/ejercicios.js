@@ -31,7 +31,9 @@ export function sesionAnterior(ejercicioId) {
   return mejor;
 }
 
-export function infoEjercicio(id) {
+export const infoEjercicio = (id) => infoPartes(id).join(" · ");
+
+export function infoPartes(id) {
   const c = E.app.store.estado.catalogo.find((x) => x.id === id);
   const partes = [];
   if (c && c.rangoReps) partes.push(c.rangoReps.min + "–" + c.rangoReps.max + " reps" + (c.unilateral ? " por lado" : ""));
@@ -52,7 +54,7 @@ export function infoEjercicio(id) {
       }
     } catch (e) { /* sin análisis */ }
   }
-  return partes.join(" · ");
+  return partes;
 }
 
 export function pintarCuerpo() {
@@ -84,7 +86,7 @@ export function bloqueEjercicio(e, i) {
   const ant = sesionAnterior(e.ejercicioId);
   const cat = E.app.store.estado.catalogo.find((x) => x.id === e.ejercicioId);
   const paso = (cat && cat.incremento > 0 ? cat.incremento : 0) || E.app.store.estado.ajustes.entreno.pasoPeso || 2.5;
-  const info = infoEjercicio(e.ejercicioId);
+  const info = infoPartes(e.ejercicioId);
   const notaFija = cat && cat.notaFija;
   const ultimaNota = E.M.modo === "entreno" && ant && ant.e.nota ? ant.e.nota : "";
   const resumen = resumenDe(e);
@@ -99,7 +101,7 @@ export function bloqueEjercicio(e, i) {
     h("div", { class: "ej-cab" },
       h("button", { class: "ej-nombre", onClick: () => menuEjercicio(i) }, e.nombre || nombreDe(e.ejercicioId)),
       h("button", { class: "btn-icono", "aria-label": "Opciones de " + (e.nombre || ""), onClick: () => menuEjercicio(i) }, icono("opciones"))),
-    info ? h("div", { class: "ej-info" }, info) : null,
+    info.length ? h("div", { class: "ej-info" }, info.map((t, k) => (k === 0 && /reps/.test(t) ? h("span", { class: "ej-tag" }, t) : h("span", { class: "ej-dato" }, t)))) : null,
     molestia, aut,
     sug ? h("button", { class: "chip-sugerencia", "aria-label": "Sugerencia: " + aTexto(sug.peso) + " kilos por " + sug.reps + " repeticiones. " + sug.motivo + ". Toca para ponerla en las series vacías.",
       onClick: () => { const n = aplicarSugerencia(e, sug); seleccion(); guardarPronto(); pintarCuerpo(); if (!n) E.app.toast("Las series ya tienen peso"); } },

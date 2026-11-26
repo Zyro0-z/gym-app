@@ -78,7 +78,7 @@ export function crearNavegacion({ app: raiz, tabbar, pestanas, vistas, ctx }) {
     poner(p.der, d.derecha ? d.derecha() : null);
     if (p.grandeEl) {
       const sobre = texto(d.sobre);
-      poner(p.grandeEl, sobre ? h("div", { class: "sobre" }, sobre) : null, h("h1", null, titulo), d.bajoTitulo ? h("div", { class: "bajo" }, d.bajoTitulo()) : null);
+      poner(p.grandeEl, sobre ? h("div", { class: "sobre" }, sobre) : null, h("h1", null, titulo), d.cabDerecha ? h("div", { class: "cab-der" }, d.cabDerecha()) : null, d.bajoTitulo ? h("div", { class: "bajo" }, d.bajoTitulo()) : null);
     }
     try { d.render(p.cuerpo, p); }
     catch (e) { console.error(e); poner(p.cuerpo, h("div", { class: "vacio" }, h("h2", null, "No se pudo mostrar"), h("p", null, String(e.message || e)))); }
