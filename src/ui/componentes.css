@@ -19,7 +19,7 @@
 .celda + .celda::before { content: ""; position: absolute; top: 0; right: 0; left: 16px; height: .5px; background: var(--separator); }
 .lista.con-iconos .celda + .celda::before { left: 57px; }
 .celda.pulsable:active { background: var(--cell-pressed); transition: none; }
-.celda-icono { width: 29px; height: 29px; flex: none; border-radius: 7px; display: grid; place-items: center; color: #fff; background: var(--tab-off); }
+.celda-icono { width: 29px; height: 29px; flex: none; border-radius: 8px; display: grid; place-items: center; color: var(--c, var(--tab-off)); background: color-mix(in srgb, var(--c, var(--tab-off)) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c, var(--tab-off)) 22%, transparent); }
 .celda-icono svg { width: 19px; height: 19px; stroke-width: 2; }
 .celda-punto { width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .celda-texto { flex: 1; min-width: 0; padding: 11px 0; }
@@ -782,3 +782,61 @@ body.con-modal .aviso-actualizacion { display: none; }
 .mapa-filtros { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
 .tarjeta-mapa { padding: 12px 13px; }
 .celda.enfocada { background: color-mix(in srgb, var(--accent) 12%, var(--cell)); }
+
+/* ── Rediseño V2 · Ligas ── */
+.liga-cab { flex-direction: row; align-items: center; text-align: left; gap: 14px; padding: 15px; background: linear-gradient(158deg, var(--cell-2) 0%, var(--cell) 100%); }
+.liga-medalla { flex: none; display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--accent) 20%, transparent) 0%, transparent 70%); }
+.liga-datos { flex: 1; min-width: 0; }
+.liga-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 2px 0 7px; }
+.liga-nombre { font-size: 22px; font-weight: 800; letter-spacing: -.03em; }
+.liga-pts { font-size: 12px; color: var(--label-2); white-space: nowrap; }
+.liga-pts b { color: var(--label); font-size: 13px; font-weight: 700; }
+.liga-barra { max-width: none; }
+.liga-barra .barrita { height: 5px; }
+.liga-falta { margin-top: 7px; font-size: 11px; color: var(--label-2); }
+.pastilla-liga.solo-info { min-height: 28px; padding: 0 10px; font-size: 11px; color: var(--accent-ink); background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: none; }
+.tarjeta-escalera { padding: 12px 13px 10px; }
+.tarjeta-escalera .escalera { padding-top: 10px; gap: 6px; }
+.tarjeta-escalera .escalera > div { min-width: 58px; padding: 6px 4px; border-radius: 12px; }
+.tarjeta-escalera .escalera > div.actual { background: color-mix(in srgb, var(--accent) 12%, var(--cell-2)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+.fg-nums svg:last-child { color: var(--label-3); }
+.tarjeta-grupos .fila-grupo + .fila-grupo { border-top: .5px solid var(--separator); }
+
+/* ── Rediseño V2 · Historial ── */
+.pastilla-liga.neutra { color: var(--label-2); background: var(--cell); box-shadow: var(--borde-fino); }
+.tarjeta-calor { padding: 12px 12px 13px; }
+.hm-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+.hm-kpi { padding: 6.5px 9px; border-radius: 10px; background: color-mix(in srgb, var(--bg-grouped) 55%, transparent); box-shadow: inset 0 0 0 1px var(--separator); }
+.hm-kpi span { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--label-2); }
+.hm-kpi b { display: block; margin-top: 1px; font-size: 14.5px; font-weight: 800; }
+.tarjeta-calor .calor { gap: 4px; }
+.tarjeta-calor .calor .dia { aspect-ratio: auto; height: 36px; border-radius: 9px; font-size: 12px; font-weight: 600; background: color-mix(in srgb, var(--label) 4%, transparent); }
+.tarjeta-calor .calor button.dia::before { inset: -4px -2px; }
+.tarjeta-calor .calor .dia.n1 { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+.tarjeta-calor .calor .dia.n2 { background: color-mix(in srgb, var(--accent) 46%, transparent); }
+.tarjeta-calor .calor .dia.n3 { background: color-mix(in srgb, var(--accent) 72%, transparent); color: #fff; font-weight: 700; }
+.tarjeta-calor .calor .dia.n4 { background: var(--accent); color: #fff; font-weight: 800; box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 38%, transparent); }
+.tarjeta-calor .calor .dia.hoy { box-shadow: inset 0 0 0 1.8px var(--accent); }
+.tarjeta-calor .calor .dia.hoy.n3, .tarjeta-calor .calor .dia.hoy.n4 { box-shadow: inset 0 0 0 1.8px #fff; }
+.tarjeta-calor .calor .dia.deload { border: 1px dashed color-mix(in srgb, var(--info, var(--g-azul)) 55%, transparent); }
+.tarjeta-calor .calor .dia.deload::after { display: none; }
+.tarjeta-calor .calor-cab { margin: -4px -6px 6px; }
+.tarjeta-calor .calor-cab .mes { font-size: 14px; font-weight: 700; }
+.lista-sesiones { padding: 0; }
+.fila-sesion { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 10px 12px; text-align: left; }
+.fila-sesion + .fila-sesion { box-shadow: inset 0 .5px 0 var(--separator); }
+.fila-sesion .barra-rutina { flex: none; width: 3.5px; height: 34px; border-radius: 3px; }
+.fs-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fs-tit { display: flex; align-items: center; gap: 6px; }
+.fs-tit b { font-size: 14.5px; font-weight: 700; letter-spacing: -.015em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-gim { flex: none; font-style: normal; font-size: 9px; font-weight: 700; padding: 1.5px 5px; border-radius: 5px; background: color-mix(in srgb, var(--g-azul) 16%, transparent); color: var(--g-azul); }
+.fs-meta { font-size: 11.5px; color: var(--label-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-fecha { flex: none; min-width: 42px; padding: 4.5px 7.5px; border-radius: 8.5px; text-align: center; background: var(--cell-2); box-shadow: var(--borde-fino); }
+.fs-fecha span { display: block; font-size: 8.5px; font-weight: 700; text-transform: uppercase; color: var(--label-2); }
+.fs-fecha b { display: block; font-size: 13.5px; font-weight: 800; line-height: 1.1; }
+.fila-sesion > svg { color: var(--label-3); flex: none; }
+
+/* ── Rediseño V2 · Ajustes ── */
+.tira-aviso.roja { --warn: var(--bad); --warn-ink: var(--bad-ink); }
+.pie-app { font-size: 11px; }
+.seccion-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--label-2); padding: 0 6px 5px; }

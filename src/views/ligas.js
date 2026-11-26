@@ -26,13 +26,15 @@ const notaVieja = (v, L) => (v && v.viejo ? h("div", { class: "t-footnote c-2", 
   "Sin series recientes en el rango: es tu liga de la semana del " + fechaCorta(deNum(v.p.nd)) + ".") : null);
 
 function cabecera(L, p, texto, v) {
-  const n = p.nivel, pr = L.progreso(p);
+  const n = p.nivel, pr = L.progreso(p), fin = Number.isFinite(n.hasta);
   return h("div", { class: ["tarjeta liga-cab", v && v.viejo && "liga-vieja"] },
-    insignia(n, 96),
-    h("div", { class: "t-title2", style: { marginTop: "8px" } }, n.txt),
-    h("div", { style: { width: "100%", maxWidth: "260px", margin: "10px auto 6px" } }, barrita(pr.frac)),
-    h("div", { class: "t-footnote c-2" }, pr.siguiente ? capital(texto) : "Has llegado a la liga más alta"),
-    notaVieja(v, L));
+    h("div", { class: "liga-medalla" }, insignia(n, 72)),
+    h("div", { class: "liga-datos" },
+      h("div", { class: "kicker" }, "Liga actual"),
+      h("div", { class: "liga-fila" }, h("div", { class: "liga-nombre" }, n.txt), fin ? h("div", { class: "liga-pts num" }, h("b", null, fmt(p.sc, 0)), " / " + fmt(n.hasta, 0)) : null),
+      h("div", { class: "liga-barra" }, barrita(pr.frac)),
+      h("div", { class: "liga-falta" }, pr.siguiente ? capital(texto) : "Has llegado a la liga más alta"),
+      notaVieja(v, L)));
 }
 
 function sinLigas(app, A) {
@@ -46,7 +48,11 @@ function sinLigas(app, A) {
 export function vistaLigas(_p, app) {
   const { store } = app;
   return {
-    titulo: "Ligas", grande: true,
+    titulo: "Ligas", grande: true, sobre: "Fuerza relativa",
+    cabDerecha: () => {
+      const A = store.analisis(), L = A && A.liga, vg = L && L.ok ? ligaVigente(L.general) : null;
+      return vg ? h("span", { class: "pastilla-liga solo-info num" }, vg.p.sc <= 95 ? "Percentil " + fmt(vg.p.sc, 1) : L.pct(vg.p.sc)) : null;
+    },
     render(c) {
       const A = store.analisis(), L = A.liga, grupos = store.estado.ajustes.grupos;
       const vg = L && L.ok ? ligaVigente(L.general) : null;
@@ -58,10 +64,14 @@ export function vistaLigas(_p, app) {
       const valor = (v) => h("span", { class: ["valor-tend", v.viejo && "c-2"] }, insignia(v.p.nivel, 20), v.p.nivel.txt);
       poner(c,
         h("div", { class: "seccion" }, cabecera(L, g, L.faltaGrupoTxt(g), vg)),
-        seccion({ cab: "Escalera" }, h("div", { class: "tarjeta" }, h("div", { class: "escalera" }, nombresLigas().map((n, i) =>
+        seccion({}, h("div", { class: "tarjeta tarjeta-escalera" }, h("div", { class: "kicker" }, "Escalera de división"), h("div", { class: "escalera" }, nombresLigas().map((n, i) =>
           h("div", { class: i + 1 === actual ? "actual" : i + 1 > actual ? "lejos" : null, "aria-current": i + 1 === actual ? "true" : null }, insignia({ insignia: i + 1, div: "" }, 32), h("span", null, n)))))),
-        gruposL.length ? seccion({ cab: "Por grupo" }, lista(gruposL.map(({ x, v }) => celda({ punto: colorGrupo(grupos, x.grupo), titulo: x.grupo,
-          valor: valor(v), chevron: true, alPulsar: () => app.nav.ir("liga/grupo/" + encodeURIComponent(x.k)) })))) : null,
+        gruposL.length ? seccion({}, h("div", { class: "tarjeta tarjeta-grupos" }, h("div", { class: "kicker" }, "Por grupo muscular"), gruposL.map(({ x, v }) => {
+          const col = colorGrupo(grupos, x.grupo);
+          return h("button", { class: "fila-grupo", "aria-label": x.grupo + ", " + v.p.nivel.txt, onClick: () => app.nav.ir("liga/grupo/" + encodeURIComponent(x.k)) },
+            h("span", { class: "fg-top" }, h("span", { class: "fg-nombre" }, h("i", { class: "punto-grupo", style: { background: col } }), x.grupo), h("span", { class: ["fg-nums", v.viejo && "c-2"] }, insignia(v.p.nivel, 18), v.p.nivel.txt, icono("chevron", { tam: 12, grosor: 2.6 }))),
+            h("span", { class: "barra-obj", "aria-hidden": "true", style: { "--g": col } }, h("i", { class: "hechas", style: { width: Math.max(2, Math.min(100, v.p.sc)) + "%" } })));
+        }))) : null,
         ejs.length ? seccion({ cab: "Por ejercicio" }, lista(ejs.map(({ x, v }) => celda({ titulo: x.nombre,
           valor: valor(v), chevron: true, alPulsar: () => app.nav.ir("liga/ejercicio/" + encodeURIComponent(x.k)) })))) : null,
         L.cambios.length ? seccion({ cab: "Cambios esta semana" }, lista(L.cambios.map((x) => celda({
