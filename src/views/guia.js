@@ -12,7 +12,7 @@ import { masDias, numDia, deNum } from "../core/fechas.js";
 
 export function vistaGuia(_p, app) {
   let reps = 8, interr = true, seg = "1M";
-  const restaurar = () => { const ap = app.store.estado.ajustes.apariencia; aplicarApariencia({ tema: ap.tema, acento: ap.acento }); };
+  const restaurar = () => { const ap = app.store.estado.ajustes.apariencia; aplicarApariencia(ap); };
   return {
     titulo: "Guía",
     grande: true,

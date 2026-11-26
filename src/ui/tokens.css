@@ -148,7 +148,7 @@
 :root[data-theme="dark"][data-accent="verde"]    { --accent: #1F8839; --accent-ink: #30D158; }
 :root[data-theme="dark"][data-accent="grafito"]  { --accent: #757579; --accent-ink: #A5A5AA; }
 /* Color del mapa corporal y de su leyenda: el acento del tema claro también en oscuro, para que la escala de menos a más sea la misma */
-:root { --mapa: var(--accent); }
+:root { --mapa: var(--accent); --mapa-1: #7890B5; --mapa-2: #E58C3A; --mapa-3: #FF6A2A; --mapa-4: #FF3D2E; }
 :root[data-theme="dark"] { --mapa: #0071ED; }
 :root[data-theme="dark"][data-accent="indigo"]  { --mapa: #5856D6; }
 :root[data-theme="dark"][data-accent="morado"]  { --mapa: #A64ED3; }

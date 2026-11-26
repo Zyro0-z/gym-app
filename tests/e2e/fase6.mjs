@@ -105,7 +105,7 @@ const zona = p.locator(".diagrama-cuerpo path[data-nivel]").first();
 await zona.click({ force: true }); await espera(300);
 assert.match(await p.locator(".diagrama-info").textContent(), /^(Pecho|Espalda) · \d+ series/);
 const colores = await p.evaluate(() => new Set([...document.querySelectorAll(".diagrama-cuerpo path[data-nivel]")].map((x) => getComputedStyle(x).fill)).size);
-assert.equal(colores, 1, "un solo tono");
+assert.ok(colores >= 1 && colores <= 4, "la escala del mapa tiene como mucho 4 colores");
 
 paso("gráficas: resumen textual en la etiqueta");
 await p.locator(".pestana.activa .segmentado [role=radio]", { hasText: "Resumen" }).click(); await espera(800);

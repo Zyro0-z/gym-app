@@ -22,6 +22,7 @@
 (function () { var p = {}; try { p = JSON.parse(localStorage.getItem("gym-apariencia") || "{}"); } catch (e) {}
   var t = p.tema || "auto", o = t === "oscuro" || (t === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
   var r = document.documentElement; r.dataset.theme = o ? "dark" : "light"; r.dataset.accent = p.acento || "azul";
+  if (p.pal) { var q = p.pal[o ? "d" : "l"]; r.style.setProperty("--accent", q[0]); r.style.setProperty("--accent-ink", q[1]); }
   document.querySelector('meta[name="theme-color"]').content = o ? "#000000" : "#F2F2F7"; })();</script>
 </head>
 <body>

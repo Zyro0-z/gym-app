@@ -137,9 +137,7 @@ export function diagramaCuerpo(grupos, { etiqueta = "Diagrama muscular", unidad 
   }).catch(() => { el.replaceChildren(); });
 
   const leyenda = max > 0 && !mini ? h("div", { class: "leyenda-niveles", "aria-hidden": "true" },
-    h("span", { class: "etq" }, "Menos"),
-    rangosNiveles(max).map((r) => h("span", { class: "nivel" }, h("i", { "data-nivel": String(r.nivel) }), r.desde === r.hasta ? String(r.desde) : r.desde + "–" + r.hasta)),
-    h("span", { class: "etq" }, "Más")) : null;
+    rangosNiveles(max).map((r) => h("span", { class: "nivel" }, h("i", { "data-nivel": String(r.nivel) }), r.desde === r.hasta ? String(r.desde) : r.desde + "–" + r.hasta))) : null;
   raiz = h("div", { class: "diagrama" + (mini ? " compacto" : "") + (selector ? " con-ficha" : "") }, h("div", { class: "diagrama-lienzo" }, el, info), leyenda);
   raiz.foco = (nombre) => foco(nombre ? grupos.find((g) => g.nombre === nombre) || null : null, false);
   return raiz;

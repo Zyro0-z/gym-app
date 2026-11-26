@@ -4,7 +4,7 @@ import { seccion, lista, celda, segmentado, interruptor } from "../ui/controles.
 import { icono } from "../ui/iconos.js";
 import { plural, fmt } from "../core/formato.js";
 import { canon } from "../core/nombres.js";
-import { temaEfectivo } from "../ui/tema.js";
+import { temaEfectivo, paletaDe, ACENTOS_CALC, COLOR_PERSONAL, ESCALAS_MAPA, NOMBRES_ESCALA, escalaMapa, COLOR_MAPA_A, COLOR_MAPA_B } from "../ui/tema.js";
 
 export const VERSION = "3.0";
 
@@ -49,7 +49,8 @@ export function vistaAjustes(_p, app) {
 }
 
 const TEMAS = [{ valor: "auto", texto: "Automático" }, { valor: "claro", texto: "Claro" }, { valor: "oscuro", texto: "Oscuro" }];
-const ACENTOS = [["azul", "Azul"], ["indigo", "Índigo"], ["morado", "Morado"], ["rosa", "Rosa"], ["rojo", "Rojo"], ["naranja", "Naranja"], ["verde", "Verde"], ["grafito", "Grafito"]];
+const ACENTOS = [["azul", "Azul"], ["cian", "Cian"], ["turquesa", "Turquesa"], ["menta", "Menta"], ["verde", "Verde"], ["lima", "Lima"], ["oro", "Oro"], ["naranja", "Naranja"], ["coral", "Coral"], ["rojo", "Rojo"],
+  ["rosa", "Rosa"], ["fucsia", "Fucsia"], ["morado", "Morado"], ["violeta", "Violeta"], ["indigo", "Índigo"], ["marino", "Marino"], ["marron", "Marrón"], ["grafito", "Grafito"]];
 const COLOR_ACENTO = {
   light: { azul: "#007AFF", indigo: "#5856D6", morado: "#AF52DE", rosa: "#FF2D55", rojo: "#FF3B30", naranja: "#FF9500", verde: "#34C759", grafito: "#8E8E93" },
   dark: { azul: "#0A84FF", indigo: "#5E5CE6", morado: "#BF5AF2", rosa: "#FF375F", rojo: "#FF453A", naranja: "#FF9F0A", verde: "#30D158", grafito: "#98989D" },
@@ -65,10 +66,23 @@ export function vistaApariencia(_p, app) {
       poner(c, 
         seccion({ cab: "Tema" }, lista([h("div", { class: "celda" }, h("div", { style: { flex: "1", padding: "8px 0" } },
           segmentado(TEMAS, ap.tema || "auto", (v) => guardar((x) => { x.tema = v; }), { etiqueta: "Tema" })))])),
-        seccion({ cab: "Color de acento" }, lista([h("div", { class: "acentos", role: "radiogroup", "aria-label": "Color de acento" }, ACENTOS.map(([k, n]) =>
-          h("button", { class: "circulo-acento", role: "radio", "aria-checked": String((ap.acento || "azul") === k), "aria-label": n,
-            style: { background: COLOR_ACENTO[temaEfectivo()][k], color: COLOR_ACENTO[temaEfectivo()][k] }, onClick: () => guardar((x) => { x.acento = k; }) },
-            (ap.acento || "azul") === k ? icono("check") : null)))])),
+        seccion({ cab: "Color de acento" }, lista([h("div", { class: "acentos", role: "radiogroup", "aria-label": "Color de acento" },
+          ACENTOS.map(([k, n]) => {
+            const col = ACENTOS_CALC[k] ? paletaDe(ACENTOS_CALC[k]).l[0] : COLOR_ACENTO[temaEfectivo()][k];
+            return h("button", { class: "circulo-acento", role: "radio", "aria-checked": String((ap.acento || "azul") === k), "aria-label": n,
+              style: { background: col, color: col }, onClick: () => guardar((x) => { x.acento = k; }) }, (ap.acento || "azul") === k ? icono("check") : null);
+          }),
+          selectorColor("Color personalizado", ap.acentoColor || COLOR_PERSONAL, ap.acento === "personal", (v) => guardar((x) => { x.acento = "personal"; x.acentoColor = v; }), "circulo-acento personal"))])),
+        seccion({ cab: "Mapa corporal" }, lista([
+          h("div", { class: "escalas", role: "radiogroup", "aria-label": "Colores del mapa corporal" },
+            [...Object.keys(ESCALAS_MAPA), "personal"].map((k) => {
+              const cols = k === "personal" ? escalaMapa({ mapa: "personal", mapaA: ap.mapaA, mapaB: ap.mapaB }) : ESCALAS_MAPA[k], on = (ap.mapa || "termico") === k;
+              return h("button", { class: "escala", role: "radio", "aria-checked": String(on), "aria-label": NOMBRES_ESCALA[k], onClick: () => guardar((x) => { x.mapa = k; }) },
+                h("span", { class: "escala-barra", style: { background: "linear-gradient(90deg," + cols.join(",") + ")" } }), on ? h("span", { class: "escala-ok" }, icono("check")) : null);
+            })),
+          (ap.mapa || "termico") === "personal" ? h("div", { class: "escala-extremos" },
+            h("span", null, "Inicio"), selectorColor("Color de inicio del mapa", ap.mapaA || COLOR_MAPA_A, false, (v) => guardar((x) => { x.mapaA = v; }), "circulo-acento"),
+            h("span", null, "Fin"), selectorColor("Color final del mapa", ap.mapaB || COLOR_MAPA_B, false, (v) => guardar((x) => { x.mapaB = v; }), "circulo-acento")) : null])),
         seccion({ pie: "Un toque suave al marcar series, cambiar valores y terminar el descanso." }, lista([
           celda({ titulo: "Háptica", control: interruptor(ap.haptica !== false, (v) => guardar((x) => { x.haptica = v; }), "Háptica") }),
         ])),
@@ -77,3 +91,9 @@ export function vistaApariencia(_p, app) {
   };
 }
 vistaApariencia.pestana = "ajustes";
+
+/** Círculo que abre el selector de color del sistema; guarda al soltar (evento `change`, no en cada arrastre). */
+function selectorColor(nombre, valor, activo, alElegir, clase) {
+  const inp = h("input", { type: "color", value: valor, "aria-label": nombre, onChange: (e) => alElegir(e.target.value) });
+  return h("label", { class: clase, style: { background: valor }, "aria-checked": activo ? "true" : null }, inp, activo ? icono("check") : null);
+}

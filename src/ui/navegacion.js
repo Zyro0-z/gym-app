@@ -16,6 +16,7 @@ import { h, poner, animar, reducirMovimiento } from "./dom.js";
 import { icono } from "./iconos.js";
 import { seleccion } from "./haptica.js";
 import { esqueleto } from "./controles.js";
+import { crearDeslizamiento } from "./deslizar.js";
 
 const DUR = 350, BORDE = 24;
 const CURVA = "cubic-bezier(.32,.72,0,1)";
@@ -211,7 +212,7 @@ export function crearNavegacion({ app: raiz, tabbar, pestanas, vistas, ctx }) {
   async function tocarPestana(id) {
     if (animando) return;
     seleccion();
-    if (id !== actual) return cambiarPestana(id);
+    if (id !== actual) return deslizar(id);
     const T = P.get(id);
     if (T.pila.length > 1) {
       // vuelve a la raíz: saca las intermedias sin animar y anima solo la última
@@ -220,6 +221,16 @@ export function crearNavegacion({ app: raiz, tabbar, pestanas, vistas, ctx }) {
       history.back();
     } else T.pila[0].scroll.scrollTo({ top: 0, behavior: reducirMovimiento() ? "auto" : "smooth" });
   }
+
+  // ── deslizamiento entre pestañas (arrastrar la pantalla o la tab bar, y animación al tocar) ──
+  const orden = pestanas.map((t) => t.id);
+  function asegurarRaiz(id) {
+    const T = P.get(id);
+    if (!T.pila.length) { const p = crearPantalla(T.raizRuta, null, { diferir: true }); T.el.appendChild(p.el); T.pila.push(p); }
+    return T;
+  }
+  const { deslizar } = crearDeslizamiento({ raiz, tabbar, P, orden, ctx, asegurarRaiz, cambiarPestana,
+    estado: { get actual() { return actual; }, get animando() { return animando; }, set animando(v) { animando = v; }, get profundidad() { return pila().length - 1; } } });
 
   // ── gesto de volver desde el borde ──
   raiz.addEventListener("pointerdown", (e) => {

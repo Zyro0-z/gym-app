@@ -126,3 +126,14 @@ body.sin-tabbar .tabbar { transform: translateY(calc(100% + 48px)); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: var(--dur-1) !important; animation-duration: var(--dur-1) !important; }
 }
+
+/* ── deslizamiento entre pestañas ── */
+.pestana.deslizando { display: block; will-change: transform; }
+.pantalla > .scroll { touch-action: pan-y; }
+.tabbar { touch-action: none; }
+.tabbar[data-arrastre] button[aria-selected="true"]:not(.previo) { color: var(--tab-off); background: transparent; }
+.tabbar[data-arrastre] button[aria-selected="true"]:not(.previo) .contorno { display: contents; }
+.tabbar[data-arrastre] button[aria-selected="true"]:not(.previo) .relleno { display: none; }
+.tabbar button.previo { color: var(--accent-ink); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.tabbar button.previo .contorno { display: none; }
+.tabbar button.previo .relleno { display: contents; }

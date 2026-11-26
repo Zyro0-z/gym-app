@@ -33,14 +33,14 @@ async function arrancar() {
     return;
   }
   const a = store.estado.ajustes;
-  aplicarApariencia({ tema: a.apariencia.tema, acento: a.apariencia.acento });
+  aplicarApariencia(a.apariencia);
   configurarHaptica(a.apariencia.haptica !== false);
 
   const nav = crearNavegacion({ app: document.getElementById("app"), tabbar: document.getElementById("tabbar"), pestanas: PESTANAS, vistas: VISTAS, ctx });
   ctx.nav = nav;
   alCambiarTema(() => nav.refrescar());
   store.suscribir((tema) => {
-    if (tema === "ajustes") { const ap = store.estado.ajustes.apariencia; aplicarApariencia({ tema: ap.tema, acento: ap.acento }); configurarHaptica(ap.haptica !== false); }
+    if (tema === "ajustes") { const ap = store.estado.ajustes.apariencia; aplicarApariencia(ap); configurarHaptica(ap.haptica !== false); }
     if (tema === "borrador" && document.body.classList.contains("con-modal")) return;   // el autoguardado al teclear no repinta el fondo; se repinta al cerrar el entreno
     nav.refrescar();
     marcarAvisos(nav);

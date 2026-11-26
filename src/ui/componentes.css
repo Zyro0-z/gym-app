@@ -258,17 +258,21 @@ body.sin-tabbar .toast { bottom: calc(var(--safe-b) + 24px); }
 .diagrama-cuerpo svg { display: block; width: 100%; height: auto; }
 .diagrama-cuerpo svg .musculos path { fill: transparent; stroke: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 /* Monocromo: un tono (--mapa, igual en claro y oscuro) en 4 niveles, multiplicado sobre la imagen para conservar las fibras */
-.diagrama-cuerpo svg .musculos path[data-nivel] { fill: var(--mapa); stroke: var(--mapa); stroke-width: 1px; stroke-linejoin: round; vector-effect: non-scaling-stroke; mix-blend-mode: multiply; transition: fill-opacity var(--dur-3) linear; }
+.diagrama-cuerpo svg .musculos path[data-nivel] { stroke: none; mix-blend-mode: multiply; transition: fill-opacity var(--dur-3) linear; }
 .diagrama-cuerpo svg .sombra { fill: #000; fill-opacity: 0; stroke: none; pointer-events: none; transition: fill-opacity var(--dur-3) linear; }
 .diagrama-cuerpo svg .sombra.on { fill-opacity: .62; }
 .diagrama-cuerpo svg .sombra.marca { stroke: #fff; stroke-width: 2px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }   /* el contorno va en la capa sin multiply: en blanco sobre multiply no se vería */
-[data-nivel="1"] { fill-opacity: .4; --op: .4; }
-[data-nivel="2"] { fill-opacity: .62; --op: .62; }
-[data-nivel="3"] { fill-opacity: .82; --op: .82; }
-[data-nivel="4"] { fill-opacity: 1; --op: 1; }
+[data-nivel="1"] { --nv: var(--mapa-1); }
+.diagrama-cuerpo svg .musculos path[data-nivel="1"] { fill: var(--mapa-1); }
+[data-nivel="2"] { --nv: var(--mapa-2); }
+.diagrama-cuerpo svg .musculos path[data-nivel="2"] { fill: var(--mapa-2); }
+[data-nivel="3"] { --nv: var(--mapa-3); }
+.diagrama-cuerpo svg .musculos path[data-nivel="3"] { fill: var(--mapa-3); }
+[data-nivel="4"] { --nv: var(--mapa-4); }
+.diagrama-cuerpo svg .musculos path[data-nivel="4"] { fill: var(--mapa-4); }
 .leyenda-niveles { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 12px; margin-top: 10px; font-size: var(--f-caption1); color: var(--label-2); }
 .leyenda-niveles .nivel { display: inline-flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }
-.leyenda-niveles i { width: 14px; height: 14px; border-radius: 4px; background: color-mix(in srgb, var(--mapa) calc(var(--op) * 100%), transparent); box-shadow: inset 0 0 0 1px var(--mapa); }
+.leyenda-niveles i { width: 14px; height: 14px; border-radius: 4px; background: var(--nv); box-shadow: inset 0 0 0 1px var(--mapa); }
 .diagrama-info { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; justify-content: center; text-align: center; font-size: var(--f-footnote); color: #fff; pointer-events: none; }
 .diagrama-info .resumen { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; background: rgba(28,28,30,.9); border-radius: 10px; padding: 4px 6px 4px 12px; color: #fff; min-height: 44px; pointer-events: auto; }
 .diagrama-info .resumen b { font-weight: 600; }
@@ -777,7 +781,7 @@ body.con-modal .aviso-actualizacion { display: none; }
 .diagrama-info .resumen .txt { overflow: hidden; text-overflow: ellipsis; }
 .diagrama-info .resumen .btn { min-height: 44px; padding: 0 12px; margin: 0; width: auto; border-radius: 8px; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent-ink); font-size: 11.5px; font-weight: 700; }
 .leyenda-niveles { justify-content: space-between; flex-wrap: nowrap; gap: 5px; margin-top: 9px; padding: 0 2px; font-size: 10px; }
-.leyenda-niveles i { width: 13px; height: 6px; border-radius: 3px; box-shadow: none; background: color-mix(in srgb, var(--mapa) calc(var(--op) * 100%), transparent); }
+.leyenda-niveles i { width: 13px; height: 6px; border-radius: 3px; box-shadow: none; background: var(--nv); }
 .leyenda-niveles .nivel { gap: 4px; }
 .mapa-filtros { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
 .tarjeta-mapa { padding: 12px 13px; }
@@ -878,7 +882,7 @@ body.con-modal .aviso-actualizacion { display: none; }
 .dia-sem .marca { background: var(--label-2); opacity: .55; }
 .dia-sem.hecho .marca, .dia-sem.previsto .marca { opacity: 1; }
 .grafica .barra { fill: color-mix(in srgb, var(--accent) 72%, transparent); }
-.leyenda-niveles i { height: 8px; box-shadow: inset 0 0 0 1px var(--mapa); }
+.leyenda-niveles i { height: 8px; box-shadow: inset 0 0 0 1px var(--label-icono); }
 .tarjeta-calor .calor .dia.n3 { background: color-mix(in srgb, var(--accent) 88%, transparent); }
 .ej-nombre { position: relative; }
 .ej-nombre::after { content: ""; position: absolute; inset: -4px 0; }
@@ -897,3 +901,17 @@ body.con-modal .aviso-actualizacion { display: none; }
 .serie.actual:not(.hecha) .num-serie { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .serie.hecha .num-serie { background: color-mix(in srgb, var(--ok) 10%, transparent); }
 .serie.actual:not(.hecha) .rpe-serie.sin-rpe { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+/* ── Apariencia: más acentos, color personal y escalas del mapa ── */
+.acentos { flex-wrap: wrap; justify-content: flex-start; gap: 16px 17px; }
+.circulo-acento.personal { background: conic-gradient(#ff3b30, #ff9500, #ffd60a, #34c759, #00c7be, #0a84ff, #bf5af2, #ff375f, #ff3b30) !important; color: var(--label) !important; cursor: pointer; }
+label.circulo-acento { overflow: visible; }
+label.circulo-acento input[type=color] { position: absolute; inset: -7px; width: calc(100% + 14px); height: calc(100% + 14px); opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.escalas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 10px; padding: 14px 16px; }
+.escala { position: relative; height: 44px; border-radius: 12px; padding: 0; box-shadow: inset 0 0 0 1px var(--separator); display: grid; place-items: center; }
+.escala-barra { position: absolute; inset: 11px 10px; border-radius: 6px; }
+.escala[aria-checked="true"] { box-shadow: 0 0 0 2px var(--cell), 0 0 0 4px var(--accent); }
+.escala-ok { position: relative; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(0, 0, 0, .55); color: #fff; }
+.escala-ok svg { width: 14px; height: 14px; stroke-width: 2.8; }
+.escala-extremos { display: flex; align-items: center; gap: 14px; padding: 4px 16px 14px; font-size: 13px; color: var(--label-2); }
+.escala-extremos .circulo-acento { margin-right: 12px; }

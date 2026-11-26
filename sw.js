@@ -80,6 +80,7 @@ const FICHEROS = [
   "src/ui/insignias/montaje.js",
   "src/ui/insignias/registro.js",
   "src/ui/navegacion.js",
+  "src/ui/deslizar.js",
   "src/ui/sonido.js",
   "src/ui/teclado.js",
   "src/ui/tema.js",
