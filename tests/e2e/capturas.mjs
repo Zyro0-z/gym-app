@@ -78,7 +78,7 @@ for (const [w, hh] of tamanos) for (const tema of ["light", "dark"]) {
   await tab("hoy");
   await p.evaluate(async (rut) => { const g = window.__gym; const r = g.store.estado.rutinas.find((x) => x.id === rut); await g.entreno.empezar(r ? r.nombre : null); }, ids.rut);
   await p.waitForTimeout(700); await foto("24-entreno", 2);
-  const rec = p.locator(".modal-completo .celda", { hasText: "Cómo llegas hoy" });
+  const rec = p.locator(".modal-completo .checkin-pill");
   if (await rec.count()) { await rec.click(); await p.waitForTimeout(600); await foto("24-recuperacion"); await p.locator(".hoja .btn-barra", { hasText: "Cancelar" }).click(); await p.waitForTimeout(500); }
   const check = p.locator(".modal-completo .serie .check").first();
   if (await check.count()) { await check.click(); await p.waitForTimeout(400); await foto("25-entreno-descanso"); }
