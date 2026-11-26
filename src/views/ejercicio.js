@@ -71,7 +71,7 @@ export function vistaEjercicio([k], app) {
       const t = d && d.tend, ic = iconoTend(t);
       const ajustado = rmConRpe(store.estado.sesiones, k);
       const rec1 = e1rmReciente(e), ruido = ruidoE1rm(e.hist);
-      const grafica = hist.length ? graficaLinea({ alto: 160, puntos: hist.map((x) => ({ x: numDia(x.dia), y: x.mejorRM, detalle: capital(fechaCorta(x.dia, A.hoy)) + " · " + x.mejorRMReps + " reps" })),
+      const grafica = hist.length ? graficaLinea({ alto: 160, record: hist.length > 2, zonas: (A.C.bloques || []).filter((b) => b.esDeload).map((b) => ({ x0: numDia(b.inicio), x1: numDia(b.fin) + 1, texto: "Descarga" })), puntos: hist.map((x) => ({ x: numDia(x.dia), y: x.mejorRM, detalle: capital(fechaCorta(x.dia, A.hoy)) + " · " + x.mejorRMReps + " reps" })),
         formato: (v) => kg(v), ejeX: (n) => fechaCorta(deNum(n)), etiqueta: "e1RM por sesión",
         banda: ruido && hist.length > 2 ? bandaRuido(e.hist, ruido.sd).filter((b) => b.dia >= desde).map((b) => ({ x: numDia(b.dia), lo: b.lo, hi: b.hi })) : null }) : h("p", { class: "etiqueta", style: { padding: "24px 0", textAlign: "center" } }, "Sin sesiones en este periodo.");
       const pctChip = t && ic ? pctTxt(t.pct) : null;

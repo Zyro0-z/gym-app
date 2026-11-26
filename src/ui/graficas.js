@@ -158,8 +158,9 @@ function barraPath(x, y, w, hh, r) {
 /**
  * Línea (y área). puntos: [{ x: número (día), y, detalle }]; ejeX(x) → texto de la marca.
  * secundaria: [{ x, y }] línea punteada (media móvil); conPuntos dibuja cada dato.
+ * zonas: [{ x0, x1, texto }] franjas verticales rotuladas (p. ej. semanas de descarga); record marca el máximo con una estrella.
  */
-export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null, area = true, conPuntos = true, secundaria = null, etiqueta = "", dominioX = null, banda = null }) {
+export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null, area = true, conPuntos = true, secundaria = null, etiqueta = "", dominioX = null, banda = null, zonas = null, record = false }) {
   return contenedor(alto, (el, ancho) => {
     const svg = s("svg", { width: ancho, height: alto, viewBox: `0 0 ${ancho} ${alto}` });
     if (!puntos.length) { el.appendChild(svg); return; }
@@ -179,6 +180,15 @@ export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null
         const v = x0 + ((x1 - x0) * k) / (n - 1);
         svg.append(s("text", { class: "eje", x: x(v), y: alto - 4, "text-anchor": k === 0 ? "start" : k === n - 1 ? "end" : "middle" }, ejeX(Math.round(v))));
       }
+    }
+    let finTxt = -1e9;
+    for (const z of zonas || []) {   // semanas de descarga u otras franjas rotuladas
+      const a = Math.max(z.x0, x0), b = Math.min(z.x1, x1);
+      if (b < a || (b === a && x1 !== x0)) continue;
+      const xa = x(a), xb = Math.max(xa + 2, x(b));
+      svg.append(s("rect", { class: "zona", x: xa, y: ARRIBA, width: xb - xa, height: alto - EJE_X - ARRIBA, rx: 3 }));
+      const tx = Math.min(xa + 4, ancho - EJE_Y - 50);
+      if (z.texto && tx >= finTxt + 6) { svg.append(s("text", { class: "zona-txt", x: tx, y: ARRIBA + 11 }, z.texto)); finTxt = tx + 52; }
     }
     if (banda && banda.length > 1) {   // franja de ±ruido personal: la zona donde un cambio no se distingue de la variación normal
       const arriba = banda.map((b, i) => (i ? "L" : "M") + x(b.x).toFixed(1) + " " + y(b.hi).toFixed(1)).join("");
@@ -200,6 +210,10 @@ export function graficaLinea({ puntos, alto = 200, formato = fmtEje, ejeX = null
     // con muchos datos un punto por dato es ruido: solo el último y el máximo
     const aPintar = conPuntos || puntos.length === 1 ? (puntos.length > 12 ? puntos.filter((_, i) => i === puntos.length - 1 || i === iMax) : puntos) : [];
     for (const p of aPintar) svg.append(s("circle", { class: "punto", cx: x(p.x), cy: y(p.y), r: 3.5 }));
+    if (record && iMax >= 0) {   // estrella sobre el máximo
+      const cx = x(puntos[iMax].x), cy = y(puntos[iMax].y) - 12, d = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => { const a = (Math.PI / 5) * k - Math.PI / 2, r = k % 2 ? 2.8 : 6.5; return (k ? "L" : "M") + (cx + r * Math.cos(a)).toFixed(1) + " " + (cy + r * Math.sin(a)).toFixed(1); }).join("") + "Z";
+      svg.append(s("path", { class: "estrella", d }));
+    }
     el.appendChild(svg);
     seleccionable(el, svg, puntos.map((p) => x(p.x)), puntos.map((p) => y(p.y)), alto,
       (i) => ({ valor: formato(puntos[i].y), detalle: (puntos[i].detalle || "") + (i === iMax ? " · máximo del periodo" : "") }), ancho, iMax);

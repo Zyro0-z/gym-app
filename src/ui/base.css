@@ -129,7 +129,8 @@ body.sin-tabbar .tabbar { transform: translateY(calc(100% + 48px)); }
 
 /* ── deslizamiento entre pestañas ── */
 .pestana.deslizando { display: block; will-change: transform; }
-.pantalla > .scroll { touch-action: pan-y; }
+.pantalla { touch-action: pan-y; }
+.pestana.fuera { display: none !important; }
 .tabbar { touch-action: none; }
 .tabbar[data-arrastre] button[aria-selected="true"]:not(.previo) { color: var(--tab-off); background: transparent; }
 .tabbar[data-arrastre] button[aria-selected="true"]:not(.previo) .contorno { display: contents; }

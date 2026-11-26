@@ -229,7 +229,7 @@ export function crearNavegacion({ app: raiz, tabbar, pestanas, vistas, ctx }) {
     if (!T.pila.length) { const p = crearPantalla(T.raizRuta, null, { diferir: true }); T.el.appendChild(p.el); T.pila.push(p); }
     return T;
   }
-  const { deslizar } = crearDeslizamiento({ raiz, tabbar, P, orden, ctx, asegurarRaiz, cambiarPestana,
+  const { deslizar } = crearDeslizamiento({ raiz, tabbar, P, orden, ctx: Object.assign(ctx, { repintar: () => { const t = top(); if (t) pintar(t); } }), asegurarRaiz, cambiarPestana,
     estado: { get actual() { return actual; }, get animando() { return animando; }, set animando(v) { animando = v; }, get profundidad() { return pila().length - 1; } } });
 
   // ── gesto de volver desde el borde ──

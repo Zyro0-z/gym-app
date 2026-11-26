@@ -12,6 +12,14 @@ p.on("pageerror", (e) => errores.push(e.message)); p.on("console", (m) => m.type
 let fallos = 0;
 const ok = (c, t) => { console.log((c ? "  ✓ " : "  ✗ ") + t); if (!c) fallos++; };
 const cdp = await ctx.newCDPSession(p);
+const tocaEnVivo = async (de, a, pasos, sonda) => {
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: de[0], y: de[1] }] });
+  for (let i = 1; i <= pasos; i++) { await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: de[0] + ((a[0] - de[0]) * i) / pasos, y: de[1] }] }); await p.waitForTimeout(20); }
+  const r = await sonda();
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await p.waitForTimeout(800);
+  return r;
+};
 const toque = async (puntos, { pasos = 8, pausa = 16 } = {}) => {
   const [a, ...resto] = puntos;
   await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: a[0], y: a[1] }] });
@@ -43,12 +51,25 @@ ok((await pestana()) === "hoy" && await limpio(), "un arrastre corto vuelve a su
 await toque([[200, 500], [200, 200]]);
 ok((await pestana()) === "hoy", "el scroll vertical no cambia de pestaña");
 
+const vivo = await tocaEnVivo([[60, 780]][0], [200, 780], 6, () => p.evaluate(() => [...document.querySelectorAll(".pestana")].filter((e) => e.classList.contains("deslizando")).map((e) => e.dataset.tab + ":" + Math.round(new DOMMatrix(getComputedStyle(e).transform).m41))));
+ok(vivo.length === 2 && vivo.some((x) => !x.endsWith(":0")), "arrastrando por la tab bar las pantallas siguen al dedo a mitad de camino (" + vivo.join(" ") + ")");
 await toque([[60, 780], [330, 780]]);
 ok((await pestana()) === "ajustes" && await limpio(), "arrastrar por la tab bar de Hoy a Ajustes abre Ajustes");
 await toque([[330, 780], [200, 780]]);
 ok((await pestana()) === "progreso" || (await pestana()) === "historial", "arrastrar por la tab bar hacia atrás abre la pestaña bajo el dedo (" + (await pestana()) + ")");
 await p.locator(".tabbar [data-tab=hoy]").click(); await p.waitForTimeout(700);
 ok((await pestana()) === "hoy" && await limpio(), "tocar una pestaña la abre y no deja capas a medias");
+
+await p.locator(".tabbar [data-tab=progreso]").click(); await p.waitForTimeout(700);
+const segActual = () => p.evaluate(() => document.querySelector(".pestana.activa .segmentado [aria-checked=true], .pestana.activa .segmentado [aria-pressed=true]")?.textContent);
+const s0 = await segActual();
+await toque([[320, 400], [60, 400]]);
+const s1 = await segActual();
+ok((await pestana()) === "progreso" && s0 !== s1, "en Progreso deslizar cambia de sección (" + s0 + " → " + s1 + ")");
+await toque([[60, 400], [330, 400]]);
+ok((await pestana()) === "progreso" && (await segActual()) === s0, "y al revés vuelve a la anterior");
+await toque([[60, 400], [330, 400]]);
+ok((await pestana()) === "hoy" && await limpio(), "en la primera sección deslizar a la derecha pasa a la pestaña anterior");
 
 await p.locator(".tabbar [data-tab=ajustes]").click(); await p.waitForTimeout(700);
 await p.getByText("Apariencia").click(); await p.waitForTimeout(700);

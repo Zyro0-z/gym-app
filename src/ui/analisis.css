@@ -50,3 +50,6 @@
 .semana-anillo { display: flex; align-items: center; gap: 14px; }
 .semana-anillo .centro-anillo { font-size: var(--f-subhead); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; text-align: center; }
 .semana-anillo .centro-anillo small { display: block; font-size: var(--f-caption2); font-weight: 500; color: var(--label-2); }
+.grafica .zona { fill: var(--label-2); fill-opacity: .12; stroke: none; }
+.grafica .zona-txt { fill: var(--label-2); font-size: 10px; font-weight: 600; }
+.grafica .estrella { fill: var(--accent-ink); stroke: none; }

@@ -50,6 +50,7 @@ export function vistaProgreso(_p, app) {
       const A = store.analisis(), L = A && A.liga, vg = L && L.ok ? ligaVigente(L.general) : null;
       return vg ? h("button", { class: "pastilla-liga", "aria-label": "Liga: " + vg.p.nivel.txt + ". Abrir ligas", onClick: () => app.nav.ir("ligas") }, insignia(vg.p.nivel, 20), h("span", null, vg.p.nivel.txt), icono("chevron", { tam: 12, grosor: 2.6 })) : null;
     },
+    secciones: { n: SEGMENTOS.length, indice: () => SEGMENTOS.findIndex((x) => x.valor === seg), ir: (i) => { seg = SEGMENTOS[i].valor; ponerPref("progreso", seg); } },
     bajoTitulo: () => segmentado(SEGMENTOS, seg, (v) => { seg = v; ponerPref("progreso", v); app.nav.repintarActual(); }, { etiqueta: "Sección" }),
     render(c) { def._c = c; pintarCuerpo(); },
   };
