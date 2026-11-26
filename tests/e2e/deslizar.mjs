@@ -63,6 +63,11 @@ ok((await pestana()) === "hoy" && await limpio(), "tocar una pestaña la abre y 
 await p.locator(".tabbar [data-tab=progreso]").click(); await p.waitForTimeout(700);
 const segActual = () => p.evaluate(() => document.querySelector(".pestana.activa .segmentado [aria-checked=true], .pestana.activa .segmentado [aria-pressed=true]")?.textContent);
 const s0 = await segActual();
+const enVivoSec = await tocaEnVivo([320, 400], [235, 400], 20, () => p.evaluate(() => {
+  const a = document.querySelector(".pestana.activa");
+  return { cab: new DOMMatrix(getComputedStyle(a.querySelector(".cab-grande")).transform).m41, seg: Math.round(a.querySelector(".segmentado").getBoundingClientRect().left), cuerpo: Math.round(new DOMMatrix(getComputedStyle(a.querySelector(".cuerpo")).transform).m41), pant: new DOMMatrix(getComputedStyle(a.querySelector(".pantalla")).transform).m41 };
+}));
+ok(enVivoSec.cab === 0 && enVivoSec.pant === 0 && enVivoSec.cuerpo < -50, "al deslizar secciones solo se mueve el cuerpo, la cabecera queda quieta " + JSON.stringify(enVivoSec));
 await toque([[320, 400], [60, 400]]);
 const s1 = await segActual();
 ok((await pestana()) === "progreso" && s0 !== s1, "en Progreso deslizar cambia de sección (" + s0 + " → " + s1 + ")");

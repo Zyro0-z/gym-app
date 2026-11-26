@@ -27,6 +27,7 @@ export function crearDeslizamiento({ raiz, tabbar, P, orden, ctx, asegurarRaiz, 
     });
   }
   const idxActual = () => orden.indexOf(estado.actual);
+  const cuerpoSec = () => { const t = P.get(estado.actual); return t && t.pila[0] && t.pila[0].cuerpo ? t.pila[0].cuerpo : null; };
   const pantalla = () => { const t = P.get(estado.actual); return t && t.pila[0] ? t.pila[0].el : null; };
 
   /** Coloca las pestañas como un carrusel: la pestaña `i` queda a `(i - f)` anchos de pantalla. */
@@ -41,6 +42,7 @@ export function crearDeslizamiento({ raiz, tabbar, P, orden, ctx, asegurarRaiz, 
   function limpiar() {
     for (let i = 0; i < n; i++) { const el = T(i).el; el.classList.remove("deslizando", "fuera"); el.style.transform = ""; }
     const p = pantalla(); if (p) p.style.transform = "";
+    const c = cuerpoSec(); if (c) { c.style.transform = ""; c.style.willChange = ""; }
   }
   /** Asienta el carrusel en la pestaña `dest` y la hace la activa. */
   async function asentar(f, dest) {
@@ -94,8 +96,8 @@ export function crearDeslizamiento({ raiz, tabbar, P, orden, ctx, asegurarRaiz, 
     const x = e.clientX - sw.x0, w = ancho(), ahora = performance.now(), dir = x < 0 ? 1 : -1, sec = secciones();
     sw.v = 0.6 * sw.v + 0.4 * ((x - sw.dx) / Math.max(16, ahora - sw.t)); sw.t = ahora; sw.dx = x;
     const enSeccion = sw.i0 === orden.indexOf(estado.actual) && sec && sec.indice() + dir >= 0 && sec.indice() + dir < sec.n && estado.actual === "progreso";
-    const p = pantalla();
-    if (enSeccion) { if (sw.modo !== "seccion") { limpiar(); sw.modo = "seccion"; } if (p) p.style.transform = `translate3d(${x}px,0,0)`; return; }
+    const p = pantalla(), cs = cuerpoSec();
+    if (enSeccion) { if (sw.modo !== "seccion") { limpiar(); sw.modo = "seccion"; if (cs) cs.style.willChange = "transform"; } if (cs) cs.style.transform = `translate3d(${x}px,0,0)`; return; }
     if (sw.modo !== "pestana") { if (p) p.style.transform = ""; sw.modo = "pestana"; }
     let f = sw.i0 - x / w;
     if (f < 0) f *= 0.3; else if (f > n - 1) f = n - 1 + (f - (n - 1)) * 0.3;   // en los extremos la pantalla se resiste
@@ -108,7 +110,7 @@ export function crearDeslizamiento({ raiz, tabbar, P, orden, ctx, asegurarRaiz, 
     const w = ancho(), x = g.dx, dir = x < 0 ? 1 : -1, cancel = e.type === "pointercancel";
     const lanza = !cancel && (Math.abs(x) > w * 0.3 || Math.abs(g.v) > 0.35) && (Math.abs(g.v) < 0.05 || Math.sign(g.v) === Math.sign(x));
     if (g.modo === "seccion") {
-      const sec = secciones(), p = pantalla(); estado.animando = true;
+      const sec = secciones(), p = cuerpoSec(); estado.animando = true;
       try {
         if (lanza && sec && p) {
           await animarValor(x, -dir * w, dur(0.5), (v) => { p.style.transform = `translate3d(${v.toFixed(1)}px,0,0)`; });
