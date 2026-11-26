@@ -94,7 +94,8 @@ function resumen(A, app, semVol, cambiarSem) {
   let n = PERIODOS_VOL.some((p) => p.valor === semVol) ? +semVol : null, semanas;
   if (n) semanas = deN(n);
   else for (const k of [8, 26, 52]) { n = k; semanas = deN(k); if (semanas.some((x) => x.vol > 0)) break; }
-  const media = semanas.reduce((a, s) => a + s.vol, 0) / (semanas.length || 1);
+  const hechas = semanas.filter((s, i) => s.vol > 0 && i < semanas.length - 1), base = hechas.length ? hechas : semanas.filter((s) => s.vol > 0);
+  const media = base.reduce((a, s) => a + s.vol, 0) / (base.length || 1);   // solo semanas entrenadas y completas: las vacías y la que está en curso no la rebajan
   const out = [];
   const sesPrev = [1, 2, 3, 4, 5, 6, 7].filter((d) => { const rt = A.C.horario.get(d); return rt && canon(rt) !== "descanso"; }).length;
   const enCurso = sesPrev > 0 && r.act.n < sesPrev ? h("span", { class: "chip-estado info num" }, "En curso · " + r.act.n + "/" + sesPrev + " sesiones") : null;
