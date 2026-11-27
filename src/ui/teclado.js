@@ -61,6 +61,7 @@ export function barraTeclado(contenedor) {
         e.preventDefault(); accion(); parar();
         if (repetir) espera = setTimeout(() => { ritmo = setInterval(accion, 90); }, 420);
       });
+      b.addEventListener("mousedown", (e) => e.preventDefault());   // Safari quita el foco en mousedown aunque se cancele pointerdown
       for (const ev of ["pointerup", "pointercancel", "pointerleave"]) b.addEventListener(ev, parar);
       return b;
     };

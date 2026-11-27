@@ -44,6 +44,7 @@ await p.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
 assert.equal(await cuenta(), c0, "mismo día: nada que hacer");
 await p.clock.fastForward(30 * 60 * 1000);
 await p.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+await p.waitForTimeout(600);
 const c1 = await cuenta();
 assert.ok(c1 > c0, "día nuevo: se repinta");
 await p.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
