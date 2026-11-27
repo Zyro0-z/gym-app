@@ -79,7 +79,7 @@ export function vistaApariencia(_p, app) {
               return h("button", { class: "escala", role: "radio", "aria-checked": String(on), "aria-label": NOMBRES_ESCALA[k], onClick: () => guardar((x) => { x.mapa = k; }) },
                 h("span", { class: "escala-barra", style: { background: "linear-gradient(90deg," + ESCALAS_MAPA[k].join(",") + ")" } }), on ? h("span", { class: "escala-ok" }, icono("check")) : null);
             }))])),
-        seccion({ pie: "Un toque suave al marcar series, cambiar valores y terminar el descanso." }, lista([
+        seccion({}, lista([
           celda({ titulo: "Háptica", control: interruptor(ap.haptica !== false, (v) => guardar((x) => { x.haptica = v; }), "Háptica") }),
         ])),
       );

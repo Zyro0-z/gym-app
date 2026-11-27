@@ -23,7 +23,7 @@ export function vistaCuerpo(_p, app) {
         a.cuerpo.fases = fs;
       }) },
       render(c) {
-        poner(c, seccion({ pie: "La fase dura hasta que empieza la siguiente. Define qué ritmo de peso es bueno." }, lista([
+        poner(c, seccion({}, lista([
           fila(segmentado(FASES, f.tipo, (v) => { f.tipo = v; }, { etiqueta: "Fase" })),
           celda({ titulo: "Desde", control: h("input", { type: "date", class: "campo-fila", value: f.desde, "aria-label": "Desde", onChange: (e) => { if (e.target.value) f.desde = e.target.value; } }) }),
         ])), i != null ? seccion({}, lista([celda({ titulo: "Borrar fase", estilo: "peligro", alPulsar: async () => {
@@ -37,7 +37,7 @@ export function vistaCuerpo(_p, app) {
       const cu = store.estado.ajustes.cuerpo, fases = cu.fases || [], hoy = store.hoy();
       const actual = fases.filter((f) => !f.desde || f.desde <= hoy).pop();
       poner(c,
-        seccion({ cab: "Fases", pie: "En volumen se espera que el peso suba despacio; en definición, que baje; en mantener, que se quede estable." },
+        seccion({ cab: "Fases" },
           lista([...fases.map((f, i) => celda({ titulo: faseTxt(f.tipo), sub: "Desde el " + fechaCorta(f.desde, hoy), valor: f === actual ? chip("Actual", "accent") : null, chevron: true, alPulsar: () => editarFase(i) })).reverse(), celda({ titulo: "Añadir fase", estilo: "accion", izquierda: h("span", { class: "c-accent", style: { display: "flex" } }, icono("mas", { tam: 22 })), alPulsar: () => editarFase(null) })])),
         seccion({}, lista([celda({ titulo: "Añadir pesaje", chevron: true, alPulsar: () => abrirPesaje(app) })])));
     },

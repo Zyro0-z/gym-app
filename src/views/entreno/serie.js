@@ -9,7 +9,7 @@ import { leerNumero, fmt } from "../../core/formato.js";
 import { cargaTotal, pesoCorporalEn } from "../../core/sesiones.js";
 import { TIPOS, letraTipo, aTexto } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
-import { pintarCuerpo } from "./ejercicios.js";
+import { pintarEjercicio } from "./ejercicios.js";
 import { empezarDescanso } from "./descanso.js";
 import { E } from "./estado.js";
 import { finDeRonda, calculadoraDiscos } from "./herramientas.js";
@@ -96,9 +96,9 @@ export function filaSerie(e, i, s, j, ant, paso, antSeries = []) {
       "aria-label": "RPE " + rpeTxt(v) + (v === obj ? ", objetivo" : ""), onClick: () => {
         if (s.rpe === v) delete s.rpe; else s.rpe = v;
         seleccion(); pintarRpe(); pintarTira(); cerrarTira(); rpeBtn.setAttribute("aria-expanded", "false"); guardarYa(); resaltarActual();
-        if (s.hecha && s === e.series.find((x) => x.tipo !== "calentamiento")) pintarCuerpo();   // la primera serie de trabajo puede ajustar el peso de las demás
+        if (s.hecha && s === e.series.find((x) => x.tipo !== "calentamiento")) pintarEjercicio(e);   // la primera serie de trabajo puede ajustar el peso de las demás
       } }, rpeTxt(v))),
-    h("p", { class: "tira-pie" }, "10 es el fallo; cada punto menos, una repetición en reserva." + (obj ? " Objetivo: " + rpeTxt(obj) + "." : "")));
+    obj ? h("p", { class: "tira-pie" }, "Objetivo: " + rpeTxt(obj) + ".") : null);
   const pintarTira = () => { for (const b of tira.querySelectorAll(".chip-rpe")) { const act = esRpe(s.rpe) && Number(b.dataset.v) === s.rpe; b.classList.toggle("activo", act); b.setAttribute("aria-checked", String(act)); } };
   const abrirTira = () => { if (tiraAbierta !== tira) cerrarTira(); tira.hidden = false; tiraAbierta = tira; pintarTira(); rpeBtn.setAttribute("aria-expanded", "true"); setTimeout(() => { if (tira.isConnected && !tira.hidden) tira.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, 60); };
   rpeBtn.setAttribute("aria-expanded", "false");
@@ -135,10 +135,10 @@ export function filaSerie(e, i, s, j, ant, paso, antSeries = []) {
   });
   const borrar = () => {
     const quitada = e.series.splice(j, 1)[0];
-    cerrarTira(); guardarYa(); pintarCuerpo();
+    cerrarTira(); guardarYa(); pintarEjercicio(e);
     E.app.toast("Serie " + (j + 1) + " eliminada", { icono: "papelera", accion: { texto: "Deshacer", alPulsar: () => {
       if (!E.M || !E.M.d.ejercicios.includes(e)) return;
-      e.series.splice(Math.min(j, e.series.length), 0, quitada); guardarYa(); pintarCuerpo();
+      e.series.splice(Math.min(j, e.series.length), 0, quitada); guardarYa(); pintarEjercicio(e);
     } } });
   };
   return [deslizable(fila, borrar), tira];
@@ -172,5 +172,5 @@ export function resaltarActual() {
 export async function elegirTipo(s) {
   const r = await E.app.hojaAcciones({ mensaje: "Tipo de serie", opciones: TIPOS.map(([v, t]) => ({ texto: t + (s.tipo === v ? " · actual" : ""), valor: v })) });
   if (!r || !E.M) return;
-  s.tipo = r; guardarPronto(); pintarCuerpo();
+  s.tipo = r; guardarPronto(); pintarEjercicio(E.M.d.ejercicios.find((x) => x.series.includes(s)));
 }

@@ -47,7 +47,7 @@ export function vistaGrupos(_p, app) {
       titulo: "Color de " + g.nombre, alturas: ["media"], cancelar: null, accion: { texto: "Listo", alPulsar: () => {} },
       render(c) {
         const actual = g.color ? (oscuro ? g.color.oscuro : g.color.claro) : null;
-        poner(c, seccion({ pie: "Automático usa un color de la paleta según el orden del grupo." }, lista([h("div", { class: "acentos", role: "radiogroup", "aria-label": "Color" },
+        poner(c, seccion({}, lista([h("div", { class: "acentos", role: "radiogroup", "aria-label": "Color" },
           COLORES.map(([n, cl, os]) => h("button", { class: "circulo-acento", role: "radio", "aria-checked": String(actual === (oscuro ? os : cl)), "aria-label": n, style: { background: oscuro ? os : cl, color: oscuro ? os : cl },
             onClick: async () => { await store.guardarAjustes((a) => { a.grupos.find((x) => x.nombre === g.nombre).color = { claro: cl, oscuro: os }; }, { analitico: false }); g = store.estado.ajustes.grupos.find((x) => x.nombre === g.nombre); this.render(c); } },
             actual === (oscuro ? os : cl) ? icono("check") : null))),
@@ -60,7 +60,7 @@ export function vistaGrupos(_p, app) {
     derecha: () => [h("button", { class: "btn-barra", "aria-label": "Nuevo grupo", onClick: anadir }, icono("mas"))],
     render(c) {
       const gs = store.estado.ajustes.grupos, cat = store.estado.catalogo;
-      poner(c, seccion({ pie: "El color identifica al grupo en gráficas y en el mapa del cuerpo." }, lista(gs.map((g) => {
+      poner(c, seccion({}, lista(gs.map((g) => {
         const n = cat.filter((x) => x.grupo && canon(x.grupo) === canon(g.nombre)).length;
         return celda({ punto: colorGrupo(gs, g.nombre), titulo: g.nombre, valor: n ? String(n) : null, chevron: true, alPulsar: () => editar(g) });
       }))));

@@ -17,7 +17,7 @@ export function vistaHorario(_p, app) {
     titulo: "Horario",
     render(c) {
       const hor = store.estado.ajustes.horario;
-      poner(c, seccion({ pie: "Hoy te propone la rutina del día. Los días de descanso no cuentan en contra de la racha." }, lista(DIAS.map((d, i) => {
+      poner(c, seccion({}, lista(DIAS.map((d, i) => {
         const v = hor[i + 1];
         return celda({ titulo: d, valor: v ? v : "Sin asignar", chevron: true, alPulsar: () => elegir(i + 1) });
       }))));

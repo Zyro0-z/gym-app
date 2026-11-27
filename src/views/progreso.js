@@ -90,15 +90,17 @@ function resumen(A, app, semVol, cambiarSem) {
   const delta = cmp.tipo === "pct" ? chip(cmp.texto, cmp.mejora ? "ok" : "warn", { icono: cmp.mejora ? "sube" : "baja" }) : null;
   // Sin preferencia guardada, el primer periodo con volumen (para no abrir con una gráfica vacía)
   const deN = (k) => (k === 8 ? A.semanas.slice(-8) : semanasDe(A, k));
-  let n = PERIODOS_VOL.some((p) => p.valor === semVol) ? +semVol : null, semanas;
+  const dias = A.sesiones.map((x) => Date.parse(x.dia)).filter((t) => t > 0), antig = dias.length ? (Date.parse(A.hoy) - Math.min(...dias)) / 864e5 : 0;
+  const periodos = PERIODOS_VOL.filter((p) => +p.valor * 7 * 0.75 < antig || p.valor === "8");
+  let n = periodos.some((p) => p.valor === semVol) ? +semVol : null, semanas;
   if (n) semanas = deN(n);
-  else for (const k of [8, 26, 52]) { n = k; semanas = deN(k); if (semanas.some((x) => x.vol > 0)) break; }
+  else for (const p of periodos) { n = +p.valor; semanas = deN(n); if (semanas.some((x) => x.vol > 0)) break; }
   const hechas = semanas.filter((s, i) => s.vol > 0 && i < semanas.length - 1), base = hechas.length ? hechas : semanas.filter((s) => s.vol > 0);
   const media = base.reduce((a, s) => a + s.vol, 0) / (base.length || 1);   // solo semanas entrenadas y completas: las vacías y la que está en curso no la rebajan
   const out = [];
   const sesPrev = [1, 2, 3, 4, 5, 6, 7].filter((d) => { const rt = A.C.horario.get(d); return rt && canon(rt) !== "descanso"; }).length;
   const enCurso = sesPrev > 0 && r.act.n < sesPrev ? h("span", { class: "chip-estado info num" }, "En curso · " + r.act.n + "/" + sesPrev + " sesiones") : null;
-  const micro = h("div", { class: "micro-pills", role: "group", "aria-label": "Periodo de la gráfica" }, PERIODOS_VOL.map((p) => h("button", { class: p.valor === String(n) && "on", "aria-pressed": String(p.valor === String(n)), "aria-label": p.texto, onClick: () => cambiarSem(p.valor) }, p.corto)));
+  const micro = periodos.length < 2 ? null : h("div", { class: "micro-pills", role: "group", "aria-label": "Periodo de la gráfica" }, periodos.map((p) => h("button", { class: p.valor === String(n) && "on", "aria-pressed": String(p.valor === String(n)), "aria-label": p.texto, onClick: () => cambiarSem(p.valor) }, p.corto)));
   out.push(seccion({}, h("div", { class: "tarjeta tarjeta-vol" },
     h("div", { class: "vol-cab" },
       h("div", null, h("div", { class: "kicker" }, "Volumen esta semana"), h("div", { class: "vol-cifra num" }, kgTotal(r.act.vol))), micro),
@@ -112,7 +114,7 @@ function resumen(A, app, semVol, cambiarSem) {
   if (so && so.lista.length) {
     const tope = Math.max(...so.lista.map((o) => Math.max(o.max, o.hechas + o.previstas)), 1);
     out.push(seccion({}, h("div", { class: "tarjeta tarjeta-grupos" },
-      h("div", { class: "fila entre" }, h("span", { class: "kicker" }, "Series por grupo · objetivo semanal"), h("span", { class: "pie-mini" }, "Franja = rango")),
+      h("div", { class: "fila entre" }, h("span", { class: "kicker" }, "Series por grupo · objetivo semanal")),
       so.lista.map((o) => {
         const est = o.cierre.estado, col = colorGrupo(grupos, o.grupo);
         const marca = est === "enRango" || est === "llegara" ? chip(est === "llegara" ? "Llegarás" : "En rango", "ok", { icono: "check", relleno: true })
@@ -120,7 +122,7 @@ function resumen(A, app, semVol, cambiarSem) {
         return h("button", { class: "fila-grupo", "aria-label": o.grupo + ": " + o.hechas + (o.previstas ? " más " + o.previstas + " previstas" : "") + " de " + o.min + " a " + o.max + " series", onClick: () => app.nav.ir("grupo/" + encodeURIComponent(o.grupo)) },
           h("span", { class: "fg-top" },
             h("span", { class: "fg-nombre" }, h("i", { class: "punto-grupo", style: { background: col } }), o.grupo),
-            h("span", { class: "fg-nums num" }, h("b", null, o.hechas + (o.previstas ? "+" + o.previstas : "")), " / " + o.min + "–" + o.max, marca)),
+            h("span", { class: "fg-nums num" }, h("b", null, o.hechas), " / " + o.min + "–" + o.max, o.previstas ? h("small", { class: "fg-prev" }, "+" + o.previstas + " previstas") : null, marca)),
           barraObjetivo(o, tope, col));
       }))));
   }
@@ -190,7 +192,7 @@ function porMusculo(A, app, periodo, modo, cambiarModo) {
     seccion({},
       h("div", { class: "tarjeta tarjeta-mapa" }, filtros(), mapa)),
     seccion({ cab: "Músculos, de más a menos series" }, lista(filas.map((f) => { const c = celda({ titulo: f.nombre, sub: f.grupo, valor: h("span", { class: "num" }, txt(f.v)), alPulsar: () => enfocar(f.nombre) }); filasEl.set(f.nombre, c); return c; }))),
-    seccion({}, lista([celda({ titulo: "Comparar con semanas anteriores", sub: "Pasada, media de 4 semanas y peso del secundario", chevron: true, alPulsar: () => app.nav.ir("musculos") })]))];
+    seccion({}, lista([celda({ titulo: "Comparar con semanas anteriores", chevron: true, alPulsar: () => app.nav.ir("musculos") })]))];
 }
 
 function musculos(A, app, periodo, modo, cambiarModo) {

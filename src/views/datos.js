@@ -7,6 +7,14 @@ import { fmt, plural } from "../core/formato.js";
 import { fechaCorta, capital } from "../ui/textos.js";
 import { csvSeries, csvPesajes } from "../core/csv.js";
 
+/** Valor de la fila de la nube: fallo reciente, fecha de la última subida o modo configurado. */
+function valorNube(n, st, hoy) {
+  if (!n || !n.url) return "Sin configurar";
+  if (st && st.error) return h("span", { class: "chip bad" }, h("span", { class: "punto" }), "Falló");
+  if (n.ultima && n.ultima.at) return capital(fechaCorta(n.ultima.at.slice(0, 10), hoy));
+  return n.auto ? "Automática" : "Manual";
+}
+
 /** Guarda un archivo: hoja Compartir (en iPhone, «Guardar en Archivos») o descarga. false si se cancela o falla. */
 export async function guardarArchivo(app, texto, nombre, tipo) {
   const f = new File([texto], nombre, { type: tipo });
@@ -107,8 +115,8 @@ export function vistaDatos(_p, app) {
             valor: ec.avisar ? h("span", { class: "chip bad" }, h("span", { class: "punto" }), "Pendiente") : null }),
           celda({ icono: "descargar", colorIcono: "var(--g-verde)", titulo: "Importar copia", estilo: "accion", alPulsar: () => importarCopia(app) }),
         ], { iconos: true })),
-        seccion({ cab: "Copia en la nube", pie: "Opcional: copia cifrada de extremo a extremo en un servidor propio (el mismo Worker de los avisos)." }, lista([
-          celda({ icono: "nube", colorIcono: "var(--g-cian)", titulo: "Copia cifrada en la nube", valor: est.ajustes.nube && est.ajustes.nube.url ? (est.ajustes.nube.auto ? "Automática" : "Manual") : "Sin configurar", chevron: true, alPulsar: () => app.nav.ir("nube") }),
+        seccion({ cab: "Copia en la nube" }, lista([
+          celda({ icono: "nube", colorIcono: "var(--g-cian)", titulo: "Copia cifrada en la nube", valor: valorNube(est.ajustes.nube, store.nubeEstado, hoy), chevron: true, alPulsar: () => app.nav.ir("nube") }),
         ], { iconos: true })),
         seccion({ cab: "Copias internas", pie: "Se guardan solas en este iPhone cada " + plural(cada, "sesión nueva", "sesiones nuevas") + " y antes de importar o restaurar; se conservan las 3 últimas. No sustituyen a la copia en Archivos: si se borran los datos de la app, se borran con ellas." },
           lista([
@@ -119,7 +127,7 @@ export function vistaDatos(_p, app) {
             celda({ titulo: "Copia interna cada", control: stepper({ valor: cada, min: 1, max: 30, formato: (v) => plural(v, "sesión", "sesiones"), etiqueta: "sesiones entre copias internas",
               alCambiar: (v) => store.guardarAjustes((a) => { a.copiasInternas = { cada: v }; }, { analitico: false }) }) }),
           ])),
-        seccion({ cab: "Hojas de cálculo", pie: "CSV para Excel o Numbers: una fila por serie (con e1RM y RPE), punto y coma como separador y coma decimal." }, lista([
+        seccion({ cab: "Hojas de cálculo" }, lista([
           celda({ titulo: "Exportar series (CSV)", estilo: "accion", alPulsar: async () => { if (await guardarArchivo(app, csvSeries(store.estado.sesiones, store.estado.catalogo, store.estado.ajustes), "gym-series-" + store.hoy() + ".csv", "text/csv")) app.toast("CSV exportado"); } }),
           celda({ titulo: "Exportar pesajes (CSV)", estilo: "accion", alPulsar: async () => { if (await guardarArchivo(app, csvPesajes(store.estado.pesajes, store.estado.ajustes), "gym-pesajes-" + store.hoy() + ".csv", "text/csv")) app.toast("CSV exportado"); } }),
         ])),

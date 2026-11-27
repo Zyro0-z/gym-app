@@ -42,13 +42,13 @@ export function vistaEjercicios(_p, app) {
     render(c) {
       const faltan = baseQueFalta(store.estado.catalogo).length;
       poner(c, h("div", { class: "seccion" }, buscador), resultados,
-        faltan ? seccion({ pie: "Añade ejercicios habituales con su grupo, material y músculos (principales y secundarios) ya rellenados. No toca los que ya tienes." },
+        faltan ? seccion({},
           lista([celda({ titulo: "Añadir ejercicios comunes", sub: faltan + " disponibles", estilo: "accion", alPulsar: async () => {
             const nuevos = baseQueFalta(store.estado.catalogo);
             await store.guardarCatalogo([...store.estado.catalogo, ...nuevos.map((x) => JSON.parse(JSON.stringify(x)))]);
             app.toast(plural(nuevos.length, "ejercicio añadido", "ejercicios añadidos")); this.render(c); pintar();
           } })])) : null,
-        duplicadosBase(store.estado.catalogo).length ? seccion({ pie: "Une los ejercicios repetidos («Press Banca (Barra)» y «Press banca») en el que lleva el nombre del catálogo base. El historial y las rutinas pasan al que se conserva." },
+        duplicadosBase(store.estado.catalogo).length ? seccion({},
           lista([celda({ titulo: "Unir ejercicios duplicados", sub: duplicadosBase(store.estado.catalogo).reduce((a, g) => a + g.unir.length, 0) + " se unen", estilo: "accion", alPulsar: async () => {
             const n = duplicadosBase(store.estado.catalogo).reduce((a, g) => a + g.unir.length, 0);
             if (!(await app.confirmar("¿Unir " + n + " ejercicios duplicados?", "Se conserva el nombre del catálogo base y todo el historial.", "Unir"))) return;
@@ -113,18 +113,18 @@ export function vistaEjercicioCat([id], app) {
           celda({ titulo: "Nombre", valor: e.nombre, chevron: true, alPulsar: renombrar }),
           celda({ titulo: "Grupo", izquierda: null, valor: h("span", { class: "valor-tend" }, e.grupo ? h("span", { class: "celda-punto", style: { background: colorGrupo(grupos, e.grupo), margin: 0 } }) : null, e.grupo || "Sin grupo"), chevron: true,
             alPulsar: async () => { const v = await opciones("Grupo muscular", [...grupos.map((g) => ({ texto: g.nombre, valor: g.nombre })), { texto: "Sin grupo", valor: "-" }]); if (v !== null) guardar((x) => { x.grupo = v === "-" ? null : v; }); } }),
-          celda({ titulo: "Por lado", sub: "Mancuerna o máquina a una mano: el volumen cuenta los dos lados", control: interruptor(!!e.unilateral, (v) => guardar((x) => { x.unilateral = v; }), "Por lado") }),
+          celda({ titulo: "Por lado", sub: "El volumen cuenta los dos lados", control: interruptor(!!e.unilateral, (v) => guardar((x) => { x.unilateral = v; }), "Por lado") }),
           celda({ titulo: "Medida", valor: e.tipoAncla === "duracion" ? "Tiempo" : e.tipoAncla === "reps" ? "Solo repeticiones" : "Peso y repeticiones", chevron: true,
             alPulsar: async () => { const v = await opciones("Qué se apunta en cada serie", [{ texto: "Peso y repeticiones", valor: "peso" }, { texto: "Solo repeticiones", valor: "reps" }, { texto: "Tiempo", valor: "duracion" }]); if (v) guardar((x) => { x.tipoAncla = v; }); } }),
-          celda({ titulo: "Descanso", sub: "Sustituye al de Ajustes", valor: e.descanso ? reloj(e.descanso) : "Como en Ajustes", chevron: true,
+          celda({ titulo: "Descanso", valor: e.descanso ? reloj(e.descanso) : "Como en Ajustes", chevron: true,
             alPulsar: async () => { const v = await opciones("Descanso tras cada serie", [...DESCANSOS.map((s) => ({ texto: reloj(s), valor: s })), { texto: "Como en Ajustes", valor: "-" }]); if (v !== null) guardar((x) => { if (v === "-") delete x.descanso; else x.descanso = v; }); } }),
         ])),
-        seccion({ cab: "Carga y músculos", pie: "Lastre: lo que apuntas se suma a tu peso corporal (dominadas, fondos). Asistido: se resta (máquina de ayuda). Se usa el último pesaje anterior a la sesión. Los músculos alimentan el volumen por músculo y el mapa corporal." }, lista([
+        seccion({ cab: "Carga y músculos" }, lista([
           ...(e.tipoAncla === "peso" || !e.tipoAncla ? [celda({ titulo: "Carga", valor: e.modoCarga === "lastre" ? "Peso corporal + lastre" : e.modoCarga === "asistido" ? "Peso corporal − ayuda" : "Peso apuntado", chevron: true,
             alPulsar: async () => { const v = await opciones("Qué significa el peso que apuntas", [{ texto: "Peso apuntado (barra, mancuernas, máquina)", valor: "total" }, { texto: "Peso corporal + lastre", valor: "lastre" }, { texto: "Peso corporal − ayuda", valor: "asistido" }]); if (v) guardar((x) => { if (v === "total") delete x.modoCarga; else x.modoCarga = v; }); } })] : []),
           celda({ titulo: "Músculos", valor: musculosTxt(e), chevron: true, alPulsar: () => editarMusculos(app, e, guardar, () => this.render(c)) }),
         ])),
-        seccion({ cab: "Progresión", pie: "Con rango, la app te dice cuándo subir el peso: cuando todas las series llegan al máximo. «Solo la primera serie» aplica el rango a la serie más pesada." }, lista([
+        seccion({ cab: "Progresión" }, lista([
           celda({ titulo: "Rango de repeticiones", control: interruptor(!!e.rangoReps, (v) => guardar((x) => { x.rangoReps = v ? { min: 8, max: 12 } : null; if (!v) x.top = false; }), "Rango de repeticiones") }),
           ...(e.rangoReps ? [
             celda({ titulo: "Mínimo", control: stepper({ valor: e.rangoReps.min, min: 1, max: e.rangoReps.max, etiqueta: "mínimo", alCambiar: (v) => guardar((x) => { x.rangoReps.min = v; }) }) }),
@@ -163,7 +163,7 @@ function editarMusculos(app, e, guardar, alCerrar) {
       alCerrar();
     } },
     render(c) {
-      const pintar = () => poner(c, seccion({ pie: "Principal: cuenta como una serie completa. Secundario: cuenta una fracción." }, lista(MUSCULOS.map((m) => celda({ titulo: m.nombre, sub: m.grupo,
+      const pintar = () => poner(c, seccion({}, lista(MUSCULOS.map((m) => celda({ titulo: m.nombre, sub: m.grupo,
         valor: est.get(m.id) === "p" ? "Principal" : est.get(m.id) === "s" ? "Secundario" : "—",
         alPulsar: () => { const n = ROT[est.get(m.id)]; if (n) est.set(m.id, n); else est.delete(m.id); pintar(); } })))));
       pintar();

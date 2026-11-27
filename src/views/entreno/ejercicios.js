@@ -69,6 +69,14 @@ export function pintarCuerpo() {
   resaltarActual();
 }
 
+/** Repinta solo el bloque de un ejercicio (el resto de la pantalla y el scroll no se tocan). */
+export function pintarEjercicio(e) {
+  const i = E.M.d.ejercicios.indexOf(e), viejo = i < 0 ? null : E.M.cuerpo.querySelector('.ej[data-ej="' + i + '"]');
+  if (!viejo) { pintarCuerpo(); return; }
+  viejo.replaceWith(bloqueEjercicio(e, i));
+  resaltarActual();
+}
+
 export function detallesEdicion() {
   const d = E.M.d;
   const campo = (tipo, valor, alCambiar, etiqueta) => h("input", { type: tipo, class: "campo-fila", value: valor, "aria-label": etiqueta, onChange: (e) => alCambiar(e.target.value) });
@@ -88,7 +96,7 @@ export function bloqueEjercicio(e, i) {
   const ultimaNota = E.M.modo === "entreno" && ant && ant.e.nota ? ant.e.nota : "";
   const resumen = resumenDe(e);
   const filas = e.series.map((s, j) => filaSerie(e, i, s, j, ant ? ant.e.series[j] : null, paso, ant ? ant.e.series : []));
-  const aut = chipAutorregulacion(e, paso, (a) => { aplicarSugerencia(e, a); seleccion(); guardarPronto(); pintarCuerpo(); });
+  const aut = chipAutorregulacion(e, paso, (a) => { aplicarSugerencia(e, a); seleccion(); guardarPronto(); pintarEjercicio(e); });
   const empezado = e.series.some((s) => s.hecha && s.tipo !== "calentamiento");   // con una serie de trabajo hecha, la sugerencia previa ya no aplica
   const sug = aut || empezado ? null : sugerenciaDe(e.ejercicioId, e.rpeObjetivo);
   const pos = posicionSuperserie(E.M.d.ejercicios, i);
@@ -100,7 +108,7 @@ export function bloqueEjercicio(e, i) {
     info.length ? h("div", { class: "ej-info" }, info.map((t, k) => (k === 0 && /reps/.test(t) ? h("span", { class: "ej-tag" }, t) : h("span", { class: "ej-dato" }, t)))) : null,
     aut,
     sug ? h("button", { class: "chip-sugerencia", "aria-label": "Sugerencia: " + aTexto(sug.peso) + " kilos por " + sug.reps + " repeticiones. " + sug.motivo + ". Toca para ponerla en las series vacías.",
-      onClick: () => { const n = aplicarSugerencia(e, sug); seleccion(); guardarPronto(); pintarCuerpo(); if (!n) E.app.toast("Las series ya tienen peso"); } },
+      onClick: () => { const n = aplicarSugerencia(e, sug); seleccion(); guardarPronto(); pintarEjercicio(e); if (!n) E.app.toast("Las series ya tienen peso"); } },
       h("span", { class: "t" }, "Sugerido"), h("span", { class: "num" }, aTexto(sug.peso) + " kg × " + sug.reps), h("span", { class: "m" }, sug.motivo)) : null,
     h("button", { class: "ej-resumen", "aria-label": "Ejercicio terminado, " + resumen + ". Toca para desplegar", onClick: () => { E.M.abiertos.add(e); resaltarActual(); } },
       icono("check", { tam: 16, grosor: 2.6 }), h("span", null, resumen), icono("chevron-abajo", { tam: 16 })),
@@ -111,11 +119,11 @@ export function bloqueEjercicio(e, i) {
       h("div", { class: ["fila-cab", e.tipo === "reps" && "solo-reps"], "aria-hidden": "true" }, h("span", null, "Serie"), h("span", null, "Anterior"), e.tipo === "reps" ? null : h("span", null, "kg"), h("span", null, "Reps"), h("span", null, "RPE"), h("span", { class: "c-check" }, icono("check", { tam: 16, grosor: 2.4 }))),
       filas),
     h("div", { class: "fila-botones-serie" },
-      h("button", { class: "btn-anadir-serie", onClick: () => { const ult = e.series[e.series.length - 1]; e.series.push(Object.assign(vacia(), ult ? { peso: ult.peso, tipo: ult.tipo === "calentamiento" ? "normal" : ult.tipo } : {})); seleccion(); guardarPronto(); pintarCuerpo(); } },
+      h("button", { class: "btn-anadir-serie", onClick: () => { const ult = e.series[e.series.length - 1]; e.series.push(Object.assign(vacia(), ult ? { peso: ult.peso, tipo: ult.tipo === "calentamiento" ? "normal" : ult.tipo } : {})); seleccion(); guardarPronto(); pintarEjercicio(e); } },
         icono("mas", { tam: 18 }), h("span", null, "Añadir serie")),
       h("button", { class: "btn-anadir-serie", onClick: () => {
         if (!repetirUltima(e)) { E.app.toast("Marca antes una serie como hecha"); return; }
-        seleccion(); guardarPronto(); pintarCuerpo();
+        seleccion(); guardarPronto(); pintarEjercicio(e);
       } }, icono("repetir", { tam: 18 }), h("span", null, "Repetir última"))));
 }
 

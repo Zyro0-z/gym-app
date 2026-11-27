@@ -34,7 +34,7 @@ export function vistaRutinas(_p, app) {
       const rs = store.estado.rutinas, hor = store.estado.ajustes.horario;
       if (!rs.length) { poner(c, vacio({ icono: "lista", titulo: "Sin rutinas", texto: "Una rutina es la lista de ejercicios de un día de entrenamiento.", acciones: [{ texto: "Crear rutina", alPulsar: () => nuevaRutina(app) }] })); return; }
       const dias = (r) => DIAS.filter((_, i) => hor[i + 1] && canon(hor[i + 1]) === canon(r.nombre)).map((d) => d.slice(0, 3).toLowerCase());
-      poner(c, seccion({ pie: "Asigna cada rutina a sus días en Horario." }, lista(rs.map((r) => celda({
+      poner(c, seccion({}, lista(rs.map((r) => celda({
         titulo: r.nombre, sub: [plural(r.ejercicios.length, "ejercicio", "ejercicios"), plural(r.ejercicios.reduce((a, e) => a + (Number(e.series) || 0), 0), "serie", "series"), dias(r).join(", ")].filter(Boolean).join(" · "),
         chevron: true, alPulsar: () => app.nav.ir("rutina/" + encodeURIComponent(r.id)) })))));
     },
@@ -96,7 +96,7 @@ export function vistaRutina([id], app) {
           pie: r.ejercicios.length ? "Arrastra el asa para cambiar el orden; desliza a la izquierda para quitar." : null },
           r.ejercicios.length ? listaEj : null,
           lista([celda({ titulo: "Añadir ejercicio", estilo: "accion", izquierda: h("span", { class: "c-accent", style: { display: "flex" } }, icono("mas", { tam: 22 })), alPulsar: anadir })])),
-        r.ejercicios.length ? seccion({ cab: "RPE objetivo", pie: "Se muestra en cada serie mientras entrenas, como referencia del esfuerzo que buscas." },
+        r.ejercicios.length ? seccion({ cab: "RPE objetivo" },
           lista(r.ejercicios.map((e, i) => {
             const ce = cat.find((x) => x.id === e.ejercicioId);
             return celda({ titulo: ce ? ce.nombre : e.ejercicioId, valor: esRpe(e.rpe) ? rpeTxt(e.rpe) : "Sin objetivo", chevron: true, alPulsar: async () => {
@@ -106,7 +106,7 @@ export function vistaRutina([id], app) {
               await guardar((x) => { if (v === "no") delete x.ejercicios[i].rpe; else x.ejercicios[i].rpe = Number(v); });
             } });
           }))) : null,
-        seccion({ cab: "Avisos de duración", pie: "Marca como dudosa una sesión de esta rutina que pase de esta duración o tenga un descanso entre series demasiado largo." }, lista([
+        seccion({ cab: "Avisos de duración" }, lista([
           celda({ titulo: "Avisar", control: interruptor(!!umb, (v) => store.guardarAjustes((a) => {
             a.umbrales = (a.umbrales || []).filter((u) => canon(u.rutina) !== canon(r.nombre));
             if (v) a.umbrales.push({ rutina: r.nombre, maxDur: 120, maxSerie: 15 });

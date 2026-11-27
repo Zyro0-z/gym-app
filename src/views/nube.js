@@ -22,7 +22,7 @@ export function vistaNube(_p, app) {
       const u = url.value.trim() ? normalizarUrl(url.value) : "";
       if (u === null) { await app.alerta({ titulo: "Dirección no válida", mensaje: "Tiene que empezar por https:// (la del servidor que ya desplegaste sirve)." }); return false; }
       await guardarNube((n) => { n.url = u; }); cargar();
-    } }, render: (c) => poner(c, seccion({ pie: "Es la dirección de tu servidor de copias: tiene que estar desplegado con el espacio KV «COPIAS» (servidor/README.md)." }, h("div", { class: "tarjeta" }, url))) });
+    } }, render: (c) => poner(c, seccion({}, h("div", { class: "tarjeta" }, url))) });
   }
 
   async function poner_clave() {
@@ -32,8 +32,8 @@ export function vistaNube(_p, app) {
       if (p) { await app.alerta({ titulo: "Clave débil", mensaje: p }); return false; }
       await store.guardarClaveNube(normalizarClave(t)); cargar();
     } }, render: (c) => poner(c,
-      seccion({ pie: "Para recuperar la copia en otro dispositivo necesitas esta misma clave. Si la pierdes, nadie puede recuperar la copia, ni yo ni el servidor." }, h("div", { class: "tarjeta" }, nueva)),
-      seccion({}, lista([celda({ titulo: "Generar una clave segura", sub: "160 bits al azar: inviable de adivinar", estilo: "accion", alPulsar: () => { nueva.value = generarClave(); nueva.select(); } })]))) });
+      seccion({ pie: "Sin esta clave no se puede recuperar la copia." }, h("div", { class: "tarjeta" }, nueva)),
+      seccion({}, lista([celda({ titulo: "Generar una clave segura", estilo: "accion", alPulsar: () => { nueva.value = generarClave(); nueva.select(); } })]))) });
   }
 
   return {
@@ -43,11 +43,11 @@ export function vistaNube(_p, app) {
       const n = store.estado.ajustes.nube, st = store.nubeEstado, hoy = store.hoy();
       const listo = !!(n.url && clave);
       poner(c,
-        seccion({ pie: "Todo se cifra con AES-256 en este iPhone antes de salir. El servidor guarda un bloque ilegible y no conoce la clave. Es opcional: la copia en Archivos sigue siendo la principal." }, lista([
+        seccion({}, lista([
           celda({ titulo: "Servidor", sub: n.url || "Sin configurar", chevron: true, alPulsar: poner_url }),
           celda({ titulo: "Clave", sub: clave ? "Guardada en este iPhone" : "Sin configurar", chevron: true, alPulsar: poner_clave }),
         ])),
-        clave ? seccion({ cab: "Tu clave", pie: "Anótala en un sitio seguro (un gestor de contraseñas). Se guarda aparte de los datos y no va dentro de las copias." },
+        clave ? seccion({ cab: "Tu clave" },
           h("div", { class: "tarjeta" }, h("code", { class: "clave-nube", "aria-label": verClave ? "Clave" : "Clave oculta" }, verClave ? clave : clave.replace(/[^-\s]/g, "•")),
             h("div", { class: "fila", style: { marginTop: "10px", gap: "8px" } }, boton(verClave ? "Ocultar" : "Mostrar", () => { verClave = !verClave; app.nav.repintarActual(); }, { estilo: "gris", peq: true }), boton("Copiar", async () => { try { await navigator.clipboard.writeText(clave); app.toast("Clave copiada"); } catch (e) { app.toast("No se pudo copiar"); } }, { estilo: "gris", peq: true })))) : null,
         seccion({ cab: "Copia", pie: st.error ? "Último intento fallido: " + st.error : (n.ultima ? "Última subida desde este iPhone: " + capital(fechaCorta(n.ultima.at.slice(0, 10), hoy)) + " " + n.ultima.at.slice(11, 16) + ", " + plural(n.ultima.sesiones, "sesión", "sesiones") + "." : "Aún no has subido ninguna.") }, lista([
@@ -75,7 +75,7 @@ export function vistaNube(_p, app) {
             await store.importar(m); await store.marcarNubeAlDia(inf || { at: t0, bytes: 0 }, m.sesiones.length); exito(); app.toast("Copia restaurada");
           } }),
         ])),
-        seccion({ cab: "Borrar", pie: "Borra la copia del servidor. Tus datos en este iPhone no se tocan." }, lista([
+        seccion({ cab: "Borrar" }, lista([
           celda({ titulo: "Borrar la copia del servidor", estilo: "destructiva", deshabilitada: !listo, alPulsar: async () => {
             if (!listo || !(await app.confirmar("¿Borrar la copia de la nube?", "Se elimina del servidor. Podrás subir otra cuando quieras.", "Borrar", true))) return;
             try { await store.borrarNube(); app.toast("Copia borrada"); cargar(); } catch (e) { await app.alerta({ titulo: "No se pudo borrar", mensaje: e.message }); }

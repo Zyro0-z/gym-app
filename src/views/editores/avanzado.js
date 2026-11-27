@@ -11,7 +11,7 @@ export function vistaAvanzado(_p, app) {
     alMostrar() { if (version === undefined) versionInstalada().then((v) => { version = v; app.nav.repintarActual(); }); },
     render(c) {
       poner(c,
-        seccion({ cab: "Versión", pie: "La versión instalada cambia con cada publicación. Si no coincide con la publicada, cierra la app del todo y vuelve a abrirla." }, lista([
+        seccion({ cab: "Versión" }, lista([
           celda({ titulo: "App", valor: VERSION }),
           celda({ titulo: "Instalada", valor: version === undefined ? "…" : version || "Sin service worker" }),
         ])));

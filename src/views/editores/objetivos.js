@@ -36,13 +36,13 @@ export function vistaObjetivos(_p, app) {
     render(c) {
       const A = store.estado.ajustes, obj = A.objetivos.seriesSemana || [];
       poner(c,
-        seccion({ cab: "Series por semana", pie: "Hoy y Progreso comparan tus series de cada grupo con este rango." }, lista(A.grupos.map((g) => {
+        seccion({ cab: "Series por semana" }, lista(A.grupos.map((g) => {
           const o = obj.find((x) => canon(x.grupo) === canon(g.nombre));
           return celda({ punto: colorGrupo(A.grupos, g.nombre), titulo: g.nombre, valor: o ? o.min + "–" + o.max : "Sin objetivo", chevron: true, alPulsar: () => editarSeries(g.nombre) });
         }))),
-        seccion({ cab: "Incremento por material", pie: "Cuánto subir el peso cuando toca, según el material del ejercicio." }, lista(A.objetivos.incrementos.map((t, i) => celda({
+        seccion({ cab: "Incremento por material" }, lista(A.objetivos.incrementos.map((t, i) => celda({
           titulo: capital(t.tipo), control: stepper({ valor: t.kg, min: 0.25, max: 10, paso: 0.25, formato: kgTxt, etiqueta: t.tipo, alCambiar: (v) => store.guardarAjustes((a) => { a.objetivos.incrementos[i].kg = v; }) }) })))),
-        seccion({}, lista([celda({ icono: "bascula", colorIcono: "var(--g-morado)", titulo: "Peso corporal", sub: "Sexo y fases (volumen, definición)", chevron: true, alPulsar: () => app.nav.ir("cuerpo") })], { iconos: true })));
+        seccion({}, lista([celda({ icono: "bascula", colorIcono: "var(--g-morado)", titulo: "Peso corporal", chevron: true, alPulsar: () => app.nav.ir("cuerpo") })], { iconos: true })));
     },
   };
 }

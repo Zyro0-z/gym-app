@@ -31,8 +31,8 @@ export function seccionAsignarMusculos(app, repintar) {
     await store.guardarCatalogo(r.catalogo);
     app.toast(plural(r.cambiados, "ejercicio actualizado", "ejercicios actualizados")); repintar();
   } }));
-  for (const ej of sin) celdas.push(celda({ titulo: ej.nombre, sub: "No está en el catálogo base: asigna sus músculos a mano", chevron: true, alPulsar: () => app.nav.ir("ejercicioCat/" + encodeURIComponent(ej.id)) }));
-  return seccion({ cab: "Músculos por asignar", pie: "Sin músculos, un ejercicio no cuenta en el mapa. Lo que ya editaste no se toca." }, lista(celdas));
+  for (const ej of sin) celdas.push(celda({ titulo: ej.nombre, chevron: true, alPulsar: () => app.nav.ir("ejercicioCat/" + encodeURIComponent(ej.id)) }));
+  return seccion({ cab: "Músculos por asignar" }, lista(celdas));
 }
 
 export function vistaMusculos(_p, app) {
