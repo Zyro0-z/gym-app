@@ -1,5 +1,4 @@
 // Modal a pantalla completa, barra minimizada, Wake Lock, guardado del borrador y cabecera.
-import { gimnasioActivo } from "../../core/gimnasios.js";
 import { h, poner, animar, reducirMovimiento } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
 import { barraTeclado } from "../../ui/teclado.js";
@@ -8,7 +7,7 @@ import { reanudarSonido } from "../../ui/sonido.js";
 import { reloj, fechaCorta, capital } from "../../ui/textos.js";
 import { copiar, aTexto, vacia, leerMin, marcarMin, nombreDe, tipoDeCatalogo } from "./estado.js";
 import { pintarCuerpo } from "./ejercicios.js";
-import { finDescanso, pintarDescanso, elegirDescanso, alVolver, activarBloqueo, refrescarBloqueo } from "./descanso.js";
+import { finDescanso, pintarDescanso, elegirDescanso, alVolver } from "./descanso.js";
 import { terminar, cancelarEdicion, guardarEdicion } from "./revision.js";
 import { E } from "./estado.js";
 
@@ -27,8 +26,6 @@ export function iniciarEntreno(a) {
   // el espejo de localStorage de forma SÍNCRONA antes de lanzar la escritura a IndexedDB, que puede no terminar.
   window.addEventListener("pagehide", () => guardarYa());
   document.addEventListener("freeze", () => guardarYa());
-  // Los controles de la pantalla bloqueada necesitan un toque para poder sonar (política de iOS)
-  document.addEventListener("pointerdown", () => activarBloqueo(), { capture: true, passive: true });
   pintarBarraMin();
   // Al volver a abrir la app se respeta cómo se dejó: a pantalla completa o minimizado
   if (E.app.store.estado.borrador && !leerMin()) abrirEntreno({ sinAnimar: true });
@@ -48,7 +45,6 @@ export function pintarBarraMin() {
   const b = E.app.store.estado.borrador;
   const ver = !!b && !(E.M && E.M.modo === "entreno");
   E.barraMin.hidden = !ver;
-  refrescarBloqueo();
   document.body.classList.toggle("con-barra-entreno", ver);
   clearInterval(E.tickMin);
   if (!ver) return;
@@ -58,7 +54,6 @@ export function pintarBarraMin() {
     const resto = d.descanso ? Math.ceil((d.descanso.fin - Date.now()) / 1000) : 0;
     E.barraMin.querySelector(".t2").textContent = reloj((Date.now() - d.inicio) / 1000) + (resto > 0 ? " · Descanso " + reloj(resto) : "");
     if (d.descanso && resto <= 0 && !d.descanso.avisado) finDescanso(d);
-    refrescarBloqueo();
   };
   pintar();
   E.tickMin = setInterval(pintar, 1000);
@@ -67,7 +62,7 @@ export function pintarBarraMin() {
 export function borradorDeRutina(nombre) {
   const r = nombre ? E.app.store.estado.rutinas.find((x) => x.nombre === nombre) : null;
   return {
-    rutina: r ? r.nombre : null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null, gimnasio: gimnasioActivo(E.app.store.estado.ajustes).id,
+    rutina: r ? r.nombre : null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null,
     ejercicios: r ? r.ejercicios.map((e) => Object.assign({ ejercicioId: e.ejercicioId, nombre: nombreDe(e.ejercicioId), objetivo: e.series || 3,
       series: Array.from({ length: Math.max(1, e.series || 3) }, vacia) }, tipoDeCatalogo(e.ejercicioId), e.rpe ? { rpeObjetivo: e.rpe } : {})) : [],
   };
@@ -76,7 +71,7 @@ export function borradorDeRutina(nombre) {
 /** Borrador que repite una sesión guardada: mismos ejercicios, series, cargas y RPE, sin marcar. */
 export function borradorDeSesion(s) {
   return {
-    rutina: s.rutina || null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null, gimnasio: gimnasioActivo(E.app.store.estado.ajustes).id,
+    rutina: s.rutina || null, fecha: E.app.store.hoy(), inicio: Date.now(), descanso: null,
     ejercicios: s.ejercicios.map((e) => Object.assign({ ejercicioId: e.ejercicioId, nombre: e.nombre || nombreDe(e.ejercicioId), objetivo: e.series.length },
       e.tipo ? { tipo: e.tipo } : {}, e.grupoId ? { grupoId: e.grupoId } : {}, {
         series: e.series.filter((x) => x.hecha !== false).map((x) => Object.assign({ peso: aTexto(x.peso), reps: aTexto(x.reps), tipo: x.tipo || "normal", hecha: false },
@@ -114,7 +109,7 @@ export function editarSesion(s) {
   E.M = {
     modo: "edicion", id: s.id, original: s, abiertos: new WeakSet(),
     d: { rutina: s.rutina, fecha: s.fecha, inicioTxt: s.inicio || "", finTxt: s.fin || "", descanso: null,
-      nota: s.nota || "", recuperacion: s.recuperacion || null, gimnasio: s.gimnasio,
+      nota: s.nota || "",
       ejercicios: s.ejercicios.map((e) => ({ ejercicioId: e.ejercicioId, nombre: e.nombre || nombreDe(e.ejercicioId), tipo: e.tipo, nota: e.nota, grupoId: e.grupoId,
         series: e.series.map((x) => Object.assign({}, x, { peso: aTexto(x.peso), reps: aTexto(x.reps), hecha: x.hecha !== false })) })) },
   };
@@ -136,7 +131,7 @@ export function mostrarModal(sinAnimar) {
   E.M.quitarTeclado = barraTeclado(capa);
   pintarCab(); pintarCuerpo(); pintarDescanso();
   E.M.tick = setInterval(tick, 1000);
-  if (E.M.modo === "entreno") { pedirWake(); activarBloqueo(); }
+  if (E.M.modo === "entreno") { pedirWake(); }
   // Teclado: el foco no sale del modal; Escape minimiza (entreno) o pulsa Cancelar (edición)
   E.M.soltarFoco = atraparFoco(capa, () => { const b = E.M && (E.M.cab.querySelector("[aria-label=Minimizar]") || E.M.cab.querySelector(".btn-barra")); if (b) b.click(); });
   if (!sinAnimar && !reducirMovimiento()) animar(capa, [{ transform: "translateY(100%)" }, { transform: "translateY(0)" }], { duration: 380, easing: "cubic-bezier(.32,.72,0,1)", fill: "none" });
@@ -208,5 +203,4 @@ export function tick() {
   const r = E.M.cab.querySelector("[data-reloj]");
   if (r && E.M.modo === "entreno") r.textContent = reloj((Date.now() - E.M.d.inicio) / 1000);
   pintarDescanso();
-  refrescarBloqueo();
 }

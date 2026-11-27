@@ -3,7 +3,7 @@
 // El reparto principal/secundario del catálogo base es cualitativo (revisiones de EMG y biomecánica);
 // se puede corregir ejercicio a ejercicio en Ajustes › Ejercicios.
 import { canon } from "./nombres.js";
-import { B, LIGA } from "./catalogo-base-datos.js";
+import { B } from "./catalogo-base-datos.js";
 
 export const MUSCULOS = [
   { id: "pecho-clavicular", nombre: "Pecho superior (clavicular)", grupo: "Pecho" },
@@ -56,7 +56,7 @@ const clave = (n) => canon(n).replace(/[()]/g, "");
 const ALIAS = Object.fromEntries(Object.entries(ALIAS_NOMBRES).map(([k, v]) => [clave(k), v]));
 
 export const CATALOGO_BASE = B.map(([nombre, grupo, p, s, x]) => ({ id: canon(nombre), nombre, grupo, unilateral: !!x.unilateral, tipoAncla: "peso",
-  tipoMaterial: x.material || null, incremento: null, rangoReps: null, top: false, estandar: null, musculos: { p, s }, ...(x.modoCarga ? { modoCarga: x.modoCarga } : {}) }));
+  tipoMaterial: x.material || null, incremento: null, rangoReps: null, top: false, musculos: { p, s }, ...(x.modoCarga ? { modoCarga: x.modoCarga } : {}) }));
 const POR_ID = new Map(CATALOGO_BASE.map((c) => [c.id, c]));
 
 /** Entrada del catálogo base para un nombre (o id), o null. */
@@ -70,17 +70,6 @@ export function baseDe(nombre) {
   return sinParentesis !== k && POR_ID.has(sinParentesis) ? POR_ID.get(sinParentesis) : null;
 }
 
-/**
- * Referencia de liga (`estandar`) del catálogo base para un ejercicio, solo si su tabla existe en `tablas` (ajustes.estandares).
- * Factor 1: misma barra/máquina/mancuerna que la tabla. Sin tabla o sin correspondencia devuelve null.
- */
-export function estandarDe(nombre, tablas) {
-  const b = baseDe(nombre), slug = b && LIGA[b.nombre];
-  if (!slug || !tablas) return null;
-  const real = Object.keys(tablas).find((k) => canon(k) === canon(slug));
-  return real ? { slug: real, factor: 1, revisado: false, aproximado: false, polea: b.tipoMaterial === "polea" } : null;
-}
-
 /** Ejercicios del catálogo base que aún no están en `catalogo`. */
 export const baseQueFalta = (catalogo) => {
   const ya = new Set(catalogo.map((c) => c.id));
@@ -89,11 +78,10 @@ export const baseQueFalta = (catalogo) => {
 };
 
 /** Lleva los campos de músculos y carga del catálogo base a un ejercicio nuevo. */
-export function conBase(ej, tablas) {
+export function conBase(ej) {
   const b = baseDe(ej.nombre);
   if (!b) return ej;
-  const est = ej.estandar ? null : estandarDe(ej.nombre, tablas);
-  return Object.assign({}, ej, est ? { estandar: est } : {}, { grupo: ej.grupo || b.grupo, unilateral: ej.unilateral || b.unilateral, tipoMaterial: ej.tipoMaterial || b.tipoMaterial,
+  return Object.assign({}, ej, { grupo: ej.grupo || b.grupo, unilateral: ej.unilateral || b.unilateral, tipoMaterial: ej.tipoMaterial || b.tipoMaterial,
     musculos: JSON.parse(JSON.stringify(b.musculos)) }, b.modoCarga ? { modoCarga: b.modoCarga } : {});
 }
 
@@ -112,26 +100,23 @@ export function equivalentes(catalogo, id) {
 }
 
 /**
- * Completa desde el catálogo base los ejercicios que no tienen músculos (junto con grupo, material y modo de carga si faltan) y los que
- * no tienen referencia de liga (si su tabla existe en `tablas`). No toca lo que ya está asignado ni los marcados «sin estándar».
+ * Completa desde el catálogo base los ejercicios que no tienen músculos (junto con grupo, material y modo de carga si faltan). No toca lo que ya está asignado.
  * `sinCoincidencia` lista los ejercicios sin músculos que el catálogo base no conoce.
- * @returns {{catalogo:object[], cambiados:number, sinCoincidencia:object[], conLiga:number}}
+ * @returns {{catalogo:object[], cambiados:number, sinCoincidencia:object[]}}
  */
-export function asignarMusculos(catalogo, tablas) {
+export function asignarMusculos(catalogo) {
   const sinCoincidencia = [];
-  let cambiados = 0, conLiga = 0;
+  let cambiados = 0;
   const salida = catalogo.map((ej) => {
     const b = baseDe(ej.nombre) || baseDe(ej.id), faltanMus = !(ej.musculos && (ej.musculos.p.length || ej.musculos.s.length));
     if (!b) { if (faltanMus) sinCoincidencia.push(ej); return ej; }
-    const est = ej.estandar ? null : estandarDe(b.nombre, tablas);
-    if (!faltanMus && !est) return ej;
-    cambiados++; if (est) conLiga++;
+    if (!faltanMus) return ej;
+    cambiados++;
     const r = Object.assign({}, ej);
     if (faltanMus) Object.assign(r, { grupo: ej.grupo || b.grupo, tipoMaterial: ej.tipoMaterial || b.tipoMaterial, musculos: JSON.parse(JSON.stringify(b.musculos)) }, b.modoCarga && !ej.modoCarga ? { modoCarga: b.modoCarga } : {});
-    if (est) r.estandar = est;
     return r;
   });
-  return { catalogo: salida, cambiados, sinCoincidencia, conLiga };
+  return { catalogo: salida, cambiados, sinCoincidencia };
 }
 
 /**
@@ -154,7 +139,7 @@ export function duplicadosBase(catalogo) {
 /** La entrada conservada completa lo que le falta (rango de repeticiones, top set, descanso, incremento, estándar, nota) con lo de la descartada. */
 export function fusionarAjustes(conservada, descartada) {
   const r = Object.assign({}, conservada);
-  for (const k of ["rangoReps", "incremento", "estandar", "notaFija", "descanso", "tipoAncla", "unilateral", "modoCarga"]) if (r[k] == null && descartada[k] != null) r[k] = descartada[k];
+  for (const k of ["rangoReps", "incremento", "notaFija", "descanso", "tipoAncla", "unilateral", "modoCarga"]) if (r[k] == null && descartada[k] != null) r[k] = descartada[k];
   if (descartada.top) r.top = true;
   return r;
 }

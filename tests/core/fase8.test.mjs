@@ -93,34 +93,33 @@ test("nube: info (incluye 404 → null), borrar y errores legibles", async () =>
   await assert.rejects(crearNube({ fetchFn: async () => { throw new TypeError("red"); }, it: IT }).info("https://w.example", "frase secreta larga"), /No se pudo conectar/);
 });
 
-/* ---------- copias con molestias y mesociclos ---------- */
-const mo = (o) => ({ id: "mo-1", fecha: "2026-11-10", articulacion: "hombro", lado: "der", nivel: 3, ejercicioId: "pressbancabarra", nota: "", ...o });
-test("copia: molestias y mesociclos hacen ida y vuelta; una copia sin ellos se sigue leyendo", () => {
+/* ---------- copias antiguas ---------- */
+test("copia: molestias y medidas antiguas se conservan; los ajustes de funciones retiradas se descartan", () => {
   const p = modelo();
-  p.molestias = [mo()];
-  p.ajustes.mesociclos = [{ id: "m1", nombre: "Volumen", inicio: "2026-10-05", semanas: 6, descarga: true }];
+  p.molestias = [{ id: "mo-1", fecha: "2026-11-10", articulacion: "hombro", nivel: 3 }]; p.medidas = [{ fecha: "2026-11-10", cintura: 82 }];
+  p.ajustes.mesociclos = [{ id: "m1", nombre: "Volumen", inicio: "2026-10-05", semanas: 6 }]; p.ajustes.gimnasios = [{ id: "a", nombre: "A", barra: 15, discos: [10, 5] }]; p.ajustes.gimnasioActivo = "a";
   const r = leerCopia(JSON.stringify(crearCopia(p, "2026-11-15T12:00:00.000Z")));
-  assert.deepEqual(r.molestias, p.molestias); assert.deepEqual(r.ajustes.mesociclos, p.ajustes.mesociclos);
-  const vieja = crearCopia(modelo(), "2026-11-15T12:00:00.000Z"); delete vieja.molestias; delete vieja.ajustes.mesociclos; delete vieja.ajustes.nube;
+  assert.deepEqual(r.molestias, p.molestias); assert.deepEqual(r.medidas, p.medidas);
+  for (const k of ["mesociclos", "gimnasios", "gimnasioActivo", "ligas", "ocultos"]) assert.equal(k in r.ajustes, false, k);
+  assert.equal(r.ajustes.entreno.barra, 15, "la barra del gimnasio activo pasa a Entrenamiento"); assert.deepEqual(r.ajustes.entreno.discos, [10, 5]);
+  const vieja = crearCopia(modelo(), "2026-11-15T12:00:00.000Z"); delete vieja.molestias; delete vieja.ajustes.nube;
   const v = leerCopia(JSON.stringify(vieja));
-  assert.deepEqual(v.molestias, []); assert.deepEqual(v.ajustes.mesociclos, []); assert.equal(v.ajustes.nube.activa, false);
+  assert.deepEqual(v.molestias, []); assert.equal(v.ajustes.nube.activa, false);
 });
-test("copia: se rechazan molestias y mesociclos mal formados con motivo", () => {
+test("copia: «molestias» y «medidas» tienen que ser listas", () => {
   const base = () => crearCopia(modelo(), "2026-11-15T12:00:00.000Z");
-  assert.deepEqual(validarCopia(Object.assign(base(), { molestias: [mo()] })), []);
-  const casos = [
-    [{ molestias: "no" }, /molestias/], [{ molestias: [mo({ nivel: 9 })] }, /molestia 1/], [{ molestias: [mo({ articulacion: "dedo" })] }, /molestia 1/],
-    [{ molestias: [mo(), mo()] }, /repetido/], [{ molestias: [mo({ id: "" })] }, /identificador/],
-  ];
-  for (const [parche, re] of casos) assert.match(validarCopia(Object.assign(base(), parche)).join("; "), re);
-  const c = base(); c.ajustes.mesociclos = [{ id: "m", nombre: "x", inicio: "no-fecha", semanas: 4 }];
-  assert.match(validarCopia(c).join("; "), /mesociclos/);
-  const d = base(); d.ajustes.mesociclos = "no"; assert.match(validarCopia(d).join("; "), /mesociclos/);
+  assert.deepEqual(validarCopia(base()), []);
+  assert.match(validarCopia(Object.assign(base(), { molestias: "no" })).join("; "), /molestias/);
+  assert.match(validarCopia(Object.assign(base(), { medidas: "no" })).join("; "), /medidas/);
 });
-test("ajustes: valores por defecto de mesociclos y nube", () => {
+test("ajustes: valores por defecto de la nube; acentos y escalas retirados pasan al más parecido", () => {
   const a = ajustesBase();
-  assert.deepEqual(a.mesociclos, []); assert.equal(a.nube.activa, false); assert.equal(a.nube.auto, true); assert.equal(a.nube.url, "");
+  assert.equal(a.nube.activa, false); assert.equal(a.nube.auto, true); assert.equal(a.nube.url, "");
   assert.equal(completarAjustes({ nube: { activa: true, url: "https://x.example" } }).nube.auto, true, "completa los campos que faltan");
+  const ap = (x) => completarAjustes({ apariencia: x }).apariencia;
+  assert.equal(ap({ acento: "cian" }).acento, "turquesa"); assert.equal(ap({ acento: "lima" }).acento, "verde"); assert.equal(ap({ acento: "oro" }).acento, "oro");
+  assert.equal(ap({ mapa: "fuego" }).mapa, "termico"); assert.equal(ap({ mapa: "hielo" }).mapa, "hielo");
+  assert.equal("mapaA" in ap({ mapa: "personal", mapaA: "#fff", mapaB: "#000" }), false);
 });
 
 /* ---------- sonido ---------- */
@@ -153,20 +152,4 @@ test("sonido: sin AudioContext no falla", async () => {
   const s = await import("../../src/ui/sonido.js?t=" + Math.random());
   assert.doesNotThrow(() => { s.prepararSonido(); s.reanudarSonido(); }); assert.equal(s.campana(), false);
   delete globalThis.window;
-});
-
-import { molestiaReciente } from "../../src/core/molestias.js";
-
-test("molestia reciente: nivel ≥ 3, últimos 21 días, solo ese ejercicio", () => {
-  const l = [
-    { id: "a", ejercicioId: "press", fecha: "2026-11-10", nivel: 3, articulacion: "hombro" },
-    { id: "b", ejercicioId: "press", fecha: "2026-11-20", nivel: 2, articulacion: "hombro" },
-    { id: "c", ejercicioId: "remo", fecha: "2026-11-22", nivel: 4, articulacion: "codo" },
-    { id: "d", ejercicioId: "press", fecha: "2026-10-01", nivel: 5, articulacion: "hombro" },
-  ];
-  assert.equal(molestiaReciente(l, "press", "2026-11-24").id, "a", "la de nivel 2 no cuenta; la de octubre es demasiado antigua");
-  assert.equal(molestiaReciente(l, "press", "2026-12-02"), null, "a los 22 días ya no avisa");
-  assert.equal(molestiaReciente(l, "remo", "2026-11-24").id, "c");
-  assert.equal(molestiaReciente(l, "sentadilla", "2026-11-24"), null);
-  assert.equal(molestiaReciente(l, "press", "2026-11-05"), null, "las anotaciones futuras no cuentan");
 });

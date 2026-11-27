@@ -5,7 +5,6 @@ import { seccion, lista, celda, segmentado, stepper, interruptor, chip, vacio, b
 import { graficaBarras, graficaLinea, sparkline } from "../ui/graficas.js";
 import { mapaCalor } from "../ui/calor.js";
 import { diagramaCuerpo } from "../ui/cuerpo.js";
-import { insignia, nombresLigas } from "../ui/insignias.js";
 import { aplicarApariencia, temaEfectivo } from "../ui/tema.js";
 import { kg, fechaCorta } from "../ui/textos.js";
 import { masDias, numDia, deNum } from "../core/fechas.js";
@@ -58,13 +57,10 @@ export function vistaGuia(_p, app) {
         seccion({ cab: "Línea con área" }, h("div", { class: "tarjeta" },
           h("div", { class: "resumen-grafica" }, h("div", { class: "etiqueta" }, "e1RM"), h("div", { class: "cifra c-accent" }, "95,2", h("span", { class: "ud" }, " kg"))),
           graficaLinea({ puntos, ejeX: (n) => fechaCorta(deNum(n)), formato: (v) => kg(v), secundaria: puntos.map((p, i, a) => ({ x: p.x, y: a.slice(Math.max(0, i - 3), i + 1).reduce((s, q) => s + q.y, 0) / Math.min(i + 1, 4) })) }))),
-        seccion({ cab: "Mapa de calor" }, h("div", { class: "tarjeta" }, mapaCalor({ mes: hoy.slice(0, 7), hoy, nivel: (iso) => (+iso.slice(8) * 7) % 5, deload: (iso) => +iso.slice(8) <= 3, alCambiarMes: () => {} }))),
+        seccion({ cab: "Calendario" }, h("div", { class: "tarjeta tarjeta-calor" }, mapaCalor({ mes: hoy.slice(0, 7), hoy, ruta: (iso) => { const d = +iso.slice(8); return d % 3 === 0 ? undefined : d % 8; }, deload: (iso) => +iso.slice(8) <= 3, alCambiarMes: () => {} }))),
         seccion({ cab: "Diagrama corporal" }, h("div", { class: "tarjeta" }, diagramaCuerpo([
           { nombre: "Pecho", tokens: ["pecho-*"], valor: 16 }, { nombre: "Espalda", tokens: ["dorsal-*", "redondo-*", "trapecio-*", "romboides-*"], valor: 8 },
           { nombre: "Pierna", tokens: ["recto-femoral-*", "vastos-*", "isquiotibiales-*", "gemelos-*", "gluteo-*"], valor: 12 }, { nombre: "Bíceps", tokens: ["biceps-*", "braquial-*"], valor: 4 }], { unidad: (v) => v + " series" }))),
-        seccion({ cab: "Insignias de liga · 96, 32 y 20" }, h("div", { class: "tarjeta" },
-          h("div", { class: "fila", style: { justifyContent: "center", gap: "20px" } }, insignia({ insignia: 9, div: "II" }, 96), insignia({ insignia: 9, div: "II" }, 32), insignia({ insignia: 9, div: "II" }, 20)),
-          h("div", { class: "escalera" }, nombresLigas().map((n, i) => h("div", null, insignia({ insignia: i + 1, div: "" }, 32), h("span", null, n)))))),
         seccion({ cab: "Estado vacío" }, h("div", { class: "tarjeta" }, vacio({ icono: "bascula", titulo: "Apunta tu peso", texto: "Con dos pesajes verás la tendencia.", acciones: [{ texto: "Añadir pesaje", alPulsar: () => {} }] }))),
         seccion({ cab: "Capas" }, lista([
           celda({ titulo: "Hoja media", estilo: "accion", alPulsar: () => hojaEjemplo(app, ["media", "grande"]) }),

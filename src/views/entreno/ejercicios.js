@@ -8,13 +8,11 @@ import { fmt } from "../../core/formato.js";
 import { esRpe, rpeTxt } from "../../core/rpe.js";
 import { e1rmReciente, cargaParaRpe } from "../../core/prescripcion.js";
 import { elegirEjercicio } from "../selector.js";
-import { anotarMolestia } from "../molestias.js";
 import { vacia, nombreDe, aTexto, tipoDeCatalogo } from "./estado.js";
 import { guardarPronto, guardarYa } from "./pantalla.js";
 import { filaSerie, resaltarActual, resumenDe } from "./serie.js";
 import { descartar, notaSesion } from "./revision.js";
-import { celdaRecuperacion } from "./recuperacion.js";
-import { avisoMolestia, chipAutorregulacion } from "./ayudas.js";
+import { chipAutorregulacion } from "./ayudas.js";
 import { E } from "./estado.js";
 import { sugerenciaDe, enDescarga, aplicarSugerencia, repetirUltima, posicionSuperserie, unirConSiguiente, separarDeSuperserie, limpiarGrupos, calculadoraDiscos, anadirCalentamiento, anadirBackoffs } from "./herramientas.js";
 
@@ -62,7 +60,6 @@ export function pintarCuerpo() {
   const scroll = cont.scrollTop;
   const bloques = [];
   if (E.M.modo === "edicion") bloques.push(detallesEdicion());
-  bloques.push(celdaRecuperacion(d, pintarCuerpo));
   d.ejercicios.forEach((e, i) => bloques.push(bloqueEjercicio(e, i)));
   bloques.push(h("div", { class: "seccion pila", style: { gap: "10px" } },
     h("button", { class: "btn gris", onClick: anadirEjercicio }, icono("mas"), h("span", null, "Añadir ejercicio")),
@@ -94,7 +91,6 @@ export function bloqueEjercicio(e, i) {
   const aut = chipAutorregulacion(e, paso, (a) => { aplicarSugerencia(e, a); seleccion(); guardarPronto(); pintarCuerpo(); });
   const empezado = e.series.some((s) => s.hecha && s.tipo !== "calentamiento");   // con una serie de trabajo hecha, la sugerencia previa ya no aplica
   const sug = aut || empezado ? null : sugerenciaDe(e.ejercicioId, e.rpeObjetivo);
-  const molestia = avisoMolestia(e, async () => { if (await cambiarEjercicio(i)) { limpiarGrupos(E.M.d.ejercicios); guardarYa(); pintarCuerpo(); } });
   const pos = posicionSuperserie(E.M.d.ejercicios, i);
   return h("section", { class: ["ej", pos && "superserie", pos && "ss-" + pos], dataset: { ej: String(i) } },
     pos === "inicio" ? h("div", { class: "ss-etiqueta" }, "Superserie") : null,
@@ -102,7 +98,7 @@ export function bloqueEjercicio(e, i) {
       h("button", { class: "ej-nombre", onClick: () => menuEjercicio(i) }, e.nombre || nombreDe(e.ejercicioId)),
       h("button", { class: "btn-icono", "aria-label": "Opciones de " + (e.nombre || ""), onClick: () => menuEjercicio(i) }, icono("opciones"))),
     info.length ? h("div", { class: "ej-info" }, info.map((t, k) => (k === 0 && /reps/.test(t) ? h("span", { class: "ej-tag" }, t) : h("span", { class: "ej-dato" }, t)))) : null,
-    molestia, aut,
+    aut,
     sug ? h("button", { class: "chip-sugerencia", "aria-label": "Sugerencia: " + aTexto(sug.peso) + " kilos por " + sug.reps + " repeticiones. " + sug.motivo + ". Toca para ponerla en las series vacías.",
       onClick: () => { const n = aplicarSugerencia(e, sug); seleccion(); guardarPronto(); pintarCuerpo(); if (!n) E.app.toast("Las series ya tienen peso"); } },
       h("span", { class: "t" }, "Sugerido"), h("span", { class: "num" }, aTexto(sug.peso) + " kg × " + sug.reps), h("span", { class: "m" }, sug.motivo)) : null,
@@ -135,7 +131,7 @@ async function cambiarEjercicio(i) {
 export async function menuEjercicio(i) {
   const e = E.M.d.ejercicios[i];
   const op = [{ texto: "Cambiar ejercicio", valor: "cambiar" }, { texto: "Ver historia", valor: "historia" }, { texto: e.nota ? "Editar nota" : "Añadir nota", valor: "nota" }];
-  if (E.app.store.estado.catalogo.some((x) => x.id === e.ejercicioId)) op.push({ texto: "Nota fija del ejercicio", valor: "notafija" }, { texto: "Anotar molestia", valor: "molestia" });
+  if (E.app.store.estado.catalogo.some((x) => x.id === e.ejercicioId)) op.push({ texto: "Nota fija del ejercicio", valor: "notafija" });
   const ejs = E.M.d.ejercicios;
   if (i < ejs.length - 1 && !(e.grupoId && ejs[i + 1].grupoId === e.grupoId)) op.push({ texto: "Unir con el siguiente", valor: "unir" });
   if (posicionSuperserie(ejs, i)) op.push({ texto: "Separar de la superserie", valor: "separar" });
@@ -151,7 +147,6 @@ export async function menuEjercicio(i) {
   else if (r === "historia") return verHistoria(e);
   else if (r === "nota") return editarNota(e);
   else if (r === "notafija") return editarNotaFija(e);
-  else if (r === "molestia") return anotarMolestia(E.app, { ejercicioId: e.ejercicioId });
   else if (r === "discos") return calculadoraDiscos(e);
   else if (r === "backoffs") { const b = anadirBackoffs(e); if (!b) { E.app.toast("Marca antes una serie con peso y repeticiones", { icono: null }); return; } E.app.toast("Back-offs: " + aTexto(b[0].peso) + " kg × " + b[0].reps + " a RPE " + rpeTxt(b[0].rpe), { icono: null }); }
   else if (r === "calentar") { if (!anadirCalentamiento(e)) { E.app.toast("Pon antes el peso de la primera serie de trabajo", { icono: null }); return; } }

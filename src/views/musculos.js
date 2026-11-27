@@ -16,18 +16,18 @@ function mapaMusculosSemana(V) {
 export { n1 };
 
 /** Ejercicios del catálogo sin músculos asignados que el catálogo base sí conoce / que no conoce. */
-export const sinMusculosCat = (catalogo, tablas) => { const r = asignarMusculos(catalogo, tablas); return { resolubles: r.cambiados, sin: r.sinCoincidencia, liga: r.conLiga }; };
+export const sinMusculosCat = (catalogo) => { const r = asignarMusculos(catalogo); return { resolubles: r.cambiados, sin: r.sinCoincidencia }; };
 
 /**
  * Sección «Asignar músculos automáticamente» (o null si no hace falta): rellena desde el catálogo base los ejercicios que no tienen
  * músculos, para que cuenten en el mapa por músculos. Los que el catálogo base no conoce se listan para asignarlos a mano.
  */
 export function seccionAsignarMusculos(app, repintar) {
-  const { store } = app, tablas = store.estado.ajustes.estandares, { resolubles, sin, liga } = sinMusculosCat(store.estado.catalogo, tablas);
+  const { store } = app, { resolubles, sin } = sinMusculosCat(store.estado.catalogo);
   if (!resolubles && !sin.length) return null;
   const celdas = [];
-  if (resolubles) celdas.push(celda({ titulo: "Asignar músculos automáticamente", sub: plural(resolubles, "ejercicio", "ejercicios") + " con coincidencia en el catálogo base" + (liga ? " · " + plural(liga, "referencia de liga", "referencias de liga") : ""), estilo: "accion", alPulsar: async () => {
-    const r = asignarMusculos(store.estado.catalogo, tablas);
+  if (resolubles) celdas.push(celda({ titulo: "Asignar músculos automáticamente", sub: plural(resolubles, "ejercicio", "ejercicios") + " con coincidencia en el catálogo base", estilo: "accion", alPulsar: async () => {
+    const r = asignarMusculos(store.estado.catalogo);
     await store.guardarCatalogo(r.catalogo);
     app.toast(plural(r.cambiados, "ejercicio actualizado", "ejercicios actualizados")); repintar();
   } }));

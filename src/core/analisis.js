@@ -3,12 +3,10 @@ import { crearContexto } from "./contexto.js";
 import { leerSesiones, todasLasSeries, porEjercicio } from "./sesiones.js";
 import { diagnosticar } from "./estancamiento.js";
 import { evaluarProgresion, incrementoDe, proximaVez, avisosProgresion } from "./progresion.js";
-import { calcularLigas } from "./ligas.js";
 import { analizarPeso, resumenPeso } from "./peso.js";
 import { ultimasSemanas, resumenSemana, racha, hoyToca, seriesObjetivo, grupoSemana, volumenPorGrupo, balance } from "./semanal.js";
 import { calidad } from "./calidad.js";
 import { volumenMusculos } from "./volumen.js";
-import { compararGimnasios } from "./porgimnasio.js";
 
 /**
  * @param {object} modelo {sesiones, catalogo, rutinas, pesajes, ajustes}
@@ -23,7 +21,6 @@ export function analizar(modelo, hoy) {
   const progresion = new Map();
   for (const [k, obj] of C.objetivos) progresion.set(k, evaluarProgresion(C, SESIONES, k, obj));
   const progresionDe = (k) => { const p = progresion.get(k); return p && !p.sinDatos ? p : null; };
-  const LIGA = calcularLigas(C, SESIONES, TODAS);
   const pesoA = analizarPeso(C);
   const semanas = ultimasSemanas(C, SESIONES);
   const ultima = SESIONES[0] || null;
@@ -38,10 +35,10 @@ export function analizar(modelo, hoy) {
   return {
     hoy, C, sesiones: SESIONES, series: TODAS, ejercicios: EJERCICIOS, diagnostico, progresion, progresionDe,
     incrementoDe: (p) => incrementoDe(C, SESIONES, p), proximaVez: (p) => proximaVez(C, SESIONES, p), avisosProgresion,
-    liga: LIGA, peso: pesoA, resumenPeso: resumenPeso(C, pesoA), semanas, resumen: resumenSemana(C, SESIONES),
+    peso: pesoA, resumenPeso: resumenPeso(C, pesoA), semanas, resumen: resumenSemana(C, SESIONES),
     racha: racha(C, SESIONES), hoyToca: hoyToca(C, SESIONES, progresionDe), seriesObjetivo: seriesObjetivo(C, SESIONES, TODAS),
     grupoSemana: grupoSemana(C, TODAS), volumenPorGrupo: volumenPorGrupo(TODAS, semanas),
-    volumenMusculos: (o) => volumenMusculos(C, TODAS, o), porGimnasio: compararGimnasios(TODAS),
-    balance: (periodo) => balance(C, TODAS, periodo), nuevosPR, calidad: calidad(C, SESIONES, TODAS, LIGA),
+    volumenMusculos: (o) => volumenMusculos(C, TODAS, o),
+    balance: (periodo) => balance(C, TODAS, periodo), nuevosPR, calidad: calidad(C, SESIONES, TODAS),
   };
 }

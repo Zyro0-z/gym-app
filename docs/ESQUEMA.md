@@ -1,5 +1,7 @@
 # Esquema de datos
 
+> **Retirado (noviembre de 2026):** ligas e insignias, cuestionario previo y Rendimiento, Molestias, Medidas corporales, Mesociclos, varios gimnasios, módulos ocultables, avisos push y controles de pantalla bloqueada. Las secciones de este documento que los describen son históricas. Los datos antiguos (`medidas`, `molestias`, `ajustes.mesociclos`…) se conservan o se descartan al leer una copia, pero la app ya no los usa.
+
 Los datos viven en IndexedDB, en la base `gymapp`. La versión de la **base** (estructura de
 almacenes) y la versión de los **datos** (`kv.schema`) van por separado:
 

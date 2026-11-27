@@ -2,7 +2,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { modeloSinEjercicio, borradorSin, modeloConEjerciciosUnidos } from "../../src/core/borrado.js";
 import { fusionarAjustes } from "../../src/core/musculos.js";
-import { leerTablas } from "../../src/core/estandares.js";
 
 const estado = () => ({
   sesiones: [
@@ -44,9 +43,6 @@ test("fusionarAjustes hereda también tipo de ancla, unilateral y modo de carga"
   const r = fusionarAjustes({ id: "x" }, { tipoAncla: "pecho", unilateral: true, modoCarga: "lastre" });
   assert.equal(r.tipoAncla, "pecho"); assert.equal(r.unilateral, true); assert.equal(r.modoCarga, "lastre");
   assert.equal(fusionarAjustes({ modoCarga: "total" }, { modoCarga: "lastre" }).modoCarga, "total");
-});
-test("leerTablas rechaza niveles todos a cero", () => {
-  assert.throws(() => leerTablas(JSON.stringify({ x: [{ pc: 80, niveles: [0, 0, 0, 0, 0] }] })), /formato/);
 });
 
 test("unir ejercicios cambia sesiones, rutinas sin repetir, molestias y borrador a la vez", () => {

@@ -3,6 +3,8 @@
 :root {
   color-scheme: light;
   --bg: #FFFFFF;
+  /* color de rutina en el calendario: contraste ≥ 4,5 sobre la tarjeta */
+  --ruta-0: #1866BF; --ruta-1: #0F7631; --ruta-2: #9F5014; --ruta-3: #C31857; --ruta-4: #9525E4; --ruta-5: #0E7071; --ruta-6: #846110; --ruta-7: #C81F19;
   --bg-grouped: #F4F5F8;
   --cell: #FFFFFF;
   --cell-2: #EDF0F5;
@@ -95,6 +97,8 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #08090C;
+  /* color de rutina en el calendario: contraste ≥ 4,5 sobre la tarjeta */
+  --ruta-0: #5C9EEB; --ruta-1: #19CC55; --ruta-2: #E68033; --ruta-3: #EE72A0; --ruta-4: #C180EF; --ruta-5: #19C9CC; --ruta-6: #CC9719; --ruta-7: #EE7672;
   --bg-grouped: #08090C;
   --cell: #11141B;
   --cell-2: #191D27;
@@ -133,13 +137,13 @@
 :root[data-theme="dark"] .hoja { --cell: #191D27; --cell-2: #232836; --cell-pressed: #2E3547; }
 
 /* ── acentos (Ajustes › Apariencia) ── */
-:root[data-accent="indigo"]   { --accent: #5856D6; --accent-ink: #5553D0; }
-:root[data-accent="morado"]   { --accent: #A64ED3; --accent-ink: #8C42B2; }
-:root[data-accent="rosa"]     { --accent: #E0284B; --accent-ink: #BF2240; }
-:root[data-accent="rojo"]     { --accent: #DE332A; --accent-ink: #BD2C24; }
-:root[data-accent="naranja"]  { --accent: #AD6500; --accent-ink: #915500; }
-:root[data-accent="verde"]    { --accent: #23873D; --accent-ink: #1E7133; }
-:root[data-accent="grafito"]  { --accent: #76767A; --accent-ink: #636367; }
+:root[data-accent="indigo"]   { --accent: #5856D6; --accent-ink: #4E4CBF; }
+:root[data-accent="morado"]   { --accent: #A64ED3; --accent-ink: #843EA7; }
+:root[data-accent="rosa"]     { --accent: #E0284B; --accent-ink: #B01F3B; }
+:root[data-accent="rojo"]     { --accent: #DE332A; --accent-ink: #AE2821; }
+:root[data-accent="naranja"]  { --accent: #AD6500; --accent-ink: #885000; }
+:root[data-accent="verde"]    { --accent: #23873D; --accent-ink: #1D6C31; }
+:root[data-accent="grafito"]  { --accent: #76767A; --accent-ink: #5F5F63; }
 :root[data-theme="dark"][data-accent="indigo"]   { --accent: #5E5CE6; --accent-ink: #9E9DF0; }
 :root[data-theme="dark"][data-accent="morado"]   { --accent: #A64ED3; --accent-ink: #D188F6; }
 :root[data-theme="dark"][data-accent="rosa"]     { --accent: #DE3053; --accent-ink: #FF7B95; }

@@ -1,8 +1,6 @@
 // Umbrales del análisis. Son los mismos de la versión 1: cambiarlos cambia los resultados.
 export const REPS_UMBRAL_FIABILIDAD_1RM = 12; // por encima, el 1RM estimado es menos fiable (≈)
 export const REPS_MAX_UNILATERAL = 40;        // más reps por lado: ¿se apuntó la suma de los dos?
-export const DIAS_PESO_RECIENTE = 14;         // pesaje más viejo: aviso en las ligas
-export const LIGA_REPS_MAX = 15;              // series por encima del rango cuentan para la liga hasta 15 reps
 export const FLECHA_PLANA_PCT = 1;
 export const FLECHA_FUERTE_PCT = 2.5;
 export const PESO_VENTANA_DIAS = 21;

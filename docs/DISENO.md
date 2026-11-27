@@ -1,5 +1,7 @@
 # Diseño
 
+> **Retirado (noviembre de 2026):** ligas e insignias, cuestionario previo y Rendimiento, Molestias, Medidas corporales, Mesociclos, varios gimnasios, módulos ocultables, avisos push y controles de pantalla bloqueada. Las secciones de este documento que los describen son históricas. Los datos antiguos (`medidas`, `molestias`, `ajustes.mesociclos`…) se conservan o se descartan al leer una copia, pero la app ya no los usa.
+
 La app es un registro de entrenamientos y un análisis de progreso para iPhone, instalada como PWA.
 Este documento fija el mapa de pantallas, el sistema de diseño (tokens y componentes), un boceto de
 cada pantalla y el porqué de cada decisión. Las decisiones se toman con las Human Interface

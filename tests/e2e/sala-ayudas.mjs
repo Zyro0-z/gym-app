@@ -1,4 +1,4 @@
-// Ayudas de sala: aviso de molestia reciente, ajuste del peso tras la primera serie, descarga sin pedir subir y propagación del peso.
+// Ayudas de sala: ajuste del peso tras la primera serie, descarga sin pedir subir y propagación del peso.
 // Uso: node e2e/sala-ayudas.mjs [chromium|webkit]
 import { chromium, webkit } from "playwright";
 import assert from "node:assert/strict";
@@ -28,10 +28,6 @@ await p.evaluate(async () => {
     await s.guardarSesion({ id: f + "-x", rutina: "Torso", fecha: f, inicio: "18:00", fin: "19:00", duracion: 60, ejercicios: [
       { ejercicioId: "pressbanca", nombre: "Press banca", tipo: "peso", series: [0, 1, 2].map(() => ({ peso: 90, reps: 8, rpe: 8, tipo: "normal", hecha: true })) },
       { ejercicioId: "remoconbarra", nombre: "Remo con barra", tipo: "peso", series: [{ peso: 60, reps: 8, tipo: "normal", hecha: true }, { peso: 60, reps: 8, tipo: "normal", hecha: true }] }] });
-  await s.guardarMolestias([
-    { id: "m1", fecha: "2026-11-13", articulacion: "hombro", lado: "der", nivel: 3, ejercicioId: "pressbanca" },
-    { id: "m2", fecha: "2026-11-17", articulacion: "codo", lado: "izq", nivel: 2, ejercicioId: "remoconbarra" },
-  ]);
 });
 await p.reload(); await p.waitForFunction(() => window.__gym); await espera(800);
 
@@ -41,17 +37,6 @@ const empezar = async () => {
 };
 await empezar();
 const press = p.locator(".modal-completo .ej").nth(0), remo = p.locator(".modal-completo .ej").nth(1);
-
-paso("molestia reciente de nivel ≥ 3: aviso en ese ejercicio y no en el de nivel leve");
-assert.match(await press.locator(".ej-molestia").innerText(), /Hombro der\. · Nivel 3 \(hace 5 días\)/);
-assert.equal(await remo.locator(".ej-molestia").count(), 0);
-
-paso("«Cambiar ›» abre el selector de equivalentes");
-await press.locator(".ej-molestia button").click(); await espera(500);
-assert.ok(await p.locator(".hoja").count(), "se abre el selector");
-await p.keyboard.press("Escape"); await espera(400);
-if (await p.locator(".hoja").count()) await p.locator(".hoja").getByRole("button", { name: /Cerrar|Cancelar/ }).first().click();
-await espera(300);
 
 paso("propagación: el peso de la serie 1 aparece como ayuda en las vacías sin escribirlo");
 await press.getByLabel("Repeticiones de la serie 1").fill("8");

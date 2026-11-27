@@ -6,8 +6,8 @@ import { canon, sinTildes } from "../core/nombres.js";
 import { colorGrupo } from "../ui/tema.js";
 import { conBase, equivalentes } from "../core/musculos.js";
 
-export const nuevoEjercicio = (nombre, grupo, tablas) => conBase({ id: canon(nombre), nombre: nombre.trim(), grupo: grupo || null, unilateral: false, tipoAncla: "peso",
-  tipoMaterial: null, incremento: null, rangoReps: null, top: false, estandar: null }, tablas);
+export const nuevoEjercicio = (nombre, grupo) => conBase({ id: canon(nombre), nombre: nombre.trim(), grupo: grupo || null, unilateral: false, tipoAncla: "peso",
+  tipoMaterial: null, incremento: null, rangoReps: null, top: false });
 
 /**
  * Devuelve { ejercicioId, nombre } o null si se cierra sin elegir.
@@ -41,7 +41,7 @@ export function elegirEjercicio(app, { titulo = "Añadir ejercicio", excluir = [
       const grupos = store.estado.ajustes.grupos.map((g) => g.nombre);
       const g = await app.hojaAcciones({ mensaje: "Grupo muscular de «" + nombre + "»", opciones: grupos.map((x) => ({ texto: x, valor: x })).concat([{ texto: "Sin grupo", valor: "" }]) });
       if (g === null) return;
-      const nuevo = nuevoEjercicio(nombre, g || null, store.estado.ajustes.estandares);
+      const nuevo = nuevoEjercicio(nombre, g || null);
       if (!store.estado.catalogo.some((c) => c.id === nuevo.id)) await store.guardarCatalogo([...store.estado.catalogo, nuevo]);
       elegido = { ejercicioId: nuevo.id, nombre: nuevo.nombre };
       hoja.cerrar();

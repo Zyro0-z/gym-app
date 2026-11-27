@@ -170,7 +170,7 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     async borrarEjercicio(id) {
       await store.importar(modeloSinEjercicio(estado, id), "borrar", borradorSin(estado.borrador, id));
     },
-    /** Quita sesiones, pesajes, medidas, molestias y borrador. Conserva rutinas, catálogo y ajustes (tablas de estándares incluidas); antes guarda una copia interna. */
+    /** Quita sesiones, pesajes, medidas, molestias y borrador. Conserva rutinas, catálogo y ajustes; antes guarda una copia interna. */
     async borrarHistorial() {
       await store.importar({ sesiones: [], catalogo: estado.catalogo, rutinas: estado.rutinas, pesajes: [], medidas: [], molestias: [], ajustes: estado.ajustes }, "borrar");
     },

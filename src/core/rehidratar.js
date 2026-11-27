@@ -7,16 +7,13 @@ import { crearContexto } from "./contexto.js";
 import { incrementoDe, proximaVez, avisosProgresion } from "./progresion.js";
 import { balance } from "./semanal.js";
 import { volumenMusculos } from "./volumen.js";
-import { funcionesLiga } from "./ligas.js";
 
 const FUNCIONES = ["progresionDe", "incrementoDe", "proximaVez", "avisosProgresion", "balance", "volumenMusculos"];
-const FUNCIONES_LIGA = ["nivelDe", "pct", "progreso", "falta", "faltaTxt", "faltaGrupoTxt", "mensual"];
 
 export function aPlano(A) {
   const P = Object.assign({}, A);
   delete P.C;
   for (const k of FUNCIONES) delete P[k];
-  if (A.liga) { P.liga = Object.assign({}, A.liga); for (const k of FUNCIONES_LIGA) delete P.liga[k]; }
   for (const s of A.sesiones) delete s.ref;
   return P;
 }
@@ -37,6 +34,5 @@ export function rehidratar(P, modelo) {
     balance: (periodo) => balance(C, TODAS, periodo),
     volumenMusculos: (o) => volumenMusculos(C, TODAS, o),
   });
-  if (P.liga && P.liga.ok) Object.assign(P.liga, funcionesLiga(C));
   return A;
 }

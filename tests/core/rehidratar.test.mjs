@@ -45,11 +45,6 @@ for (const [nombre, modelo, fechas] of conjuntos) for (const hoy of fechas)
     assert.deepEqual([...B.C.horario], [...A.C.horario]);
     for (const d of ["2026-08-01", hoy]) assert.deepEqual(B.C.bloquesActivos(d), A.C.bloquesActivos(d));
     for (const x of A.series.slice(0, 50)) assert.equal(B.C.grupoDe(x.ejercicio), A.C.grupoDe(x.ejercicio));
-    if (A.liga.ok) {
-      for (const [k, e] of A.liga.ejercicios) { const f = B.liga.ejercicios.get(k); if (e.hoy && e.hoy.nivel) { assert.equal(B.liga.faltaTxt(f), A.liga.faltaTxt(e)); assert.deepEqual(B.liga.progreso(f.hoy), A.liga.progreso(e.hoy)); } }
-      for (const [k, g] of A.liga.grupos) { const f = B.liga.grupos.get(k); if (g.hoy.nivel) assert.equal(B.liga.faltaGrupoTxt(f.hoy), A.liga.faltaGrupoTxt(g.hoy)); assert.deepEqual(B.liga.mensual(f.linea, ["2026-09", "2026-10"]), A.liga.mensual(g.linea, ["2026-09", "2026-10"])); }
-      assert.equal(B.liga.pct(50), A.liga.pct(50));
-    }
     for (const s of B.sesiones) assert.ok(s.ref && s.ref.id === s.id, "ref restaurada");
   });
 

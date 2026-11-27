@@ -46,7 +46,3 @@ export function csvSeries(sesiones, catalogo, ajustes = {}, opciones = {}) {
 export function csvPesajes(pesajes, ajustes = {}) {
   return aCsv(["fecha", "peso_kg"], [...pesajes].sort((a, b) => (a.fecha < b.fecha ? -1 : 1)).map((p) => [p.fecha, p.kg]), ajustes.csv || {});
 }
-
-export function csvMedidas(medidas, claves, ajustes = {}) {
-  return aCsv(["fecha", ...claves.map((k) => k + "_cm")], [...medidas].sort((a, b) => (a.fecha < b.fecha ? -1 : 1)).map((m) => [m.fecha, ...claves.map((k) => m[k] ?? null)]), ajustes.csv || {});
-}

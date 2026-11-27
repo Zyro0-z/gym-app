@@ -1,5 +1,4 @@
-# Servidor opcional de avisos (ver servidor/README.md). Plan gratuito de Workers: Durable Objects
-# con almacenamiento SQLite (por eso «new_sqlite_classes»).
+# Servidor opcional de copias cifradas (ver servidor/README.md). El nombre se mantiene para no cambiar la URL ya desplegada.
 name = "gym-avisos"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
@@ -7,11 +6,7 @@ compatibility_date = "2026-11-01"
 [vars]
 ORIGEN = "https://zyro0-z.github.io"
 
-[[durable_objects.bindings]]
-name = "AVISOS"
-class_name = "Avisos"
-
-# Copias cifradas (opcional). Crea el espacio con «npx wrangler kv namespace create COPIAS», descomenta este bloque y pega su id.
+# Crea el espacio con «npx wrangler kv namespace create COPIAS», descomenta este bloque y pega su id.
 # [[kv_namespaces]]
 # binding = "COPIAS"
 # id = "PEGA_AQUI_EL_ID_DEL_KV"
@@ -19,3 +14,7 @@ class_name = "Avisos"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Avisos"]
+
+[[migrations]]
+tag = "v2"
+deleted_classes = ["Avisos"]

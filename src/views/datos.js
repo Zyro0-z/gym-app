@@ -68,7 +68,7 @@ async function restaurar(app, r) {
 async function borrarTodo(app) {
   const n = app.store.estado.sesiones.length;
   const ok = await app.confirmar("¿Borrar todos los datos?",
-    "Se borran " + plural(n, "sesión", "sesiones") + ", pesajes, medidas y rutinas de este iPhone. Se conservan los ajustes y el catálogo de ejercicios. Antes se guarda una copia interna que puedes restaurar.", "Borrar todo", true);
+    "Se borran " + plural(n, "sesión", "sesiones") + ", pesajes y rutinas de este iPhone. Se conservan los ajustes y el catálogo de ejercicios. Antes se guarda una copia interna que puedes restaurar.", "Borrar todo", true);
   if (!ok) return false;
   try { await app.store.borrarTodo(); }
   catch (e) { await app.alerta({ titulo: "No se pudo borrar", mensaje: e.message }); return false; }
@@ -76,11 +76,11 @@ async function borrarTodo(app) {
   return true;
 }
 
-/** Borra el historial (sesiones, pesajes, medidas, molestias) y deja rutinas, ejercicios y tablas; antes queda una copia interna. */
+/** Borra el historial (sesiones y pesajes) y deja rutinas y ejercicios; antes queda una copia interna. */
 async function borrarHistorial(app) {
   const n = app.store.estado.sesiones.length;
   const ok = await app.confirmar("¿Borrar el historial?",
-    "Se borran " + plural(n, "sesión", "sesiones") + ", pesajes, medidas y molestias. Se conservan las rutinas, los ejercicios (con sus músculos y ligas) y los ajustes, tablas incluidas. Las ligas se calculan con tu historial: volverán a salir cuando registres entrenos y tu peso. Antes se guarda una copia interna.", "Borrar historial", true);
+    "Se borran " + plural(n, "sesión", "sesiones") + " y pesajes. Se conservan las rutinas, los ejercicios (con sus músculos) y los ajustes. Antes se guarda una copia interna.", "Borrar historial", true);
   if (!ok) return false;
   try { await app.store.borrarHistorial(); }
   catch (e) { await app.alerta({ titulo: "No se pudo borrar", mensaje: e.message }); return false; }
@@ -119,7 +119,7 @@ export function vistaDatos(_p, app) {
             celda({ titulo: "Copia interna cada", control: stepper({ valor: cada, min: 1, max: 30, formato: (v) => plural(v, "sesión", "sesiones"), etiqueta: "sesiones entre copias internas",
               alCambiar: (v) => store.guardarAjustes((a) => { a.copiasInternas = { cada: v }; }, { analitico: false }) }) }),
           ])),
-        seccion({ cab: "Hojas de cálculo", pie: "CSV para Excel o Numbers: una fila por serie (con e1RM y RPE), punto y coma como separador y coma decimal. Las medidas se exportan desde su pantalla." }, lista([
+        seccion({ cab: "Hojas de cálculo", pie: "CSV para Excel o Numbers: una fila por serie (con e1RM y RPE), punto y coma como separador y coma decimal." }, lista([
           celda({ titulo: "Exportar series (CSV)", estilo: "accion", alPulsar: async () => { if (await guardarArchivo(app, csvSeries(store.estado.sesiones, store.estado.catalogo, store.estado.ajustes), "gym-series-" + store.hoy() + ".csv", "text/csv")) app.toast("CSV exportado"); } }),
           celda({ titulo: "Exportar pesajes (CSV)", estilo: "accion", alPulsar: async () => { if (await guardarArchivo(app, csvPesajes(store.estado.pesajes, store.estado.ajustes), "gym-pesajes-" + store.hoy() + ".csv", "text/csv")) app.toast("CSV exportado"); } }),
         ])),

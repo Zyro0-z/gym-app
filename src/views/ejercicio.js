@@ -1,11 +1,9 @@
 // Detalle de ejercicio (e1RM, próxima vez, estado, récords y sesiones) y detalle de grupo muscular.
 import { e1rmAjustado, esRpe, rpeTxt } from "../core/rpe.js";
 import { h, poner } from "../ui/dom.js";
-import { activo } from "../data/modulos.js";
 import { icono } from "../ui/iconos.js";
 import { seccion, lista, celda, vacio, chip, segmentado } from "../ui/controles.js";
 import { graficaLinea, graficaBarras } from "../ui/graficas.js";
-import { insignia } from "../ui/insignias.js";
 import { colorGrupo } from "../ui/tema.js";
 import { fmt, plural } from "../core/formato.js";
 import { canon } from "../core/nombres.js";
@@ -13,10 +11,7 @@ import { numDia, deNum, menosMeses, claveSemana } from "../core/fechas.js";
 import { ESTADOS } from "../core/estancamiento.js";
 import { kg, kgTotal, fechaCorta, capital } from "../ui/textos.js";
 import { tonoEstado, iconoTend, flechaEstado, pctTxt, micro } from "./progreso.js";
-import { ligaVigente } from "./ligas.js";
 import { e1rmReciente, ruidoE1rm, prPorRango, bandaRuido } from "../core/prescripcion.js";
-import { deEjercicio, nombreArticulacion } from "../core/molestias.js";
-import { anotarMolestia } from "./molestias.js";
 import { nombreMusculo } from "../core/musculos.js";
 import { diagramaCuerpo } from "../ui/cuerpo.js";
 import { abrirSesionDelDia } from "./comun.js";
@@ -90,8 +85,7 @@ export function vistaEjercicio([k], app) {
           e.hist.length < 3 ? h("div", { class: "etiqueta", style: { marginTop: "6px" } }, "Con 3 sesiones o más se calcula la tendencia.") : null)),
       ];
       const mc = cat() && cat().musculos;
-      const on = (id) => activo(store.estado.ajustes, id);
-      if (on("ficha.mapa") && mc && ((mc.p && mc.p.length) || (mc.s && mc.s.length))) {
+      if (mc && ((mc.p && mc.p.length) || (mc.s && mc.s.length))) {
         const sec = (mc.s || []).filter((m) => !(mc.p || []).includes(m));
         const lista = (xs) => xs.map(nombreMusculo).join(", ");
         out.push(seccion({}, h("div", { class: "tarjeta tarjeta-musc" },
@@ -101,22 +95,14 @@ export function vistaEjercicio([k], app) {
             mc.p && mc.p.length ? h("div", null, h("div", { class: "musc-et" }, "Principales"), h("div", { class: "musc-p" }, lista(mc.p))) : null,
             sec.length ? h("div", null, h("div", { class: "musc-et sec" }, "Secundarios"), h("div", { class: "musc-s" }, lista(sec))) : null))));
       }
-      if (p && on("ficha.proxima")) {
+      if (p) {
         const txt = A.proximaVez(p);
         if (txt) out.push(seccion({}, h("div", { class: "tarjeta tarjeta-prox" },
           h("div", null, h("div", { class: "tele-et acc" }, "Próxima sesión"), h("div", { class: "prox-txt" }, capital(txt))))));
       }
-      const mol = deEjercicio(store.estado.molestias || [], k);
-      if (on("molestias")) out.push(seccion({ cab: "Molestias" },
-        lista([...mol.slice(0, 3).map((m) => celda({ titulo: nombreArticulacion(m.articulacion), sub: capital(fechaCorta(m.fecha, A.hoy)) + (m.nota ? " · " + m.nota : ""), valor: chip("Nivel " + m.nivel, m.nivel >= 4 ? "bad" : m.nivel === 3 ? "warn" : null), alPulsar: () => anotarMolestia(app, {}, m) })),
-          celda({ titulo: "Anotar molestia", estilo: "accion", alPulsar: () => anotarMolestia(app, { ejercicioId: k }) })])));
-      const L = A.liga, le = L && L.ok ? L.ejercicios.get(k) : null;
       const estado = [];
       if (d) estado.push(celda({ titulo: "Semáforo", valor: chip(ESTADOS[d.estado].texto, tonoEstado(d.estado)) }));
       if (d && d.diasSinPR != null) estado.push(celda({ titulo: "Días sin récord", valor: String(d.diasSinPR) }));
-      const vle = on("ligas") ? ligaVigente(le) : null;
-      if (vle) estado.push(celda({ titulo: "Liga", sub: vle.viejo ? "Última conocida" : capital(L.faltaTxt(le)), valor: h("span", { class: "valor-tend" }, insignia(vle.p.nivel, 20), vle.p.nivel.txt), chevron: true, alPulsar: () => app.nav.ir("liga/ejercicio/" + encodeURIComponent(k)) }));
-      else if (on("ligas") && le && le.motivo) estado.push(celda({ titulo: "Liga", sub: capital(le.motivo) }));
       if (estado.length) out.push(seccion({ cab: "Estado" }, lista(estado)));
       const rec = [];
       if (e.rmMax) rec.push(celda({ titulo: "e1RM", valor: kg(e.rmMax.st.oneRM) + " · " + fechaCorta(e.rmMax.dia, A.hoy) }));
@@ -144,15 +130,14 @@ export function comoSeCalcula(app) {
     render(c) {
       poner(c,
         seccion({ cab: "e1RM" }, h("div", { class: "tarjeta" }, p("Es el peso que podrías levantar una vez, estimado con la fórmula de Epley: peso × (1 + reps / 30). Solo cuentan las series con peso que no son de calentamiento."))),
-        seccion({ cab: "Ajustado por RPE" }, h("div", { class: "tarjeta" }, p("Si anotas el RPE, las repeticiones que te quedaban en reserva (10 − RPE) se suman a las hechas antes de aplicar Epley: 100 kg × 5 a RPE 8 cuenta como 100 kg × 7. Es una referencia aparte; no cambia el e1RM, las tendencias ni las ligas."))),
+        seccion({ cab: "Ajustado por RPE" }, h("div", { class: "tarjeta" }, p("Si anotas el RPE, las repeticiones que te quedaban en reserva (10 − RPE) se suman a las hechas antes de aplicar Epley: 100 kg × 5 a RPE 8 cuenta como 100 kg × 7. Es una referencia aparte; no cambia el e1RM ni las tendencias."))),
         seccion({ cab: "Semáforo" }, h("div", { class: "tarjeta" }, p("Compara tu mejor e1RM reciente con el anterior. Estancado: muchos días sin récord. Retrocede: el e1RM baja. Los días de descarga no cuentan."))),
-        seccion({ cab: "Próxima vez" }, h("div", { class: "tarjeta" }, p("Doble progresión: cuando todas las series llegan al máximo del rango de repeticiones, sube el peso con el incremento del ejercicio y vuelve al mínimo del rango."))),
-        seccion({ cab: "Ligas" }, h("div", { class: "tarjeta" }, p("Tu e1RM se compara con tablas de estándares según tu peso corporal. La liga de un grupo es la media de sus ejercicios, ponderada por las series. Para bajar de división hay un margen, así que un mal día no te hace descender."))));
+        seccion({ cab: "Próxima vez" }, h("div", { class: "tarjeta" }, p("Doble progresión: cuando todas las series llegan al máximo del rango de repeticiones, sube el peso con el incremento del ejercicio y vuelve al mínimo del rango."))));
     },
   });
 }
 
-/** Detalle de un grupo muscular: series por semana frente al objetivo, ejercicios y liga. */
+/** Detalle de un grupo muscular: series por semana frente al objetivo, ejercicios. */
 export function vistaGrupo([nombre], app) {
   const { store } = app;
   return {
@@ -164,15 +149,12 @@ export function vistaGrupo([nombre], app) {
       const porSem = semanas.map((s) => A.series.filter((x) => x.dia && canon(x.grupo) === k && claveSemana(x.dia) === s.clave).length);
       const obj = (A.C.volumenObj || []).find((o) => canon(o.grupo) === k);
       const ejs = A.ejercicios.filter((e) => canon(e.grupo) === k);
-      const L = A.liga, lg = L && L.ok ? L.grupos.get(k) : null;
       const color = colorGrupo(grupos, nombre);
       poner(c,
         seccion({ cab: "Series por semana" + (obj ? " · objetivo " + obj.min + "–" + obj.max : "") }, h("div", { class: "tarjeta" },
           h("div", { class: "resumen-grafica" }, h("div", { class: "etiqueta" }, "Esta semana"), h("div", { class: "cifra" }, String(porSem[porSem.length - 1] || 0), h("span", { class: "ud" }, " series"))),
           graficaBarras({ datos: semanas.map((s, i) => ({ etiqueta: s.etiqueta, partes: [{ valor: porSem[i], color }] })), banda: obj ? [obj.min, obj.max] : null, formato: (v) => plural(Math.round(v), "serie", "series"),
             detalle: (d) => "semana del " + d.etiqueta, etiqueta: "Series de " + nombre + " por semana" }))),
-        ligaVigente(lg) ? seccion({}, lista([celda({ izquierda: insignia(ligaVigente(lg).p.nivel, 32), titulo: "Liga de " + nombre, sub: ligaVigente(lg).viejo ? "Última conocida" : null, valor: ligaVigente(lg).p.nivel.txt, chevron: true,
-          alPulsar: () => app.nav.ir("liga/grupo/" + encodeURIComponent(k)) })])) : null,
         ejs.length ? seccion({ cab: "Ejercicios" }, lista(ejs.sort((a, b) => b.ser - a.ser).map((e) => {
           const d = A.diagnostico.get(e.k);
           return celda({ titulo: e.nombre, sub: plural(e.ser, "serie", "series") + " en total", valor: h("span", { class: "valor-tend" }, flechaEstado(d), e.rmMax ? kg(e.rmMax.st.oneRM) : "—"),

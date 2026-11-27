@@ -49,8 +49,6 @@ function detalleV1(d) {
 }
 const avisoV1 = (t) => t.replace(/^Pocas series/, "⚠ Pocas series").replace(/^sin rutina «/, "sin plantilla «");
 const proximaV1 = (t) => t.replace("(sin incremento definido)", "(sin incremento en objetivos)");
-const motivoLigaV1 = (e) => ({ sinEstandar: "sin estándar razonable (estandares)", sinTabla: "falta la tabla «" + (e.m && e.m.slug) + "» en estandares",
-  sinRango: "sin rango en objetivos: la liga sólo cuenta series dentro de tu rango" })[e.codigo] || e.motivo;
 const codigoDur = (m) => (m == null ? null : /^irreal/.test(m) ? "irreal" : /^inconsistente/.test(m) ? "inconsistente" : /^sospechosa/.test(m) ? "sospechosa" : "sinDato");
 const cierreV1 = (c) => ({ deload: "🛌 deload, no se juzga", noLlega: "🔻 no llegará · faltarán " + c.faltan, encima: "🔺 por encima al cierre",
   llegara: "✅ llegará al rango", enRango: "✅ en rango" })[c.estado];
@@ -83,7 +81,6 @@ const P = (p) => p ? { nd: p.nd, sc: p.sc == null ? null : p.sc, sinPeso: p.sinP
   mejor: p.mejor ? { oneRM: p.mejor.st.oneRM, peso: p.mejor.st.peso, reps: p.mejor.st.reps, dia: p.mejor.s.dia, pc: p.mejor.pc.kg } : null, niv: p.niv || null } : null;
 const sinUndef = (o) => JSON.parse(JSON.stringify(o));
 const porK = (lista) => Object.fromEntries(lista.map((x) => [x.k, x]));
-const txtCambio = (c) => (c.sube ? "🏆 Ascenso: " : "🔻 Descenso: ") + c.nombre + " → " + c.nivel.txt;
 const DIAS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 /** Proyección del análisis nuevo con la forma del volcado antiguo. */
@@ -105,18 +102,6 @@ function proyectar(A, informe) {
     k: p.k, clave: p.clave, estado: { sube: "⬆ Sube carga", "mantén": "→ Mantén", debajo: "⚠ Por debajo del rango" }[p.clave], target: p.target, pesoMax: p.pesoMax,
     piramide: p.piramide, pocas: p.pocas, sinPlantilla: p.sinPlantilla, unilateral: p.unilateral, ses: p.ses.dia, plantilla: p.ses.plantilla,
     work: p.work.map((st) => [st.peso, st.reps]), avisos: A.avisosProgresion(p).map(avisoV1), inc: sinUndef(A.incrementoDe(p)), proxima: proximaV1(A.proximaVez(p)), rango: rangoTxt(p) }));
-  const L = A.liga;
-  R.liga = { ok: L.ok };
-  if (L.ok) {
-    R.liga.ejercicios = porK(Array.from(L.ejercicios.values()).map((e) => ({ k: e.k, nombre: e.nombre, grupo: e.grupo, motivo: e.motivo == null ? null : motivoLigaV1(e),
-      series4: e.series4, aprox: !!e.m.aprox, hoy: P(e.hoy), linea: e.linea.map(P), falta: e.hoy && e.hoy.nivel ? L.faltaTxt(e) : null,
-      progreso: e.hoy && e.hoy.nivel ? sinUndef(L.progreso(e.hoy)) : null })));
-    R.liga.grupos = porK(Array.from(L.grupos.values()).map((g) => ({ k: g.k, grupo: g.grupo, hoy: P(g.hoy), linea: g.linea.map(P), falta: g.hoy.nivel ? L.faltaGrupoTxt(g.hoy) : null })));
-    R.liga.general = { hoy: P(L.general.hoy), linea: L.general.linea.map(P), pct: L.general.hoy.sc == null ? null : L.pct(L.general.hoy.sc),
-      falta: L.general.hoy.nivel ? L.faltaGrupoTxt(L.general.hoy) : null };
-    R.liga.cambios = L.cambios.map(txtCambio).sort();
-    R.liga.fueraDeTabla = L.fueraDeTabla.slice().sort();
-  }
   R.semanas = A.semanas;
   const r = A.resumen;
   R.resumen = { act: r.act, prev: r.prev, delta: r.deltaPct != null ? (r.deltaPct >= 0 ? "▲ +" : "▼ ") + fmt(r.deltaPct, 1) + " %" : r.primeraSemana ? "▲ primera semana con datos" : "—",
@@ -149,11 +134,8 @@ function proyectar(A, informe) {
     sumaLados: q.sumaLados.map((x) => ({ dia: x.s.dia, ej: x.ex.nombre, serie: x.i + 1, peso: x.st.peso, reps: x.st.reps })),
     fueraPlantilla: q.fueraPlantilla.map((f) => ({ nombre: f.nombre, n: f.n, ultima: f.ultima.dia, plantilla: f.ultima.plantilla })).sort((a, b) => (a.nombre < b.nombre ? -1 : 1)),
     plantillasPerdidas: q.plantillasPerdidas.map((x) => x.nombre + " (" + x.n + ")").sort(),
-    ligaAvisos: { sinEstandar: q.ligas.sinEstandar.length, sinFactor: q.ligas.sinFactor.length, pesoViejo: q.ligas.pesoViejo },
     totalSinPeso: q.totalSinPeso, descartadas: q.descartadas,
-    sinLinea: q.ligas.sinEstandar.slice().sort(), explicitos: q.ligas.explicitos.slice().sort(), sinFactor: q.ligas.sinFactor.slice().sort(),
-    aprox: q.ligas.aprox.slice().sort(), poleas: q.ligas.poleas.slice().sort(), sinColor: q.sinColor.slice().sort(),
-    gl: C.peso.registros.length && C.peso.sexo ? A.sesiones.filter((s) => s.dia && s.dia < C.peso.registros[0].fecha).length : null,
+    sinColor: q.sinColor.slice().sort(),
   };
   return R;
 }
@@ -169,14 +151,6 @@ function normalizarGolden(G) {
   R.ejercicios = porK(G.ejercicios.map((e) => { const x = Object.assign({}, e); delete x.chispa; return x; }));
   R.diagnostico = porK(G.diagnostico);
   R.progresion = porK(G.progresion);
-  R.liga = { ok: G.liga.ok };
-  if (G.liga.ok) {
-    R.liga.ejercicios = porK(G.liga.ejercicios);
-    R.liga.grupos = porK(G.liga.grupos);
-    R.liga.general = G.liga.general;
-    R.liga.cambios = G.liga.cambios.slice().sort();
-    R.liga.fueraDeTabla = G.liga.fueraDeTabla.slice().sort();
-  }
   R.semanas = G.semanas;
   R.resumen = G.resumen;
   R.racha = G.racha;
@@ -197,9 +171,8 @@ function normalizarGolden(G) {
     sinMapeoCfg: q.sinMapeoCfg.map((x) => x.nombre + " (" + x.de.join(" y ") + ")").sort(),
     sumaLados: q.sumaLados, fueraPlantilla: q.fueraPlantilla.slice().sort((a, b) => (a.nombre < b.nombre ? -1 : 1)),
     plantillasPerdidas: q.plantillasPerdidas.map((x) => x.nombre + " (" + x.n + ")").sort(),
-    ligaAvisos: q.ligaAvisos, totalSinPeso: q.totalSinPeso, descartadas: q.descartadas,
-    sinLinea: q.sinLinea.slice().sort(), explicitos: q.explicitos.slice().sort(), sinFactor: q.sinFactor.slice().sort(),
-    aprox: q.aprox.slice().sort(), poleas: q.poleas.slice().sort(), sinColor: q.sinColor.slice().sort(), gl: q.gl,
+    totalSinPeso: q.totalSinPeso, descartadas: q.descartadas,
+    sinColor: q.sinColor.slice().sort(),
   };
   return R;
 }

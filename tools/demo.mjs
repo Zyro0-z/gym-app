@@ -1,16 +1,14 @@
 // Genera una copia de demostración con la rutina real de Sergio (Torso Fuerza, Piernas + Core, Push y Pull) durante 12 semanas
-// terminando ayer, con progresión, RPE, peso corporal, medidas, molestias, mesociclo, dos gimnasios y los músculos de cada ejercicio
+// terminando ayer, con progresión, RPE, peso corporal y los músculos de cada ejercicio
 // asignados desde el catálogo base (así el mapa por músculos se ve completo).
 // Uso: node tools/demo.mjs [salida.json]      ·      node tools/demo.mjs --sintetico [salida.json]  (el historial del modelo de pruebas)
-//      node tools/demo.mjs --completo [salida.json]  (la copia de Sergio ampliada para recorrer TODA la app: ligas con tablas sintéticas,
-//      lastre/asistido, solo repeticiones, tiempo, por lado, superseries, series descendentes, dos sesiones en un día, semana de descarga,
-//      mesociclos y avisos de «Calidad de los datos» a propósito)
+//      node tools/demo.mjs --completo [salida.json]  (la copia de Sergio ampliada para recorrer TODA la app: 
+//      lastre/asistido, solo repeticiones, tiempo, por lado, superseries, series descendentes, dos sesiones en un día, semana de descarga
+//      y avisos de «Calidad de los datos» a propósito)
 import { readFileSync, writeFileSync } from "node:fs";
 import { crearCopia, leerCopia } from "../src/data/modelo.js";
 import { canon } from "../src/core/nombres.js";
-import { baseDe, estandarDe } from "../src/core/musculos.js";
-import { LIGA } from "../src/core/catalogo-base-datos.js";
-import { ponerMesociclo } from "../src/core/mesociclos.js";
+import { baseDe } from "../src/core/musculos.js";
 
 const args = process.argv.slice(2);
 const sintetico = args.includes("--sintetico"), completo = args.includes("--completo");
@@ -33,7 +31,6 @@ const molestiasDe = (ejId) => [
   { id: "mo-d5", fecha: mas(hoy, -19), articulacion: "espalda-baja", lado: "ambos", nivel: 2, nota: "" },
 ];
 const medidasDe = () => [0, 1, 2, 3, 4, 5].map((i) => ({ fecha: mas(hoy, -150 + i * 28), cintura: 83 - i * 0.3, pecho: 100 + i * 0.5, brazo: 35.5 + i * 0.4, muslo: 56 + i * 0.5, cadera: 95, cuello: 38 }));
-const gimnasios = [{ id: "principal", nombre: "Gimnasio", barra: 20, discos: [1.25, 2.5, 5, 10, 15, 20, 25] }, { id: "casa", nombre: "Casa", barra: 15, discos: [1.25, 2.5, 5, 10] }];
 
 function sinteticoModelo() {
   const ultima = base.sesiones.map((s) => s.fecha).sort().at(-1);
@@ -48,12 +45,8 @@ function sinteticoModelo() {
     let i = 0;
     for (const x of ex.series) { if (x.tipo === "calentamiento") continue; x.rpe = Math.round(Math.min(10, 7 + (i / Math.max(1, n - 1)) * 2.5 + ((k++ % 3) - 1) * 0.5) * 2) / 2; i++; }
   }
-  e.sesiones.slice(-14).forEach((s, i) => { s.recuperacion = { sueno: 5.5 + ((i * 7) % 5) * 0.5, estres: 1 + (i % 4), energia: 2 + ((i * 3) % 4) }; });
   e.sesiones.at(-1).nota = "Buenas sensaciones; el hombro derecho molesta al bajar la barra.";
   e.ajustes.horario = { ...e.ajustes.horario, [dow(hoy)]: "Torso A" };
-  e.ajustes.gimnasios = gimnasios; e.ajustes.gimnasioActivo = "principal";
-  e.sesiones.filter((_, i) => i % 9 === 4).forEach((s) => { s.gimnasio = "casa"; });
-  e.ajustes.mesociclos = [{ id: "demo1", nombre: "Bloque de fuerza", inicio: mas(lunes(hoy), -28), semanas: 8, descarga: false }];
   e.molestias = molestiasDe((e.catalogo.find((c) => /banca/i.test(c.nombre)) || e.catalogo[0]).id);
   e.medidas = medidasDe();
   return e;
@@ -88,7 +81,7 @@ function modeloSergio() {
     const b = baseDe(nombre);
     if (!b) throw new Error("Sin coincidencia en el catálogo base: " + nombre);
     catalogo.push({ id: id(nombre), nombre, grupo: b.grupo, unilateral: b.unilateral, tipoAncla: "peso", tipoMaterial: b.tipoMaterial, incremento: null,
-      rangoReps: { min, max }, top: nombre === "Press Banca (Barra)", estandar: null, musculos: JSON.parse(JSON.stringify(b.musculos)),
+      rangoReps: { min, max }, top: nombre === "Press Banca (Barra)", musculos: JSON.parse(JSON.stringify(b.musculos)),
       ...(DESCANSOS[nombre] ? { descanso: DESCANSOS[nombre] } : {}) });
   }
   const rutinas = RUTINAS.map((r) => ({ id: id(r.nombre), nombre: r.nombre, ejercicios: r.ejercicios.map(([n, s]) => ({ ejercicioId: id(n), series: s })) }));
@@ -120,8 +113,6 @@ function modeloSergio() {
     const [hh, mm] = r.inicio.split(":").map(Number), fin = hh * 60 + mm + dur;
     const sesion = { id: fecha + "-demo-" + String(n).padStart(5, "0"), rutina: r.nombre, fecha, inicio: r.inicio,
       fin: String(Math.floor(fin / 60)).padStart(2, "0") + ":" + String(fin % 60).padStart(2, "0"), duracion: dur, ejercicios };
-    if (n % 9 === 4) sesion.gimnasio = "casa";
-    sesion.recuperacion = { sueno: 5 + Math.round(azar(n) * 4) / 2, estres: 1 + Math.floor(azar(n + 1) * 4), energia: 2 + Math.floor(azar(n + 2) * 3) };
     sesiones.push(sesion); n++;
   }
   sesiones.at(-1).nota = "Buenas sensaciones; el hombro derecho molesta al bajar la barra.";
@@ -130,21 +121,12 @@ function modeloSergio() {
   for (let d = -SEMANAS * 7; d <= -1; d += 3) pesajes.push({ fecha: mas(hoy, d), kg: Math.round((78.2 + (d + SEMANAS * 7) * 0.028 + (azar(d + 200) - 0.5) * 0.7) * 10) / 10 });
 
   const ajustes = JSON.parse(JSON.stringify(base.ajustes));
-  ajustes.horario = { 1: "Torso Fuerza", 2: "Descanso", 3: "Piernas + Core", 4: "Descanso", 5: "Push", 6: "Pull", 7: "Off" };
-  ajustes.gimnasios = gimnasios; ajustes.gimnasioActivo = "principal";
-  ajustes.mesociclos = [{ id: "demo1", nombre: "Bloque de fuerza", inicio: mas(lunes(hoy), -28), semanas: 8, descarga: false }];
   ajustes.bloques = []; ajustes.umbrales = [];
   for (const g of ajustes.grupos || []) if (g.nombre === "hombro") g.nombre = "Hombro";      // el modelo de pruebas lo trae en minúscula
   return { sesiones, catalogo, rutinas, pesajes, ajustes, molestias: molestiasDe(id("Press Banca (Barra)")), medidas: medidasDe() };
 }
 
 // ── Copia completa: la de Sergio + todo lo que la rutina real no toca ──
-// Tablas de estándares SINTÉTICAS (no son de Strength Level): kg de 1RM por nivel según el peso corporal, solo para que las ligas funcionen.
-const MULT = { "bench-press": 1.25, squat: 1.6, "bent-over-row": 1.1, "lat-pulldown": 1.0, "hack-squat": 1.5, "leg-extension": 1.2, "lying-leg-curl": 0.8, "standing-calf-raise": 1.6,
-  "dumbbell-curl": 0.35, "hammer-curl": 0.35, "cable-lateral-raise": 0.15, "dumbbell-lateral-raise": 0.2, "tricep-pushdown": 0.7, "lying-tricep-extension": 0.6, "dumbbell-shoulder-press": 0.5,
-  "machine-shoulder-press": 0.9, "incline-dumbbell-bench-press": 0.5, "dumbbell-bench-press": 0.6, "seated-cable-row": 1.0, "face-pull": 0.5, "standing-cable-crunch": 0.9, "cable-bicep-curl": 0.6, "cable-crossover": 0.3,
-  "romanian-deadlift": 1.6, "leg-press": 2.6, "dumbbell-row": 0.55, "dumbbell-lunge": 0.5, "hip-thrust": 1.8, "pull-ups": 1.0, "chin-ups": 1.0 };
-const tablaSintetica = (slug) => [55, 65, 75, 85, 95, 105].map((pc) => ({ pc, niveles: [0.45, 0.7, 1, 1.35, 1.75].map((f) => Math.round(pc * (MULT[slug] || 0.8) * f * 2) / 2) }));
 
 function modeloCompleto() {
   const m = modeloSergio();
@@ -159,21 +141,10 @@ function modeloCompleto() {
   for (const [nombre, o] of extra) {
     const b = baseDe(nombre);
     m.catalogo.push({ id: id(nombre), nombre, grupo: b.grupo, unilateral: b.unilateral, tipoAncla: o.tipoAncla, tipoMaterial: b.tipoMaterial, incremento: null,
-      rangoReps: o.tipoAncla === "peso" ? { min: 6, max: 12 } : null, top: false, estandar: null, musculos: JSON.parse(JSON.stringify(b.musculos)), ...(b.modoCarga ? { modoCarga: b.modoCarga } : {}) });
+      rangoReps: o.tipoAncla === "peso" ? { min: 6, max: 12 } : null, top: false, musculos: JSON.parse(JSON.stringify(b.musculos)), ...(b.modoCarga ? { modoCarga: b.modoCarga } : {}) });
   }
-  m.catalogo.push({ id: "flexiones", nombre: "Flexiones", grupo: "Pecho", unilateral: false, tipoAncla: "reps", tipoMaterial: null, incremento: null, rangoReps: null, top: false, estandar: null,
+  m.catalogo.push({ id: "flexiones", nombre: "Flexiones", grupo: "Pecho", unilateral: false, tipoAncla: "reps", tipoMaterial: null, incremento: null, rangoReps: null, top: false,
     musculos: { p: ["pecho-esternal", "triceps-lateral-medial"], s: ["deltoide-anterior", "recto-abdominal"] }, notaFija: "Cuerpo recto, pecho a un puño del suelo" });
-
-  // Ligas: tablas sintéticas para todo lo que tiene tabla en LIGA, y el factor a medias (unos revisados con otro factor, otros sin revisar)
-  const slugs = new Set(m.catalogo.map((c) => { const b = baseDe(c.nombre); return b && LIGA[b.nombre]; }).filter(Boolean));
-  aj.estandares = Object.fromEntries([...slugs].map((s) => [s, tablaSintetica(s)]));
-  for (const c of m.catalogo) {
-    const est = estandarDe(c.nombre, aj.estandares);
-    if (est) c.estandar = est;
-  }
-  const ajusta = (nombre, f) => { const c = m.catalogo.find((x) => x.nombre === nombre); if (c && c.estandar) Object.assign(c.estandar, f); };
-  ajusta("Jalón al Pecho", { factor: 1.1, revisado: true }); ajusta("Press Inclinado (Manc)", { factor: 0.9, revisado: true }); ajusta("Sentadilla Hack", { revisado: true });
-  const sinLiga = m.catalogo.find((c) => c.nombre === "Curl Femoral Tumbado"); if (sinLiga) sinLiga.estandar = { sin: true };
 
   // Rutina de casa, con todos los tipos de ejercicio
   m.rutinas.push({ id: "casa-cuerpo-completo", nombre: "Casa · Cuerpo completo", ejercicios: ["Dominadas", "Fondos en paralelas", "Flexiones", "Zancadas", "Remo con mancuerna", "Plancha"].map((n) => ({ ejercicioId: id(n), series: 3 })) });
@@ -186,7 +157,7 @@ function modeloCompleto() {
     if (fecha > ayer) continue;
     const e = (nombre, tipoEj, series) => ({ ejercicioId: id(nombre), nombre, tipo: tipoEj, series });
     const tres = (tipoEj, kg, reps) => [0, 1, 2].map((j) => serieDe(tipoEj, w, j, kg, reps - j));
-    m.sesiones.push({ id: fecha + "-demo-" + String(n++).padStart(5, "0"), rutina: "Casa · Cuerpo completo", fecha, inicio: "10:00", fin: "10:55", duracion: 55, gimnasio: "casa", recuperacion: { sueno: 7.5, estres: 2, energia: 4 },
+    m.sesiones.push({ id: fecha + "-demo-" + String(n++).padStart(5, "0"), rutina: "Casa · Cuerpo completo", fecha, inicio: "10:00", fin: "10:55", duracion: 55,
       ejercicios: [e("Dominadas", "peso", tres("peso", 2.5 * (w / 2), 8)), e("Fondos en paralelas", "peso", tres("peso", 5 + w / 2 * 2.5, 10)), e("Flexiones", "reps", tres("reps", 0, 18)),
         e("Zancadas", "peso", tres("peso", 12 + w / 2, 10)), e("Remo con mancuerna", "peso", tres("peso", 22 + w / 2, 10)), e("Plancha", "duracion", tres("duracion", 0, 0))] });
   }
@@ -202,10 +173,8 @@ function modeloCompleto() {
     { ejercicioId: id("Plancha"), nombre: "Plancha", tipo: "duracion", series: [60, 55, 50].map((t) => ({ peso: 0, reps: 0, segundos: t, tipo: "normal", hecha: true })) },
     { ejercicioId: "flexiones", nombre: "Flexiones", tipo: "reps", series: [25, 20, 18].map((r) => ({ peso: 0, reps: r, tipo: "normal", hecha: true })) }], nota: "Extra de la tarde" });
 
-  // Semana de descarga y mesociclos (uno terminado con descarga y otro en curso)
-  aj.bloques = []; aj.mesociclos = [];
-  ponerMesociclo(aj, { id: "meso1", nombre: "Acumulación", inicio: lun0, semanas: 8, descarga: true });
-  ponerMesociclo(aj, { id: "meso2", nombre: "Intensificación", inicio: mas(lun0, 56), semanas: 6, descarga: true });
+  // Semana de descarga
+  aj.bloques = [{ id: "demo-descarga", inicio: mas(lun0, 49), fin: mas(lun0, 55), tipo: "deload", grupos: [] }];
   aj.umbrales = [{ rutina: "Piernas + Core", maxDur: 80, maxSerie: null }, { rutina: "Rutina que no existe", maxDur: 90, maxSerie: null }];
 
   // Avisos de «Calidad de los datos» a propósito: nombre repetido sin catálogo, duración dudosa, rutina borrada y repeticiones por lado

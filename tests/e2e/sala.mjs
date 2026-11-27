@@ -88,7 +88,7 @@ await p.locator(".hoja").getByRole("button", { name: "Guardar" }).click(); await
 assert.match(await press.locator(".ej-nota.fija").innerText(), /Banco en el 3/);
 assert.equal((await estado()).catalogo.find((c) => c.id === "pressbanca").notaFija, "Banco en el 3; escápulas atrás");
 
-paso("generar calentamiento: series de aproximación montables con los discos del gimnasio");
+paso("generar calentamiento: series de aproximación montables con los discos configurados");
 await press.getByRole("button", { name: /Opciones de Press banca/ }).click(); await espera(500);
 await p.getByRole("button", { name: "Generar calentamiento" }).click(); await espera(500);
 e = await estado();
@@ -97,13 +97,14 @@ assert.equal(sp[0].tipo, "calentamiento"); assert.equal(sp[0].peso, "20");
 assert.ok(sp.filter((x) => x.tipo === "calentamiento").length >= 3);
 assert.equal(sp.filter((x) => x.tipo !== "calentamiento").length, 2);
 
-paso("terminar: la sesión guarda el gimnasio y la rutina se puede actualizar con los cambios");
+paso("terminar: la sesión se guarda y la rutina se puede actualizar con los cambios");
 await p.getByRole("button", { name: "Terminar" }).click(); await espera(700);
 assert.match(await p.locator(".hoja").innerText(), /Remo con barra: 2 → 1 series/);
 await p.getByLabel("Actualizar la rutina con estos cambios").click(); await espera(300);
 await p.locator(".hoja .btn-barra.fuerte", { hasText: "Guardar" }).click(); await espera(1200);
 e = await estado();
-assert.equal(e.sesiones.find((x) => x.fecha === e.sesiones.map((y) => y.fecha).sort().pop() && x.rutina === "Torso" && x.id.includes("-") && x.gimnasio).gimnasio, "principal");
+assert.ok(e.sesiones.some((x) => x.fecha === e.sesiones.map((y) => y.fecha).sort().pop() && x.rutina === "Torso" && x.id.includes("-")), "la sesión terminada está guardada");
+assert.ok(e.sesiones.every((x) => x.gimnasio === undefined), "las sesiones ya no llevan gimnasio");
 assert.equal(e.rutinas[0].ejercicios.find((x) => x.ejercicioId === "remoconbarra").series, 1);
 assert.equal(e.rutinas[0].ejercicios.find((x) => x.ejercicioId === "pressbanca").rpe, 8, "conserva el RPE objetivo");
 

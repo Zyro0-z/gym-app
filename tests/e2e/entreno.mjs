@@ -96,7 +96,8 @@ await p.locator(".hoja .btn-barra.fuerte", { hasText: "Hecho" }).click(); await 
 
 paso("Historial: detalle, editar y borrar");
 await p.locator(".tabbar [data-tab=historial]").click(); await espera(600);
-await p.locator(".pestana.activa .fila-sesion", { hasText: "Torso" }).first().click(); await espera(700);
+const diaHoy = await p.evaluate(() => String(+window.__gym.store.hoy().slice(8)));
+await p.locator(".pestana.activa .calor button.dia", { hasText: new RegExp("^" + diaHoy + "$") }).first().click(); await espera(700);
 await textoMalo();
 await p.locator(".pestana.activa .barra-nav button", { hasText: "Editar" }).click(); await espera(700);
 await p.getByLabel("Repeticiones de la serie 2").first().fill("9");

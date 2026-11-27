@@ -8,7 +8,7 @@ import { canon, sinTildes } from "../../core/nombres.js";
 import { capital, reloj } from "../../ui/textos.js";
 import { elegirEjercicio, nuevoEjercicio } from "../selector.js";
 import { kgTxt, usosEjercicio, renombrarEjercicio, unirDuplicados } from "./comun.js";
-import { MUSCULOS, nombreMusculo, baseQueFalta, estandarDe, duplicadosBase } from "../../core/musculos.js";
+import { MUSCULOS, nombreMusculo, baseQueFalta, duplicadosBase } from "../../core/musculos.js";
 import { seccionAsignarMusculos } from "../musculos.js";
 
 /* ---------- Catálogo de ejercicios ---------- */
@@ -45,8 +45,7 @@ export function vistaEjercicios(_p, app) {
         faltan ? seccion({ pie: "Añade ejercicios habituales con su grupo, material y músculos (principales y secundarios) ya rellenados. No toca los que ya tienes." },
           lista([celda({ titulo: "Añadir ejercicios comunes", sub: faltan + " disponibles", estilo: "accion", alPulsar: async () => {
             const nuevos = baseQueFalta(store.estado.catalogo);
-            const tablas = store.estado.ajustes.estandares;
-            await store.guardarCatalogo([...store.estado.catalogo, ...nuevos.map((x) => Object.assign(JSON.parse(JSON.stringify(x)), { estandar: estandarDe(x.nombre, tablas) }))]);
+            await store.guardarCatalogo([...store.estado.catalogo, ...nuevos.map((x) => JSON.parse(JSON.stringify(x)))]);
             app.toast(plural(nuevos.length, "ejercicio añadido", "ejercicios añadidos")); this.render(c); pintar();
           } })])) : null,
         duplicadosBase(store.estado.catalogo).length ? seccion({ pie: "Une los ejercicios repetidos («Press Banca (Barra)» y «Press banca») en el que lleva el nombre del catálogo base. El historial y las rutinas pasan al que se conserva." },
@@ -109,8 +108,6 @@ export function vistaEjercicioCat([id], app) {
       const enRutinas = store.estado.rutinas.filter((r) => r.ejercicios.some((x) => x.ejercicioId === id)).map((r) => r.nombre);
       const tipos = (A.objetivos.incrementos || []);
       const incMat = e.tipoMaterial ? tipos.find((t) => canon(t.tipo) === canon(e.tipoMaterial)) : null;
-      const tablas = Object.keys(A.estandares || {});
-      const est = e.estandar;
       poner(c,
         seccion({}, lista([
           celda({ titulo: "Nombre", valor: e.nombre, chevron: true, alPulsar: renombrar }),
@@ -138,18 +135,6 @@ export function vistaEjercicioCat([id], app) {
             alPulsar: async () => { const v = await opciones("Material", [...tipos.map((t) => ({ texto: capital(t.tipo) + " · +" + kgTxt(t.kg), valor: t.tipo })), { texto: "Ninguno", valor: "-" }]); if (v !== null) guardar((x) => { x.tipoMaterial = v === "-" ? null : v; }); } }),
           celda({ titulo: "Incremento", valor: e.incremento ? "+" + kgTxt(e.incremento) : incMat ? "Del material (+" + kgTxt(incMat.kg) + ")" : "Automático", chevron: true,
             alPulsar: async () => { const v = await opciones("Cuánto subir el peso", [{ texto: incMat ? "Del material (+" + kgTxt(incMat.kg) + ")" : "Automático", valor: 0 }, ...INCREMENTOS.map((k) => ({ texto: "+" + kgTxt(k), valor: k }))]); if (v !== null) guardar((x) => { x.incremento = v || null; }); } }),
-        ])),
-        seccion({ cab: "Ligas", pie: "La tabla de estándares con la que se compara tu e1RM. El factor ajusta ejercicios parecidos (por ejemplo, 0,8 para una variante más fácil)." }, lista([
-          celda({ titulo: "Referencia", valor: !est ? "Sin asignar" : est.sin ? "Ninguna" : est.slug, chevron: tablas.length > 0,
-            alPulsar: tablas.length ? async () => {
-              const v = await opciones("Tabla de estándares", [...tablas.map((t) => ({ texto: t, valor: t })), { texto: "Ninguna (no cuenta para las ligas)", valor: "-" }, { texto: "Sin asignar", valor: "0" }]);
-              if (v === null) return;
-              guardar((x) => { x.estandar = v === "0" ? null : v === "-" ? { sin: true } : Object.assign({ factor: 1, revisado: true }, x.estandar && !x.estandar.sin ? x.estandar : {}, { slug: v }); });
-            } : null }),
-          ...(est && !est.sin ? [
-            celda({ titulo: "Factor", control: stepper({ valor: est.factor ?? 1, min: 0.1, max: 3, paso: 0.05, formato: (v) => fmt(v, 2), etiqueta: "factor", alCambiar: (v) => guardar((x) => { x.estandar.factor = v; x.estandar.revisado = true; }) }) }),
-            celda({ titulo: "Polea", sub: "Aplica la corrección de polea de Avanzado", control: interruptor(!!est.polea, (v) => guardar((x) => { x.estandar.polea = v; }), "Polea") }),
-          ] : []),
         ])),
         seccion({ pie: usos ? "Aparece en " + plural(usos, "sesión", "sesiones") + (enRutinas.length ? " y en " + enRutinas.join(", ") : "") + ". Para unirlo con otro, cámbiale el nombre al de ese ejercicio." : enRutinas.length ? "Está en " + enRutinas.join(", ") + "." : null },
           lista([celda({ titulo: usos ? "Borrar ejercicio y su historial" : "Borrar ejercicio", estilo: "peligro", alPulsar: borrar })])));

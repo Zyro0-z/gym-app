@@ -47,14 +47,10 @@ export const ACENTOS = ["azul", "indigo", "morado", "rosa", "rojo", "naranja", "
 export function ajustesBase() {
   return {
     version: 2,
-    ocultos: [],                                                       // módulos desactivados en Ajustes › Módulos (ids de data/modulos.js)
-    apariencia: { tema: "auto", acento: "azul", haptica: true, acentoColor: "#3B82F6", mapa: "termico", mapaA: "#FFD27A", mapaB: "#E0467A" },
+    apariencia: { tema: "auto", acento: "azul", haptica: true, acentoColor: "#3B82F6", mapa: "termico" },
     entreno: { descanso: 90, presets: [30, 60, 90, 120, 180], pasoPeso: 2.5, sonido: true, pantallaEncendida: true,
-      barra: 20, discos: [25, 20, 15, 10, 5, 2.5, 1.25, 0.5],        // calculadora de discos
-      controlesBloqueo: false,                                        // Media Session (experimental)
-      push: { activo: false, url: "" } },                             // aviso por un servidor propio
+      barra: 20, discos: [25, 20, 15, 10, 5, 2.5, 1.25, 0.5] },      // calculadora de discos
     analisis: { fraccionSecundaria: 0.5 },                             // series de un músculo secundario cuentan esta fracción
-    gimnasios: [], gimnasioActivo: null,                                // perfiles de gimnasio (barra y discos); vacío = uno implícito
     horario: { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null, 7: null },
     bloques: [], umbrales: [],
     objetivos: { seriesSemana: [], incrementos: [{ tipo: "máquina", kg: 2.5 }, { tipo: "polea", kg: 2.5 }, { tipo: "mancuerna", kg: 2 }, { tipo: "barra", kg: 2.5 }] },
@@ -62,14 +58,8 @@ export function ajustesBase() {
     copiasInternas: { cada: 5 },               // una copia interna cada N sesiones nuevas
     avisoCopia: { pospuestoHasta: null },
     grupos: GRUPOS_BASE.map((nombre) => ({ nombre, color: null, regiones: REGIONES_BASE[nombre].slice() })),
-    ligas: { activa: false, escala: [], puntos: 5, margen: 1, semCarga: 8, semSeries: 4, correccionPolea: 1 },
-    estandares: {},
     copia: null,
-    // Propuesta de descarga (docs/ESQUEMA.md): caída de e1RM ≥ caidaPct % en ≥ `ejercicios` ejercicios,
-    // RPE medio que sube ≥ rpeSube, o sueño medio < `sueno` h; solo tras ≥ semanasMin semanas sin descarga
-    descarga: { caidaPct: 3, ejercicios: 2, rpeSube: 1, sueno: 7, semanasMin: 6, pospuestaHasta: null, descartadaEn: null },
     csv: { separador: ";", decimal: "," },
-    mesociclos: [],                            // [{ id, nombre, inicio, semanas, descarga }] (core/mesociclos.js)
     nube: { activa: false, url: "", auto: true, ultima: null },   // copia cifrada opcional (core/cifrado.js, data/nube.js)
   };
 }
@@ -79,8 +69,18 @@ export function completarAjustes(a) {
   const b = ajustesBase();
   if (!a) return b;
   const out = Object.assign({}, b, a);
-  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "ligas", "copiasInternas", "avisoCopia", "descarga", "csv", "analisis", "nube"]) out[k] = Object.assign({}, b[k], a[k] || {});
-  out.entreno.push = Object.assign({}, b.entreno.push, (a.entreno && a.entreno.push) || {});
+  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "copiasInternas", "avisoCopia", "csv", "analisis", "nube"]) out[k] = Object.assign({}, b[k], a[k] || {});
+  // Funciones retiradas: el gimnasio activo pasa a ser la barra y los discos de Entrenamiento; el resto de sus claves se descarta
+  const gs = Array.isArray(a.gimnasios) ? a.gimnasios : [], gm = gs.find((x) => x && x.id === a.gimnasioActivo) || gs[0];
+  if (gm && Number.isFinite(gm.barra)) out.entreno.barra = gm.barra;
+  if (gm && Array.isArray(gm.discos) && gm.discos.length) out.entreno.discos = gm.discos;
+  for (const k of ["gimnasios", "gimnasioActivo", "ligas", "estandares", "descarga", "mesociclos", "ocultos"]) delete out[k];
+  delete out.entreno.push; delete out.entreno.controlesBloqueo;
+  // Acentos y escalas del mapa retirados: pasan al más parecido que queda
+  const ap = out.apariencia, ACENTO_ANTIGUO = { cian: "turquesa", menta: "turquesa", lima: "verde", coral: "naranja", violeta: "morado", marron: "naranja" };
+  if (ACENTO_ANTIGUO[ap.acento]) ap.acento = ACENTO_ANTIGUO[ap.acento];
+  if (!["termico", "hielo", "acento"].includes(ap.mapa)) ap.mapa = "termico";
+  delete ap.mapaA; delete ap.mapaB;
   out.horario = Object.assign({}, b.horario, a.horario || {});
   if (!Array.isArray(out.grupos) || !out.grupos.length) out.grupos = b.grupos;
   else out.grupos = out.grupos.map((g) => (g && Array.isArray(g.regiones) ? Object.assign({}, g, { regiones: migrarRegiones(g.regiones) }) : g));

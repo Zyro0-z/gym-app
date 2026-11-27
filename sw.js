@@ -13,18 +13,11 @@ const FICHEROS = [
   "manifest.webmanifest",
   "src/app.js",
   "src/core/estadistica.js",
-  "src/core/rendimiento.js",
-  "src/core/rpebandas.js",
-  "src/core/mesociclos.js",
-  "src/core/molestias.js",
   "src/core/cifrado.js",
   "src/core/tarjeta.js",
   "src/data/nube.js",
   "src/ui/analisis.css",
   "src/ui/tarjeta.js",
-  "src/views/rendimiento.js",
-  "src/views/molestias.js",
-  "src/views/mesociclos.js",
   "src/views/nube.js",
   "src/store.js",
   "src/core/analisis.js",
@@ -34,7 +27,6 @@ const FICHEROS = [
   "src/core/estancamiento.js",
   "src/core/fechas.js",
   "src/core/formato.js",
-  "src/core/ligas.js",
   "src/core/nombres.js",
   "src/core/peso.js",
   "src/core/presentacion.js",
@@ -42,19 +34,14 @@ const FICHEROS = [
   "src/core/discos.js",
   "src/core/gimnasios.js",
   "src/core/musculos.js",
-  "src/core/catalogo-base-datos.js", "src/core/estandares.js", "src/core/borrado.js",
+  "src/core/catalogo-base-datos.js", "src/core/borrado.js",
   "src/core/calentamiento.js",
   "src/core/rutinas.js",
   "src/core/volumen.js",
-  "src/core/porgimnasio.js",
   "src/core/prescripcion.js",
   "src/core/deriva.js",
   "src/core/sugerencia.js",
-  "src/core/fatiga.js",
-  "src/core/descarga.js",
-  "src/core/comparar.js",
   "src/core/csv.js",
-  "src/core/medidas.js",
   "src/ui/instalar.js",
   "src/core/progresion.js",
   "src/core/rehidratar.js",
@@ -75,10 +62,6 @@ const FICHEROS = [
   "src/ui/graficas.js",
   "src/ui/haptica.js",
   "src/ui/iconos.js",
-  "src/ui/insignias.js",
-  "src/ui/insignias/graficos.js",
-  "src/ui/insignias/montaje.js",
-  "src/ui/insignias/registro.js",
   "src/ui/navegacion.js",
   "src/ui/deslizar.js",
   "src/ui/sonido.js",
@@ -87,10 +70,7 @@ const FICHEROS = [
   "src/ui/textos.js",
   "src/ui/tokens.css",
   "src/ui/version.js",
-  "src/ui/bloqueo.js",
-  "src/ui/avisos.js",
   "src/views/ajustes.js",
-  "src/data/modulos.js",
   "src/views/comun.js",
   "src/views/datos.js",
   "src/views/editores.js",
@@ -112,13 +92,8 @@ const FICHEROS = [
   "src/views/entreno/ayudas.js",
   "src/views/entreno/estado.js",
   "src/views/entreno/herramientas.js",
-  "src/views/entreno/recuperacion.js",
-  "src/views/fatiga.js",
   "src/views/musculos.js",
   "src/views/mapa-enlace.js",
-  "src/views/porgimnasio.js",
-  "src/views/comparar.js",
-  "src/views/medidas.js",
   "src/views/entreno/pantalla.js",
   "src/views/entreno/resumen.js",
   "src/views/entreno/revision.js",
@@ -127,7 +102,6 @@ const FICHEROS = [
   "src/views/historial.js",
   "src/views/hoy.js",
   "src/views/indice.js",
-  "src/views/ligas.js",
   "src/views/pesaje.js",
   "src/views/progreso.js",
   "src/views/selector.js",
@@ -152,22 +126,6 @@ self.addEventListener("message", (e) => {
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== V).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
-});
-// Avisos de fin de descanso (servidor opcional): se muestran siempre (iOS lo exige para Web Push)
-self.addEventListener("push", (e) => {
-  let d = {};
-  try { d = e.data ? e.data.json() : {}; } catch (err) { d = {}; }
-  e.waitUntil(self.registration.showNotification(d.titulo || "Descanso terminado", {
-    body: d.cuerpo || "", tag: d.etiqueta || "descanso", renotify: true, icon: "icons/icon-192.png", badge: "icons/icon-192.png" }));
-});
-self.addEventListener("notificationclick", (e) => {
-  e.notification.close();
-  e.waitUntil((async () => {
-    const cs = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    const c = cs.find((x) => new URL(x.url).origin === location.origin);
-    if (c) return c.focus();
-    return self.clients.openWindow("./");
-  })());
 });
 const sinConexion = () => new Response("Sin conexión", { status: 503, statusText: "Sin conexion", headers: { "content-type": "text/plain; charset=utf-8" } });
 self.addEventListener("fetch", (e) => {

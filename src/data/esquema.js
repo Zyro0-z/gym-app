@@ -2,11 +2,9 @@
 // Sin librerías. Devuelve una lista de problemas en frases legibles; vacía si la copia es válida.
 // El modelo está descrito campo a campo en docs/ESQUEMA.md.
 import { fechaISO } from "../core/fechas.js";
-import { validarMolestia } from "../core/molestias.js";
 
 export const TIPOS_SERIE = ["normal", "calentamiento", "fallo", "descendente"];
 export const TIPOS_EJERCICIO = ["peso", "duracion", "temporizador", "reps"];
-export const MEDIDAS = ["cintura", "pecho", "brazo", "muslo", "cadera", "cuello"];
 const MAX_PROBLEMAS = 3;
 
 const esTexto = (v) => typeof v === "string" && v.trim() !== "";
@@ -44,13 +42,6 @@ export function validarCopia(o, { version = 3, esquema = 4 } = {}) {
     if (!opcional(s.duracion) && !(esNum(s.duracion) && s.duracion >= 0)) return mal(q + ": duración no válida");
     if (!opcional(s.rutina) && typeof s.rutina !== "string") return mal(q + ": rutina no válida");
     if (!opcional(s.nota) && typeof s.nota !== "string") return mal(q + ": la nota no es texto");
-    if (!opcional(s.gimnasio) && !esTexto(s.gimnasio)) return mal(q + ": gimnasio no válido");
-    if (!opcional(s.recuperacion)) {
-      const r = s.recuperacion;
-      if (typeof r !== "object") return mal(q + ": recuperación no válida");
-      if (!opcional(r.sueno) && !(esNum(r.sueno) && r.sueno >= 0 && r.sueno <= 24)) return mal(q + ": horas de sueño fuera de rango");
-      for (const k of ["estres", "energia"]) if (!opcional(r[k]) && !(Number.isInteger(r[k]) && r[k] >= 1 && r[k] <= 5)) return mal(q + ": «" + k + "» debe ir de 1 a 5");
-    }
     if (!Array.isArray(s.ejercicios)) return mal(q + ": sin lista de ejercicios");
     return s.ejercicios.some((e, j) => {
       const qe = q + ", ejercicio " + (j + 1) + (e && esTexto(e.nombre) ? " «" + e.nombre + "»" : "");
@@ -71,11 +62,6 @@ export function validarCopia(o, { version = 3, esquema = 4 } = {}) {
     });
   });
 
-  const gims = o.ajustes && o.ajustes.gimnasios;
-  if (gims !== undefined && gims !== null) {
-    if (!Array.isArray(gims)) mal("los gimnasios no tienen el formato esperado");
-    else gims.some((g, i) => (!g || !esTexto(g.id) || !esTexto(g.nombre) || !esNum(g.barra) || !Array.isArray(g.discos) || !g.discos.every((d) => esNum(d) && d > 0)) && mal("gimnasio " + (i + 1) + ": incompleto"));
-  }
   const idsCat = new Set();
   o.catalogo.some((c, i) => {
     if (!c || !esTexto(c.id) || !esTexto(c.nombre)) return mal("ejercicio " + (i + 1) + " del catálogo: sin identificador o sin nombre");
@@ -104,21 +90,6 @@ export function validarCopia(o, { version = 3, esquema = 4 } = {}) {
     if (!(esNum(x.kg) && x.kg > 0 && x.kg < 700)) return mal("pesaje del " + x.fecha + ": peso no válido");
     return false;
   });
-  (o.medidas || []).some((x, i) => {
-    if (!x || !fechaISO(x.fecha)) return mal("medida " + (i + 1) + ": fecha imposible o ausente");
-    for (const k of MEDIDAS) if (!opcional(x[k]) && !(esNum(x[k]) && x[k] > 0 && x[k] < 400)) return mal("medida del " + x.fecha + ": «" + k + "» no válida");
-    return false;
-  });
-  const idsMo = new Set();
-  (o.molestias || []).some((x, i) => {
-    const f = validarMolestia(x, null);
-    if (f.length) return mal("molestia " + (i + 1) + ": " + f[0].toLowerCase());
-    if (typeof x.id !== "string" || !x.id || idsMo.has(x.id)) return mal("molestia " + (i + 1) + ": identificador ausente o repetido");
-    idsMo.add(x.id);
-    return false;
-  });
-  const mesos = o.ajustes && o.ajustes.mesociclos;
-  if (mesos !== undefined && mesos !== null && !(Array.isArray(mesos) && mesos.every((m) => m && esTexto(m.id) && esTexto(m.nombre) && fechaISO(m.inicio) && Number.isInteger(m.semanas)))) mal("los mesociclos no tienen el formato esperado");
   return p.slice(0, MAX_PROBLEMAS);
 }
 

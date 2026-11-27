@@ -35,14 +35,12 @@ const CASOS = [
   ["tipo de serie desconocido", (o) => { o.sesiones[0].ejercicios[0].series[0].tipo = "superserie"; }, /tipo de serie desconocido/],
   ["RPE fuera de rango", (o) => { o.sesiones[0].ejercicios[0].series[0].rpe = 11; }, /RPE fuera de rango/],
   ["RPE con paso raro", (o) => { o.sesiones[0].ejercicios[0].series[0].rpe = 8.3; }, /RPE fuera de rango/],
-  ["recuperación fuera de rango", (o) => { o.sesiones[0].recuperacion = { estres: 9 }; }, /de 1 a 5/],
   ["ejercicio repetido en el catálogo", (o) => { o.catalogo[1].id = o.catalogo[0].id; }, /repetido en el catálogo/],
   ["rutina sin nombre", (o) => { o.rutinas[0].nombre = ""; }, /incompleta/],
   ["rutina repetida", (o) => { o.rutinas[1].id = o.rutinas[0].id; }, /repetida/],
   ["pesaje con fecha imposible", (o) => { o.pesajes[0].fecha = "2026-13-01"; }, /pesaje 1: fecha imposible/],
   ["pesaje sin kg", (o) => { delete o.pesajes[0].kg; }, /peso no válido/],
   ["medidas no es lista", (o) => { o.medidas = "x"; }, /«medidas» no es una lista/],
-  ["medida imposible", (o) => { o.medidas = [{ fecha: "2026-11-01", cintura: -3 }]; }, /«cintura» no válida/],
 ];
 
 for (const [nombre, romper, motivo] of CASOS)

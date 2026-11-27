@@ -37,8 +37,6 @@ export function vistaCuerpo(_p, app) {
       const cu = store.estado.ajustes.cuerpo, fases = cu.fases || [], hoy = store.hoy();
       const actual = fases.filter((f) => !f.desde || f.desde <= hoy).pop();
       poner(c,
-        seccion({ cab: "Sexo", pie: "Solo se usa para comparar tu fuerza con las tablas de estándares de las ligas." }, lista([fila(segmentado([{ valor: "h", texto: "Hombre" }, { valor: "m", texto: "Mujer" }], cu.sexo || "",
-          (v) => store.guardarAjustes((a) => { a.cuerpo.sexo = v; }), { etiqueta: "Sexo" }))])),
         seccion({ cab: "Fases", pie: "En volumen se espera que el peso suba despacio; en definición, que baje; en mantener, que se quede estable." },
           lista([...fases.map((f, i) => celda({ titulo: faseTxt(f.tipo), sub: "Desde el " + fechaCorta(f.desde, hoy), valor: f === actual ? chip("Actual", "accent") : null, chevron: true, alPulsar: () => editarFase(i) })).reverse(), celda({ titulo: "Añadir fase", estilo: "accion", izquierda: h("span", { class: "c-accent", style: { display: "flex" } }, icono("mas", { tam: 22 })), alPulsar: () => editarFase(null) })])),
         seccion({}, lista([celda({ titulo: "Añadir pesaje", chevron: true, alPulsar: () => abrirPesaje(app) })])));

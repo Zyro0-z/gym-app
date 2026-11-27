@@ -20,9 +20,9 @@ export function vistaNube(_p, app) {
     const url = h("input", { class: "campo-texto", type: "url", inputmode: "url", autocomplete: "off", autocapitalize: "off", spellcheck: false, placeholder: "https://gym-avisos.tu-cuenta.workers.dev", "aria-label": "Dirección del servidor", value: store.estado.ajustes.nube.url || "" });
     app.abrirHoja({ titulo: "Servidor", alturas: ["media"], accion: { texto: "Guardar", alPulsar: async () => {
       const u = url.value.trim() ? normalizarUrl(url.value) : "";
-      if (u === null) { await app.alerta({ titulo: "Dirección no válida", mensaje: "Tiene que empezar por https:// (el servidor de avisos que ya desplegaste sirve)." }); return false; }
+      if (u === null) { await app.alerta({ titulo: "Dirección no válida", mensaje: "Tiene que empezar por https:// (la del servidor que ya desplegaste sirve)." }); return false; }
       await guardarNube((n) => { n.url = u; }); cargar();
-    } }, render: (c) => poner(c, seccion({ pie: "La misma dirección del servidor de avisos vale: tiene que estar desplegado con el espacio KV «COPIAS» (servidor/README.md)." }, h("div", { class: "tarjeta" }, url))) });
+    } }, render: (c) => poner(c, seccion({ pie: "Es la dirección de tu servidor de copias: tiene que estar desplegado con el espacio KV «COPIAS» (servidor/README.md)." }, h("div", { class: "tarjeta" }, url))) });
   }
 
   async function poner_clave() {

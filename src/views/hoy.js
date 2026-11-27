@@ -12,13 +12,9 @@ import { empezarEntreno, abrirEntreno, mostrarResumen } from "./entreno.js";
 import { abrirPesaje } from "./pesaje.js";
 import { importarCopia, exportarCopia } from "./datos.js";
 import { nuevaRutina } from "./editores.js";
-import { programarDescarga, posponerDescarga } from "./fatiga.js";
 import { mostrarInstalar, marcarVisto } from "../ui/instalar.js";
-import { propuestaDescarga } from "../core/descarga.js";
-import { mesocicloActual, estadoMesociclo } from "../core/mesociclos.js";
 import { sparkline } from "../ui/graficas.js";
 import { sugerirCarga } from "../core/sugerencia.js";
-import { activo } from "../data/modulos.js";
 
 export function vistaHoy(_p, app) {
   const { store } = app;
@@ -28,9 +24,7 @@ export function vistaHoy(_p, app) {
     sobre: () => fechaCabecera(store.hoy()),
     bajoTitulo: () => {
       const A = store.analisis(), b = A.C.bloquesActivos(A.hoy).find((x) => x.esDeload);
-      if (b) return chip("Descarga hasta el " + fechaCorta(b.fin, A.hoy), "accent");
-      const m = mesocicloActual(store.estado.ajustes.mesociclos, A.hoy);
-      return m ? chip(m.nombre + " · semana " + estadoMesociclo(m, A.hoy).semana + " de " + m.semanas, null) : null;
+      return b ? chip("Descarga hasta el " + fechaCorta(b.fin, A.hoy), "accent") : null;
     },
     alOcultar: () => clearInterval(reloj1),
     destruir: () => clearInterval(reloj1),
@@ -44,8 +38,7 @@ export function vistaHoy(_p, app) {
         return;
       }
       const A = store.analisis();
-      const on = (id) => activo(est.ajustes, id);
-      poner(c, tarjetaHoy(A, est, app), avisoInstalar(def, c), on("hoy.descarga") ? avisoDescarga(A, app) : null, on("hoy.semana") ? semana(A, est) : null, avisoCopia(app), lineas(A, est, app, on));
+      poner(c, tarjetaHoy(A, est, app), avisoInstalar(def, c), semana(A, est), avisoCopia(app), lineas(A, est, app));
       if (est.borrador) {
         const t = c.querySelector("[data-reloj-hoy]");
         reloj1 = setInterval(() => { if (t && store.estado.borrador) t.textContent = reloj((Date.now() - store.estado.borrador.inicio) / 1000); }, 1000);
@@ -191,17 +184,17 @@ function semana(A, est) {
 }
 
 /** Última sesión y peso en dos teselas; debajo, «Otra rutina». */
-function lineas(A, est, app, on) {
+function lineas(A, est, app) {
   const s = sesionesOrdenadas(est)[0];
   const ult = est.pesajes.length ? est.pesajes.slice().sort((a, b) => (a.fecha < b.fecha ? 1 : -1))[0] : null;
   const tendencia = A.peso.puntos.slice(-14).map((p) => (p.media != null ? p.media : p.kg));
   const tot = s ? totalesSesion(s) : null;
-  const teselaSesion = s && on("hoy.ultima") ? h("button", { class: "tesela", onClick: () => app.nav.ir("sesion/" + encodeURIComponent(s.id), { pestana: "historial" }),
+  const teselaSesion = s ? h("button", { class: "tesela", onClick: () => app.nav.ir("sesion/" + encodeURIComponent(s.id), { pestana: "historial" }),
     "aria-label": "Última sesión: " + (s.rutina || "Entrenamiento libre") + ", " + lineaSesion(s) },
     h("div", { class: "kicker" }, "Última · " + capital(fechaRelativa(s.fecha, A.hoy))),
     h("div", null, h("div", { class: "tesela-tit" }, s.rutina || "Entrenamiento libre"),
       h("div", { class: "tesela-sub num" }, [tot.series + " ser", tot.vol ? fmt(tot.vol / 1000, 1) + " t" : null, s.duracion ? minutos(s.duracion) : null].filter(Boolean).join(" · ")))) : null;
-  const teselaPeso = !on("hoy.peso") ? null : h("div", { class: "tesela" },
+  const teselaPeso = h("div", { class: "tesela" },
     h("div", { class: "tesela-cab" }, h("span", { class: "kicker" }, "Peso"),
       h("button", { class: "btn-mas", "aria-label": "Añadir pesaje", onClick: () => abrirPesaje(app) }, icono("mas"))),
     h("div", { class: "tesela-peso" },
@@ -218,16 +211,6 @@ function avisoInstalar(def, c) {
   return h("div", { class: "seccion" }, avisoCompacto({ icono: "compartir", tono: "accent", titulo: "Añade la app a la pantalla de inicio", etiqueta: "Instalar la app",
     texto: "En Safari: Compartir › Añadir a pantalla de inicio.",
     acciones: [{ texto: "Entendido", alPulsar: () => { marcarVisto(); def.render(c); } }] }));
-}
-
-/** Propuesta de descarga (regla en core/descarga.js), con el primer motivo y el enlace al detalle. */
-function avisoDescarga(A, app) {
-  const P = propuestaDescarga(A, app.store.estado.ajustes.descarga);
-  if (!P.proponer) return null;
-  return h("div", { class: "seccion" }, avisoCompacto({ icono: "info", tono: "accent", titulo: "Te vendría bien una semana de descarga", etiqueta: "Propuesta de descarga",
-    texto: P.motivos[0] + " Propuesta: la semana del " + fechaCorta(P.inicio, A.hoy) + ".",
-    acciones: [{ texto: "Programar", alPulsar: () => programarDescarga(app, P.inicio) }, { texto: "Ahora no", alPulsar: () => posponerDescarga(app) },
-      { texto: "Ver por qué", alPulsar: () => app.nav.ir("fatiga", { pestana: "progreso" }) }] }));
 }
 
 /** Copia pendiente: una tira compacta; un toque abre «guardar» o «posponer». */

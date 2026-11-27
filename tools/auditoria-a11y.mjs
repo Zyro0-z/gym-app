@@ -36,16 +36,14 @@ function recorrido(ids) {
   const P = [["hoy", (g) => g.tab("hoy")]];
   for (const s of ["Resumen", "Ejercicios", "Músculos", "Cuerpo"]) P.push(["progreso-" + s.toLowerCase(), async (g) => { await g.tab("progreso"); await g.seg(s); }]);
   P.push(["historial", (g) => g.tab("historial")], ["ajustes", (g) => g.tab("ajustes")]);
-  const rutas = [["ejercicio", ids.ej && "ejercicio/" + encodeURIComponent(ids.ej), "progreso"], ["grupo", "grupo/" + encodeURIComponent(ids.grupo), "progreso"], ["ligas", "ligas", "progreso"],
-    ["liga", ids.liga && "liga/grupo/" + encodeURIComponent(ids.liga), "progreso"], ["fatiga", "fatiga", "progreso"], ["musculos", "musculos", "progreso"], ["porGimnasio", "porGimnasio", "progreso"], ["comparar", "comparar", "progreso"], ["medidas", "medidas", "progreso"], ["rendimiento", "rendimiento", "progreso"], ["molestias", "molestias", "progreso"],
+  const rutas = [["ejercicio", ids.ej && "ejercicio/" + encodeURIComponent(ids.ej), "progreso"], ["grupo", "grupo/" + encodeURIComponent(ids.grupo), "progreso"], ["musculos", "musculos", "progreso"],
     ["sesion", ids.ses && "sesion/" + encodeURIComponent(ids.ses), "historial"], ["rutinas", "rutinas", "ajustes"], ["rutina", ids.rut && "rutina/" + encodeURIComponent(ids.rut), "ajustes"],
     ["horario", "horario", "ajustes"], ["ejercicios", "ejercicios", "ajustes"], ["ejercicio-cat", ids.cat && "ejercicioCat/" + encodeURIComponent(ids.cat), "ajustes"],
     ["entrenamiento", "entrenamiento", "ajustes"], ["objetivos", "objetivos", "ajustes"], ["cuerpo", "cuerpo", "ajustes"], ["bloques", "bloques", "ajustes"], ["bloque", "bloque/+", "ajustes"],
-    ["grupos", "grupos", "ajustes"], ["mesociclos", "mesociclos", "ajustes"], ["nube", "nube", "ajustes"], ["apariencia", "apariencia", "ajustes"], ["modulos", "modulos", "ajustes"], ["datos", "datos", "ajustes"], ["calidad", "calidad", "ajustes"], ["avanzado", "avanzado", "ajustes"], ["guia", "guia", "ajustes"]];
+    ["grupos", "grupos", "ajustes"], ["nube", "nube", "ajustes"], ["apariencia", "apariencia", "ajustes"], ["datos", "datos", "ajustes"], ["calidad", "calidad", "ajustes"], ["avanzado", "avanzado", "ajustes"], ["guia", "guia", "ajustes"]];
   for (const [n, r, t] of rutas) if (r) P.push([n, async (g) => { await g.tab(t); await g.tab(t); await g.ir(r, t); }]);
   P.push(
     ["hoja-pesaje", async (g) => { await g.tab("hoy"); await g.p.getByRole("button", { name: "Añadir pesaje" }).click(); await g.espera(600); }, { capa: ".hoja", rol: "dialog" }],
-    ["hoja-molestia", async (g) => { await g.cerrarCapas(); await g.tab("progreso"); await g.ir("molestias", "progreso"); await g.p.getByRole("button", { name: "Anotar molestia" }).first().click(); await g.espera(600); }, { capa: ".hoja", rol: "dialog" }],
     ["alerta", async (g) => { await g.cerrarCapas(); g.p.evaluate(() => { window.__alerta = window.__gym.confirmar("¿Borrar la sesión?", "No se puede deshacer.", "Borrar", true); }); await g.espera(600); }, { capa: ".alerta-capa", rol: "alertdialog" }],
     ["toast", async (g) => { await g.cerrarCapas(); await g.p.evaluate(() => window.__gym.toast("Copia exportada")); await g.espera(300); }, { toast: true }],
     ["entreno", async (g) => { await g.cerrarCapas(); await g.p.evaluate(async (rut) => { const x = window.__gym; const r = x.store.estado.rutinas.find((y) => y.id === rut); await x.entreno.empezar(r ? r.nombre : null); }, ids.rut); await g.espera(900); }, { capa: ".modal-completo" }],
@@ -54,7 +52,10 @@ function recorrido(ids) {
   return P;
 }
 
-async function pasada(tema, grande) {
+const ACENTOS = ["azul", "indigo", "marino", "turquesa", "verde", "oro", "naranja", "rojo", "rosa", "fucsia", "morado", "grafito"];
+const PANTALLAS_ACENTO = new Set(["hoy", "progreso-resumen", "historial", "apariencia"]);
+
+async function pasada(tema, grande, acento = null) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: tema, hasTouch: true, isMobile: motor === "chromium" });
   const p = await ctx.newPage();
   const errores = [];
@@ -70,10 +71,10 @@ async function pasada(tema, grande) {
   await p.waitForFunction(() => window.__gym);
   await p.evaluate(async (t) => { const g = window.__gym; await g.store.importar(g.store.leerCopia(t)); }, datos);
   await p.reload(); await p.waitForFunction(() => window.__gym); await p.waitForTimeout(1200);
+  if (acento) { await p.evaluate(async (a) => { await window.__gym.store.guardarAjustes((x) => { x.apariencia.acento = a; }, { analitico: false }); }, acento); await p.waitForTimeout(500); }
   const ids = await p.evaluate(() => {
     const g = window.__gym, A = g.store.analisis(), e = g.store.estado;
-    const L = A.liga && A.liga.ok ? [...A.liga.grupos.keys()][0] : null;
-    return { ej: A.ejercicios[0] && A.ejercicios[0].k, ses: e.sesiones[0] && e.sesiones[0].id, rut: e.rutinas[0] && e.rutinas[0].id, cat: e.catalogo[0] && e.catalogo[0].id, liga: L, grupo: e.ajustes.grupos[0].nombre };
+    return { ej: A.ejercicios[0] && A.ejercicios[0].k, ses: e.sesiones[0] && e.sesiones[0].id, rut: e.rutinas[0] && e.rutinas[0].id, cat: e.catalogo[0] && e.catalogo[0].id, grupo: e.ajustes.grupos[0].nombre };
   });
   const g = {
     p, espera: (ms = 450) => p.waitForTimeout(ms),
@@ -84,9 +85,10 @@ async function pasada(tema, grande) {
   };
   const cdp = motor === "chromium" && !grande ? await ctx.newCDPSession(p) : null;
   for (const [nombre, abrir, extra = {}] of recorrido(ids)) {
+    if (acento && !PANTALLAS_ACENTO.has(nombre)) continue;
     const marca = await p.evaluate(() => performance.now());
     await abrir(g); await p.waitForTimeout(900);
-    const id = tema + (grande ? "-grande" : "") + " · " + nombre;
+    const id = tema + (grande ? "-grande" : "") + (acento ? " · acento " + acento : "") + " · " + nombre;
     cuenta.pantallas++;
     if (fotos) await p.screenshot({ path: `${fotos}/${motor}-${tema}${grande ? "-grande" : ""}-${nombre}.png` });
     if (grande) {
@@ -98,7 +100,7 @@ async function pasada(tema, grande) {
     const cambios = await p.evaluate((m) => window.__cambios.filter((c) => c.t >= m), marca);
     const total = cambios.reduce((a, c) => a + c.v, 0);
     if (total > 0.01) anotar(fallos, id, { tipo: "salto de layout", donde: [...new Set(cambios.flatMap((c) => c.src))].join(", "), texto: "CLS " + total.toFixed(3) });
-    if (tema !== "light") continue;
+    if (tema !== "light" || acento) continue;
     // Nombres accesibles (árbol de accesibilidad de Chromium)
     if (cdp) {
       const { nodes } = await cdp.send("Accessibility.getFullAXTree");
@@ -134,6 +136,7 @@ async function pasada(tema, grande) {
 
 for (const tema of ["light", "dark"]) {
   if (solo !== "grande") await pasada(tema, false);
+  if (solo !== "grande") for (const a of ACENTOS) await pasada(tema, false, a);
   if (solo !== "normal" && tema === "light") await pasada(tema, true);
 }
 if (solo !== "normal") await pasada("dark", true);

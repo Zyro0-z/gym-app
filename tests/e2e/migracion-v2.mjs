@@ -75,9 +75,9 @@ for (const nombre of motores) for (const f of FIXTURES) {
     && JSON.stringify(bk.datos.catalogo) === JSON.stringify(dump.kv.catalogo), "copia íntegra en backup-esquema-v3");
   ok(b.kv["respaldo-auto-1"] && b.kv["respaldo-auto-1"].motivo === "migrar" && b.kv["respaldo-auto-1"].sesiones === dump.sesiones.length, "copia interna «migrar» en la rotación");
   const aj = b.kv.ajustes;
-  ok(aj.entreno.barra === 20 && aj.entreno.discos.length === 8 && aj.descarga.caidaPct === 3 && aj.csv.separador === ";", "ajustes nuevos con sus valores por defecto");
-  ok(JSON.stringify(Object.assign({}, aj, { entreno: undefined, descarga: undefined, csv: undefined, grupos: undefined })) ===
-     JSON.stringify(Object.assign({}, require_completo(dump.kv.ajustes, aj), { entreno: undefined, descarga: undefined, csv: undefined, grupos: undefined })), "los ajustes que ya había no cambian");
+  ok(aj.entreno.barra === 20 && aj.entreno.discos.length === 8 && aj.csv.separador === ";", "ajustes nuevos con sus valores por defecto");
+  ok(JSON.stringify(Object.assign({}, aj, { entreno: undefined, descarga: undefined, csv: undefined, grupos: undefined, ligas: undefined, estandares: undefined, gimnasios: undefined, gimnasioActivo: undefined, mesociclos: undefined, ocultos: undefined, apariencia: undefined })) ===
+     JSON.stringify(Object.assign({}, require_completo(dump.kv.ajustes, aj), { entreno: undefined, descarga: undefined, csv: undefined, grupos: undefined, ligas: undefined, estandares: undefined, gimnasios: undefined, gimnasioActivo: undefined, mesociclos: undefined, ocultos: undefined, apariencia: undefined })), "los ajustes que ya había no cambian");
   // Los grupos conservan nombre y color; solo sus regiones pasan del mapa antiguo al de músculos
   ok(JSON.stringify(aj.grupos.map((g) => [g.nombre, g.color])) === JSON.stringify(dump.kv.ajustes.grupos.map((g) => [g.nombre, g.color])), "los grupos conservan nombre y color");
   ok(Array.isArray(b.kv.medidas) && b.kv.medidas.length === 0, "medidas vacías");

@@ -1,13 +1,10 @@
 // Ajustes › Calidad de los datos: avisos sobre lo registrado.
 import { poner } from "../../ui/dom.js";
-import { icono } from "../../ui/iconos.js";
 import { seccion, lista, celda, vacio } from "../../ui/controles.js";
 import { fmt, plural } from "../../core/formato.js";
 import { canon } from "../../core/nombres.js";
-import { fechaCorta, capital, kg } from "../../ui/textos.js";
-import { abrirPesaje } from "../pesaje.js";
+import { fechaCorta, capital } from "../../ui/textos.js";
 import { renombrarEjercicio } from "./comun.js";
-import { resolverLigas } from "../../core/estandares.js";
 
 /* ---------- Calidad de los datos ---------- */
 
@@ -21,10 +18,6 @@ export function vistaCalidad(_p, app) {
     if (op === "-") irEj(v.k);
     else if (op) { const r = await renombrarEjercicio(app, v.k, op); if (r) app.toast("Unidos"); }
   }
-  async function ligas(nombres, modo, texto) {
-    await store.guardarCatalogo(resolverLigas(store.estado.catalogo, nombres, modo));
-    app.toast(texto); app.nav.repintarActual();
-  }
   return {
     titulo: "Calidad de los datos", tituloAtras: "Calidad",
     render(c) {
@@ -34,20 +27,8 @@ export function vistaCalidad(_p, app) {
         lista(q.variantes.map((v) => celda({ titulo: v.nombre, sub: "¿" + v.cands.map((x) => x.nombre).join(", ") + "?", chevron: true, alPulsar: () => variante(v) })))));
       if (q.sinCat.length) out.push(seccion({ cab: "Ejercicios sin grupo", pie: "Sus series no cuentan para ningún grupo muscular." }, lista(q.sinCat.map((n) => celda({ titulo: n, chevron: true, alPulsar: () => irEj(canon(n)) })))));
       if (q.sinMapeoCfg.length) out.push(seccion({ cab: "Configurados sin grupo" }, lista(q.sinMapeoCfg.map((x) => celda({ titulo: x.nombre, sub: "Tiene " + x.de.join(" y ") + " pero no grupo", chevron: true, alPulsar: () => irEj(x.k) })))));
-      const avisoCel = [];
-      for (const a of q.avisos) {
-        if (a.codigo === "sinSexo") avisoCel.push(celda({ titulo: "Falta el sexo", sub: "Sin él no se calculan las ligas", chevron: true, alPulsar: () => app.nav.ir("cuerpo", { pestana: "ajustes" }) }));
-        if (a.codigo === "umbralSinRutina") avisoCel.push(celda({ titulo: "Aviso de duración sin rutina", sub: "«" + a.rutina + "» no tiene sesiones", chevron: true, alPulsar: () => app.nav.ir("rutinas", { pestana: "ajustes" }) }));
-        if (a.codigo === "antesDelPeso") avisoCel.push(celda({ titulo: plural(a.n, "sesión anterior", "sesiones anteriores") + " al primer pesaje", sub: "No tienen liga: el primer pesaje es del " + fechaCorta(a.fecha, hoy) }));
-      }
-      const L = q.ligas;
-      if (L.sinPeso && store.estado.sesiones.length) avisoCel.push(celda({ titulo: "Sin pesajes", sub: "Las ligas usan tu peso corporal", chevron: true, alPulsar: () => abrirPesaje(app) }));
-      if (L.pesoViejo) avisoCel.push(celda({ titulo: "Último pesaje hace " + L.diasPeso + " días", sub: kg(L.ultimoPeso.kg) + " · pésate para que las ligas sigan al día", chevron: true, alPulsar: () => abrirPesaje(app) }));
-      if (avisoCel.length) out.push(seccion({ cab: "Peso y ligas" }, lista(avisoCel)));
-      if (L.sinEstandar.length) out.push(seccion({ cab: "Sin referencia de liga", pie: "Tienen rango de repeticiones pero no tabla de estándares. «Marcar sin estándar» los saca de este aviso; si luego importas su tabla, se enlaza desde el ejercicio.",
-        accion: { texto: "Marcar sin estándar", alPulsar: () => ligas(L.sinEstandar, "sin", "Marcados sin estándar") } }, lista(L.sinEstandar.map((n) => celda({ titulo: n, chevron: true, alPulsar: () => irEj(canon(n)) })))));
-      if (L.sinFactor.length) out.push(seccion({ cab: "Factor de liga sin revisar", pie: "Factor 1: tu ejercicio puntúa contra la tabla tal cual. Si en alguno tu máquina pesa distinto, cámbialo desde el ejercicio.",
-        accion: { texto: "Dar por revisados", alPulsar: () => ligas(L.sinFactor, "revisar", "Factor 1 confirmado") } }, lista(L.sinFactor.map((n) => celda({ titulo: n, chevron: true, alPulsar: () => irEj(canon(n)) })))));
+      const avisoCel = q.avisos.filter((a) => a.codigo === "umbralSinRutina").map((a) => celda({ titulo: "Aviso de duración sin rutina", sub: "«" + a.rutina + "» no tiene sesiones", chevron: true, alPulsar: () => app.nav.ir("rutinas", { pestana: "ajustes" }) }));
+      if (avisoCel.length) out.push(seccion({ cab: "Avisos" }, lista(avisoCel)));
       if (q.malasDur.length) out.push(seccion({ cab: "Duraciones dudosas", pie: "No cuentan para la duración media. Corrige el inicio y el fin desde Editar." }, lista(q.malasDur.map(ses))));
       if (q.sumaLados.length) out.push(seccion({ cab: "Repeticiones por lado", pie: "Ejercicios por lado con muchas repeticiones: ¿se apuntaron los dos lados juntos?" },
         lista(q.sumaLados.map((x) => celda({ titulo: x.ex.nombre + " · " + (x.st.peso ? fmt(x.st.peso, 1) + "×" : "") + x.st.reps, sub: capital(fechaCorta(x.s.dia, hoy)), chevron: true, alPulsar: () => irSes(x.s.id) })))));

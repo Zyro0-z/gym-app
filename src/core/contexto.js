@@ -82,32 +82,15 @@ export function crearContexto(modelo, hoy) {
 
   const pesajes = (modelo.pesajes || []).slice().sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0));
   const cuerpo = A.cuerpo || {};
-  const peso = { registros: pesajes, sexo: cuerpo.sexo || null, fases: (cuerpo.fases || []).slice() };
+  const peso = { registros: pesajes, fases: (cuerpo.fases || []).slice() };
   const pesoEn = (dia) => { let r = null; for (const x of pesajes) { if (x.fecha <= dia) r = x; else break; } return r; };
-
-  const L = A.ligas || {};
-  const ligas = { ok: !!L.activa && (L.escala || []).length > 0, lista: (L.escala || []).map((x) => ({ nombre: x.nombre, desde: x.desde, hasta: x.hasta == null ? Infinity : x.hasta, ndiv: x.ndiv })),
-    puntos: L.puntos ?? 5, margen: L.margen ?? 1, semCarga: L.semCarga ?? 8, semSeries: L.semSeries ?? 4 };
-  const correccionPolea = L.correccionPolea ?? 1;
-  const tablas = new Map();
-  for (const slug of Object.keys(A.estandares || {}))
-    tablas.set(canon(slug), { slug, filas: A.estandares[slug].slice().sort((a, b) => a.pc - b.pc) });
-  const estandares = new Map();
-  for (const c of catalogo.values()) {
-    if (!c.estandar) continue;
-    const e = c.estandar;
-    if (e.sin) { estandares.set(c.id, { nombre: c.nombre, sinEstandar: true }); continue; }
-    estandares.set(c.id, { nombre: c.nombre, slug: e.slug, factorBase: e.factor, factor: e.polea ? e.factor * correccionPolea : e.factor,
-      revisado: !!e.revisado, aprox: !!e.aproximado, polea: !!e.polea });
-  }
 
   const colores = new Map();
   for (const g of A.grupos || []) if (g.color) colores.set(canon(g.nombre), g.color);
 
   return {
     hoy, modelo, catalogo, nombreGrupo, grupoDe, conGrupo, gruposConocidos, incrementos, objetivos, plantillas, horario,
-    bloques, protege, bloquesActivos, bloqueProtector, diasProtegidos, umbrales, peso, pesoEn, ligas, correccionPolea,
-    tablas, estandares, colores, volumenObj: ((A.objetivos && A.objetivos.seriesSemana) || []).slice(),
+    bloques, protege, bloquesActivos, bloqueProtector, diasProtegidos, umbrales, peso, pesoEn, colores, volumenObj: ((A.objetivos && A.objetivos.seriesSemana) || []).slice(),
     unilateral: (k) => { const c = catalogo.get(k); return !!(c && c.unilateral); },
     fraccionSecundaria: fraccion(A.analisis && A.analisis.fraccionSecundaria),
   };

@@ -64,7 +64,7 @@ await ctx.setOffline(true);
 await p.reload(); await p.waitForFunction(() => window.__gym); await espera(800);
 assert.equal((await estado()).sesiones.length, 3);
 await p.locator(".tabbar [data-tab=historial]").click(); await espera(600);
-assert.ok(await p.locator(".pestana.activa .fila-sesion", { hasText: "Entrenamiento libre" }).count(), "el historial se ve sin conexión");
+assert.ok(await p.locator(".pestana.activa .calor button.dia").count(), "el historial se ve sin conexión");
 await ctx.setOffline(false);
 
 paso("versión nueva: con un entreno en curso el aviso espera; al terminarlo sale y la recarga conserva los datos");
