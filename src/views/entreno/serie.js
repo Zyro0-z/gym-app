@@ -122,7 +122,7 @@ export function filaSerie(e, i, s, j, ant, paso, antSeries = []) {
         E.app.toast(pr.tipo === "e1rm" ? "Récord de e1RM: " + kgT(pr.e1rm) + " kg" + (pr.dentroDelRuido ? " (dentro de tu ruido)" : "")
           : "Récord en " + pr.rango.txt + " reps: " + kgT(pr.peso) + (enTotal ? " kg en total" : "") + " × " + pr.reps + (pr.previo ? " (antes " + kgT(pr.previo.peso) + ")" : ""), { icono: "trofeo" });
       }
-      if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && !esRpe(s.rpe) && E.app.store.estado.ajustes.entreno.rpeAlMarcar !== false) abrirTira();
+      if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && !esRpe(s.rpe) && obj !== null) { s.rpe = obj; pintarRpe(); pintarTira(); }   // marcar la serie da por buena la serie con el RPE objetivo; si te desvías, toca el RPE de la fila
       // En una superserie el descanso empieza al acabar la ronda (el último ejercicio del grupo)
       if (E.M.modo === "entreno" && s.tipo !== "calentamiento" && finDeRonda(E.M.d.ejercicios, i)) empezarDescanso(descansoDe(e));   // 0 = «No»: sin descanso automático
     } else { s.hecha = false; fila.classList.remove("pr"); if (tiraAbierta === tira) cerrarTira(); }

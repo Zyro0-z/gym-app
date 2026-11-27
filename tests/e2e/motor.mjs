@@ -70,6 +70,7 @@ assert.match(await press.locator(".ej-info").innerText(), /\d+ reps @[\d,.]+ ≈
 await press.getByLabel("Peso de la serie 1").fill("107,5"); await press.getByLabel("Repeticiones de la serie 1").fill("5");
 await press.locator(".serie .check").first().click(); await espera(500);
 assert.match(await p.locator(".toast").innerText(), /Récord/);
+await press.locator(".serie .rpe-serie").first().click(); await espera(200);
 await press.locator(".tira-rpe:not([hidden]) .chip-rpe", { hasText: /^9$/ }).click(); await espera(300);
 await press.getByRole("button", { name: /Opciones de Press banca/ }).click(); await espera(500);
 await p.getByRole("button", { name: /Añadir back-offs/ }).click(); await espera(600);
@@ -81,9 +82,11 @@ assert.equal(sb[1].reps, "5");
 
 paso("al terminar, la fatiga dentro de la sesión sale en el resumen");
 await press.locator(".serie .check").nth(1).click(); await espera(300);
+await press.locator(".serie .rpe-serie").nth(1).click(); await espera(200);
+await press.locator(".tira-rpe:not([hidden]) .chip-rpe", { hasText: /^9$/ }).click(); await espera(300);
+await press.locator(".serie .rpe-serie").nth(2).click(); await espera(200);
 await press.locator(".tira-rpe:not([hidden]) .chip-rpe", { hasText: /^9$/ }).click(); await espera(300);
 await press.locator(".serie .check").nth(2).click(); await espera(300);
-await press.locator(".tira-rpe:not([hidden]) .chip-rpe", { hasText: /^9$/ }).click(); await espera(300);
 await p.getByRole("button", { name: "Terminar" }).click(); await espera(700);
 await p.locator(".hoja .btn-barra.fuerte", { hasText: "Guardar" }).click(); await espera(2800);
 assert.match(await p.locator(".hoja").innerText(), /Fatiga dentro de la sesión/);

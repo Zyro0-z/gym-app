@@ -635,7 +635,6 @@ sesión» en rojo con una confirmación.
 | Molestias: niveles 1–5 con texto, «persistente» a las 3 anotaciones de nivel 3+ en 14 días | Registrar y resumir; el diagnóstico es de un fisioterapeuta. |
 | Mesociclo con descarga final crea el bloque de descarga | La propuesta de descarga y el análisis ya respetan los bloques; no hay una segunda fuente de verdad. |
 | Tarjeta de sesión con paleta fija, no la del tema | Se ve igual donde se publique. Se comparte como archivo PNG (hoja de Compartir) o se descarga. |
-| Copia en la nube cifrada en el dispositivo; clave aparte de los datos y fuera de las copias | El servidor no ve datos ni clave. Si se pierde la clave no hay recuperación: se avisa donde se muestra. |
 | Sonido: se desbloquea en cualquier toque, se reanuda al volver a la app y la campana reintenta si el contexto estaba parado; guardado también en `pagehide`/`freeze` | iOS suspende el audio (llamadas, Siri, bloqueo) y a veces cierra la app sin `visibilitychange`. |
 
 ## 12. Pulido visual (noviembre 2026)
@@ -650,7 +649,6 @@ sesión» en rojo con una confirmación.
 - Progreso › Cuerpo: gráfica de peso y, debajo, la gráfica de medidas con su selector; la lista completa de pesajes vive en «Todos los pesajes» (`pesajes`).
 - Progreso › Músculos: selector «Grupos | Músculos». «Músculos» pinta el mapa por músculo concreto (semana, 4 u 8 semanas).
 - Sin zoom por doble toque (`touch-action: manipulation` en `html`); el pellizco se conserva por accesibilidad.
-- Copia en la nube: no pisa una copia del servidor más reciente que la última subida o restaurada de este dispositivo (`subirNube` lanza `conflicto`; «Subir ahora» pide confirmar). La derivación PBKDF2 de id y token se hace una vez por clave.
 - Cambiar ejercicio en sala: arriba, «Mismo músculo principal» (`equivalentes` en `core/musculos.js`) con los del mismo músculo; al elegir se aplica el tipo del catálogo (peso o solo repeticiones).
 - Descanso propio por ejercicio (`catalogo[].descanso`, en la ficha del ejercicio): sustituye al de Ajustes; con «No» en Ajustes no hay descanso automático.
 - Mapa por músculos: cada ejercicio cuenta en su subgrupo (pecho superior frente a pecho medio e inferior): el press plano tiene como principal el esternal y el inclinado el clavicular; el otro entra como secundario (peso ajustable, 0 = asignación estricta). Los ejercicios sin músculos se rellenan con «Asignar músculos automáticamente» (`asignarMusculos` en `core/musculos.js`); `baseDe` entiende nombres con paréntesis («Press Plano (Manc)»).

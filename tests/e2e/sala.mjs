@@ -39,10 +39,12 @@ await p.getByRole("button", { name: /Empezar/ }).first().click(); await espera(6
 if (await p.locator(".hoja").count()) { await p.locator(".hoja .celda", { hasText: "Torso" }).click(); await espera(800); }
 const press = p.locator(".modal-completo .ej").nth(0), remo = p.locator(".modal-completo .ej").nth(1);
 
-paso("al marcar una serie se despliega el RPE en línea y se anota con un toque");
+paso("el RPE de la fila se anota con dos toques (el ✓ no abre la tira)");
 await press.getByLabel("Repeticiones de la serie 1").fill("8");
 await press.getByLabel("Peso de la serie 1").fill("80");
 await press.locator(".serie .check").first().click(); await espera(300);
+assert.equal(await press.locator(".tira-rpe:not([hidden])").count(), 0, "el ✓ no abre la tira");
+await press.locator(".serie .rpe-serie").first().click(); await espera(200);
 assert.equal(await press.locator(".tira-rpe:not([hidden]) .chip-rpe").count(), 7);
 await press.locator(".tira-rpe:not([hidden]) .chip-rpe", { hasText: /^9$/ }).click(); await espera(300);
 let e = await estado();
@@ -53,8 +55,7 @@ paso("ejercicio terminado: se pliega con su resumen y se despliega al tocarlo");
 await press.getByLabel("Repeticiones de la serie 2").fill("8");
 await press.getByLabel("Peso de la serie 2").fill("80");
 await press.locator(".serie .check").nth(1).click(); await espera(300);
-assert.equal(await press.locator(".plegado").count(), 0, "mientras la tira está abierta no se pliega");
-await press.locator(".tira-rpe:not([hidden]) .chip-rpe", { hasText: /^8$/ }).click(); await espera(400);
+await espera(300);
 assert.equal(await p.locator(".modal-completo .ej.plegado").count(), 1);
 assert.match(await press.locator(".ej-resumen").innerText(), /2 series · 80 × 8/);
 await press.locator(".ej-resumen").click(); await espera(300);

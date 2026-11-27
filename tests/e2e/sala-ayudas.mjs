@@ -48,6 +48,7 @@ assert.equal((await estado()).borrador.ejercicios[0].series[1].peso ?? "", "", "
 
 paso("autorregulación: RPE 10 con 80 × 8 (el habitual era 90 × 8 @8) propone bajar el peso para el RPE objetivo");
 await press.locator(".serie .check").first().click(); await espera(300);
+await press.locator(".serie .rpe-serie").first().click(); await espera(200);
 await press.locator(".tira-rpe:not([hidden]) .chip-rpe", { hasText: /^10$/ }).click(); await espera(500);
 const chip = press.locator(".chip-sugerencia");
 assert.equal(await chip.count(), 1);
@@ -69,6 +70,24 @@ const sug = press2.locator(".chip-sugerencia");
 assert.equal(await sug.count(), 1);
 assert.match(await sug.innerText(), /90/);
 assert.match(await sug.getAttribute("aria-label"), /descarga/i);
+
+paso("el ✓ guarda el RPE objetivo sin abrir la tira; «Editar objetivo» cambia series y RPE en la sesión y en la rutina");
+await p.evaluate(() => window.__gym.store.guardarBorrador(null)); await p.reload(); await p.waitForFunction(() => window.__gym); await espera(800);
+await empezar();
+const press3 = p.locator(".modal-completo .ej").nth(0);
+await press3.getByLabel("Repeticiones de la serie 1").fill("8"); await press3.getByLabel("Peso de la serie 1").fill("80");
+await press3.locator(".serie .check").first().click(); await espera(300);
+assert.equal(await press3.locator(".tira-rpe:not([hidden])").count(), 0, "el ✓ no abre la tira");
+assert.equal((await estado()).borrador.ejercicios[0].series[0].rpe, 8, "el ✓ da por buena la serie con el RPE objetivo");
+await press3.getByRole("button", { name: /Opciones de Press banca/ }).click(); await espera(500);
+await p.getByRole("button", { name: /Editar objetivo/ }).click(); await espera(600);
+await p.locator(".hoja").getByRole("button", { name: "Más series" }).click();
+await p.locator(".hoja .tira-rpe .chip-rpe", { hasText: /^9$/ }).click();
+await p.locator(".hoja").getByRole("button", { name: "Guardar" }).click(); await espera(700);
+const bor = (await estado()).borrador.ejercicios[0];
+assert.equal(bor.series.length, 4); assert.equal(bor.rpeObjetivo, 9);
+const rt = (await estado()).rutinas[0].ejercicios[0];
+assert.deepEqual([rt.series, rt.rpe], [4, 9], "queda guardado en la rutina");
 
 assert.deepEqual(errores, []);
 await b.close(); srv.close();

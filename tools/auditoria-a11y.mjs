@@ -40,7 +40,7 @@ function recorrido(ids) {
     ["sesion", ids.ses && "sesion/" + encodeURIComponent(ids.ses), "historial"], ["rutinas", "rutinas", "ajustes"], ["rutina", ids.rut && "rutina/" + encodeURIComponent(ids.rut), "ajustes"],
     ["horario", "horario", "ajustes"], ["ejercicios", "ejercicios", "ajustes"], ["ejercicio-cat", ids.cat && "ejercicioCat/" + encodeURIComponent(ids.cat), "ajustes"],
     ["entrenamiento", "entrenamiento", "ajustes"], ["objetivos", "objetivos", "ajustes"], ["cuerpo", "cuerpo", "ajustes"], ["bloques", "bloques", "ajustes"], ["bloque", "bloque/+", "ajustes"],
-    ["grupos", "grupos", "ajustes"], ["nube", "nube", "ajustes"], ["apariencia", "apariencia", "ajustes"], ["datos", "datos", "ajustes"], ["calidad", "calidad", "ajustes"], ["avanzado", "avanzado", "ajustes"], ["guia", "guia", "ajustes"]];
+    ["grupos", "grupos", "ajustes"], ["apariencia", "apariencia", "ajustes"], ["datos", "datos", "ajustes"], ["calidad", "calidad", "ajustes"], ["avanzado", "avanzado", "ajustes"], ["guia", "guia", "ajustes"]];
   for (const [n, r, t] of rutas) if (r) P.push([n, async (g) => { await g.tab(t); await g.tab(t); await g.ir(r, t); }]);
   P.push(
     ["hoja-pesaje", async (g) => { await g.tab("hoy"); await g.p.getByRole("button", { name: "Añadir pesaje" }).click(); await g.espera(600); }, { capa: ".hoja", rol: "dialog" }],

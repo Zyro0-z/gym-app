@@ -56,7 +56,7 @@ assert.equal(await p.evaluate(() => window.__gym.store.estado.sesiones.length), 
 paso("Ajustes › Datos: restaurar una copia interna (con confirmación)");
 await p.evaluate(() => window.__gym.nav.ir("datos", { pestana: "ajustes" })); await espera(900);
 const txt = await p.locator(".pestana.activa .pantalla:not([hidden])").innerText();
-assert.ok(/Copias internas/.test(txt) && /Antes de importar/.test(txt) && /iCloud/.test(txt));
+assert.ok(/Copias internas/.test(txt) && /Antes de importar/.test(txt));
 await p.locator(".pestana.activa .celda", { hasText: "Antes de importar" }).first().click(); await espera(500);
 await p.locator(".alerta button", { hasText: "Restaurar" }).click(); await espera(1200);
 assert.equal(await p.evaluate(() => window.__gym.store.estado.sesiones.length), 20, "vuelven las 20 sesiones");

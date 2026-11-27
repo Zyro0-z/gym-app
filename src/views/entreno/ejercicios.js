@@ -1,11 +1,11 @@
 // Bloques de ejercicio: referencias (anterior, próxima vez), menú, añadir, historia y nota.
 import { h, poner, reducirMovimiento } from "../../ui/dom.js";
 import { icono } from "../../ui/iconos.js";
-import { seccion, lista, celda } from "../../ui/controles.js";
+import { seccion, lista, celda, stepper } from "../../ui/controles.js";
 import { seleccion } from "../../ui/haptica.js";
 import { fechaCorta, capital } from "../../ui/textos.js";
 import { fmt } from "../../core/formato.js";
-import { esRpe, rpeTxt } from "../../core/rpe.js";
+import { esRpe, rpeTxt, CHIPS_RPE } from "../../core/rpe.js";
 import { e1rmReciente, cargaParaRpe } from "../../core/prescripcion.js";
 import { elegirEjercicio } from "../selector.js";
 import { vacia, nombreDe, aTexto, tipoDeCatalogo } from "./estado.js";
@@ -136,6 +136,31 @@ async function cambiarEjercicio(i) {
   return true;
 }
 
+/** Cambia series, repeticiones y RPE objetivo del ejercicio: vale para esta sesión y se guarda en la rutina (las repeticiones, en el ejercicio). */
+function editarObjetivo(e) {
+  const store = E.app.store, cat = store.estado.catalogo.find((x) => x.id === e.ejercicioId);
+  let series = Number(e.objetivo) || e.series.length, rpe = esRpe(e.rpeObjetivo) ? e.rpeObjetivo : null;
+  const rango = { min: cat && cat.rangoReps ? cat.rangoReps.min : 8, max: cat && cat.rangoReps ? cat.rangoReps.max : 12 };
+  let repsTocadas = false;
+  const chips = CHIPS_RPE.map((v) => h("button", { class: ["chip-rpe", v === rpe && "activo"], role: "radio", "aria-checked": String(v === rpe), "aria-label": "RPE " + rpeTxt(v),
+    onClick: () => { rpe = rpe === v ? null : v; seleccion(); for (const b of chips) { const act = rpe !== null && b.textContent === rpeTxt(rpe); b.classList.toggle("activo", act); b.setAttribute("aria-checked", String(act)); } } }, rpeTxt(v)));
+  E.app.abrirHoja({ titulo: e.nombre, alturas: ["media"], accion: { texto: "Guardar", alPulsar: async () => {
+    while (e.series.length < series) { const ult = e.series[e.series.length - 1]; e.series.push(Object.assign(vacia(), ult ? { peso: ult.peso, tipo: ult.tipo === "calentamiento" ? "normal" : ult.tipo } : {})); }
+    while (e.series.length > series) { const u = e.series[e.series.length - 1]; if (u.hecha || u.peso || u.reps) break; e.series.pop(); }
+    e.objetivo = series; if (rpe === null) delete e.rpeObjetivo; else e.rpeObjetivo = rpe;
+    const rutinas = JSON.parse(JSON.stringify(store.estado.rutinas)), r = rutinas.find((x) => x.nombre === E.M.d.rutina), re = r && r.ejercicios.find((x) => x.ejercicioId === e.ejercicioId);
+    if (re) { re.series = series; if (rpe === null) delete re.rpe; else re.rpe = rpe; await store.guardarRutinas(rutinas); }
+    if (repsTocadas && cat) { const c = JSON.parse(JSON.stringify(store.estado.catalogo)); c.find((x) => x.id === e.ejercicioId).rangoReps = { min: Math.min(rango.min, rango.max), max: Math.max(rango.min, rango.max) }; await store.guardarCatalogo(c); }
+    guardarYa(); if (E.M) pintarEjercicio(e);
+  } }, render: (c) => poner(c,
+    seccion({}, lista([
+      celda({ titulo: "Series", control: stepper({ valor: series, min: 1, max: 12, etiqueta: "series", alCambiar: (v) => { series = v; } }) }),
+      celda({ titulo: "Repeticiones mínimo", control: stepper({ valor: rango.min, min: 1, max: 50, etiqueta: "mínimo", alCambiar: (v) => { rango.min = v; repsTocadas = true; } }) }),
+      celda({ titulo: "Repeticiones máximo", control: stepper({ valor: rango.max, min: 1, max: 50, etiqueta: "máximo", alCambiar: (v) => { rango.max = v; repsTocadas = true; } }) }),
+    ])),
+    seccion({ cab: "RPE objetivo" }, h("div", { class: "tira-rpe", role: "radiogroup", "aria-label": "RPE objetivo" }, chips))) });
+}
+
 export async function menuEjercicio(i) {
   const e = E.M.d.ejercicios[i];
   const op = [{ texto: "Cambiar ejercicio", valor: "cambiar" }, { texto: "Ver historia", valor: "historia" }, { texto: e.nota ? "Editar nota" : "Añadir nota", valor: "nota" }];
@@ -144,6 +169,7 @@ export async function menuEjercicio(i) {
   if (i < ejs.length - 1 && !(e.grupoId && ejs[i + 1].grupoId === e.grupoId)) op.push({ texto: "Unir con el siguiente", valor: "unir" });
   if (posicionSuperserie(ejs, i)) op.push({ texto: "Separar de la superserie", valor: "separar" });
   if (!e.tipo || e.tipo === "peso") op.push({ texto: "Calculadora de discos", valor: "discos" });
+  if (E.M.modo === "entreno" && E.M.d.rutina) op.push({ texto: "Editar objetivo", valor: "objetivo" });
   if (E.M.modo === "entreno" && (!e.tipo || e.tipo === "peso") && !e.series.some((s) => s.tipo === "calentamiento")) op.push({ texto: "Generar calentamiento", valor: "calentar" });
   if (E.M.modo === "entreno" && (!e.tipo || e.tipo === "peso") && e.series.some((s) => s.hecha && s.tipo !== "calentamiento")) op.push({ texto: "Añadir back-offs", valor: "backoffs" });
   if (i > 0) op.push({ texto: "Subir", valor: "subir" });
@@ -156,6 +182,7 @@ export async function menuEjercicio(i) {
   else if (r === "nota") return editarNota(e);
   else if (r === "notafija") return editarNotaFija(e);
   else if (r === "discos") return calculadoraDiscos(e);
+  else if (r === "objetivo") return editarObjetivo(e);
   else if (r === "backoffs") { const b = anadirBackoffs(e); if (!b) { E.app.toast("Marca antes una serie con peso y repeticiones", { icono: null }); return; } E.app.toast("Back-offs: " + aTexto(b[0].peso) + " kg × " + b[0].reps + " a RPE " + rpeTxt(b[0].rpe), { icono: null }); }
   else if (r === "calentar") { if (!anadirCalentamiento(e)) { E.app.toast("Pon antes el peso de la primera serie de trabajo", { icono: null }); return; } }
   else if (r === "unir") unirConSiguiente(E.M.d.ejercicios, i);

@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Solo desarrollo: la app no tiene build ni dependencias. Estas son las de las pruebas.",
   "scripts": {
-    "test": "node --test \"tests/core/*.test.mjs\" \"servidor/test/*.test.mjs\"",
+    "test": "node --test \"tests/core/*.test.mjs\"",
     "test:e2e": "node tests/e2e/todas.mjs chromium",
     "test:webkit": "sh tests/webkit.sh e2e/todas.mjs webkit",
     "test:todo": "npm test && npm run bench && npm run test:e2e && npm run test:webkit",

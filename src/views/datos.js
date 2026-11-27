@@ -7,14 +7,6 @@ import { fmt, plural } from "../core/formato.js";
 import { fechaCorta, capital } from "../ui/textos.js";
 import { csvSeries, csvPesajes } from "../core/csv.js";
 
-/** Valor de la fila de la nube: fallo reciente, fecha de la última subida o modo configurado. */
-function valorNube(n, st, hoy) {
-  if (!n || !n.url) return "Sin configurar";
-  if (st && st.error) return h("span", { class: "chip bad" }, h("span", { class: "punto" }), "Falló");
-  if (n.ultima && n.ultima.at) return capital(fechaCorta(n.ultima.at.slice(0, 10), hoy));
-  return n.auto ? "Automática" : "Manual";
-}
-
 /** Guarda un archivo: hoja Compartir (en iPhone, «Guardar en Archivos») o descarga. false si se cancela o falla. */
 export async function guardarArchivo(app, texto, nombre, tipo) {
   const f = new File([texto], nombre, { type: tipo });
@@ -115,9 +107,6 @@ export function vistaDatos(_p, app) {
             valor: ec.avisar ? h("span", { class: "chip bad" }, h("span", { class: "punto" }), "Pendiente") : null }),
           celda({ icono: "descargar", colorIcono: "var(--g-verde)", titulo: "Importar copia", estilo: "accion", alPulsar: () => importarCopia(app) }),
         ], { iconos: true })),
-        seccion({ cab: "Copia en la nube" }, lista([
-          celda({ icono: "nube", colorIcono: "var(--g-cian)", titulo: "Copia cifrada en la nube", valor: valorNube(est.ajustes.nube, store.nubeEstado, hoy), chevron: true, alPulsar: () => app.nav.ir("nube") }),
-        ], { iconos: true })),
         seccion({ cab: "Copias internas", pie: "Se guardan solas en este iPhone cada " + plural(cada, "sesión nueva", "sesiones nuevas") + " y antes de importar o restaurar; se conservan las 3 últimas. No sustituyen a la copia en Archivos: si se borran los datos de la app, se borran con ellas." },
           lista([
             ...(internas === null ? [celda({ titulo: "Cargando…" })] : !internas.length ? [celda({ titulo: "Aún no hay copias internas" })]
@@ -141,7 +130,7 @@ export function vistaDatos(_p, app) {
           celda({ titulo: "Borrar historial (conserva rutinas y tablas)", estilo: "destructiva", alPulsar: async () => { if (await borrarHistorial(app)) recargar(); } }),
           celda({ titulo: "Borrar todos los datos", estilo: "destructiva", alPulsar: async () => { if (await borrarTodo(app)) recargar(); } }),
         ])),
-        seccion({ cab: "Sincronización", pie: "Los datos viven solo en este iPhone y no se sincronizan con otros dispositivos (la copia cifrada de la nube es opcional y solo guarda una copia). En iPhone, una web no puede guardar sola en iCloud Drive ni en Archivos; la copia se guarda a mano con «Guardar copia en Archivos» y, en la hoja de Compartir, «Guardar en Archivos». Para pasar los datos a otro dispositivo, importa allí esa copia." }),
+        seccion({ cab: "Sincronización", pie: "Los datos viven solo en este iPhone. Para pasarlos a otro dispositivo, importa allí una copia guardada en Archivos." }),
       );
     },
   };

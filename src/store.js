@@ -14,7 +14,6 @@ import { modeloSinEjercicio, borradorSin, modeloConEjerciciosUnidos } from "./co
 import { analizar } from "./core/analisis.js";
 import { rehidratar } from "./core/rehidratar.js";
 import { hoyISO } from "./core/fechas.js";
-import { crearNube, subirSinPisar } from "./data/nube.js";
 
 const copiar = (x) => (x === undefined ? x : JSON.parse(JSON.stringify(x)));
 
@@ -24,8 +23,6 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
   let worker = null, enCurso = null, otraVez = false, sigId = 0;
   const esperas = [];
   const subs = new Set();
-  const nube = crearNube();
-  let tNube = 0, nubePend = false;
 
   const avisar = (tema) => { for (const fn of [...subs]) { try { fn(tema); } catch (e) { console.error(e); } } };
   const cambio = (tema, analitico = true) => { if (analitico) version++; avisar(tema); };
@@ -77,27 +74,8 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     poner(analizar(m, hoy), v, hoy);
   }
 
-  /** Copia cifrada automática: 5 s después del último cambio en las sesiones (si está activada y configurada). */
-  function programarNube() {
-    clearTimeout(tNube);
-    const n = estado && estado.ajustes.nube;
-    if (!n || !n.activa || !n.auto || !n.url) return;
-    nubePend = true;
-    tNube = setTimeout(() => store.subirNube().catch((e) => console.warn("Copia en la nube:", e.message)), 5000);
-  }
-
   const store = {
     get estado() { return estado; },
-    /** Sube la copia si quedó pendiente: iOS congela el temporizador de 5 s al bloquear el teléfono. Se llama al arrancar, al volver a la app y al recuperar la red. */
-    reanudarNube() {
-      const n = estado && estado.ajustes.nube;
-      if (!n || !n.activa || !n.auto || !n.url || store.nubeEstado.subiendo) return;
-      if (!nubePend && !(n.ultima && n.ultima.sesiones !== estado.sesiones.length)) return;
-      clearTimeout(tNube);
-      store.subirNube().catch((e) => console.warn("Copia en la nube:", e.message));
-    },
-    /** Último resultado de la copia en la nube: { subiendo, error } (solo en memoria). */
-    nubeEstado: { subiendo: false, error: null },
     hoy: () => hoyISO(reloj()),
     suscribir(fn) { subs.add(fn); return () => subs.delete(fn); },
 
@@ -123,7 +101,7 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
       await repos.guardarSesion(s);
       const i = estado.sesiones.findIndex((x) => x.id === s.id);
       if (i >= 0) estado.sesiones[i] = copiar(s); else estado.sesiones.push(copiar(s));
-      cambio("sesiones"); programarNube();
+      cambio("sesiones");
       // Copia interna cada N sesiones nuevas (si falla, la sesión ya está guardada)
       if (i < 0) try {
         const n = await repos.contarSesionNueva(), cada = (estado.ajustes.copiasInternas && estado.ajustes.copiasInternas.cada) || 5;
@@ -133,7 +111,7 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
     async borrarSesion(id) {
       await repos.borrarSesion(id);
       estado.sesiones = estado.sesiones.filter((x) => x.id !== id);
-      cambio("sesiones"); programarNube();
+      cambio("sesiones");
     },
     async guardarPesajes(p) { await repos.guardarPesajes(p); estado.pesajes = copiar(p); cambio("pesajes"); },
     async guardarMedidas(m) { await repos.guardarMedidas(m); estado.medidas = copiar(m); cambio("medidas", false); },
@@ -181,36 +159,6 @@ export function crearStore({ reloj = () => new Date(), usarWorker = true } = {})
       if (!r) throw new Error("La copia ya no existe.");
       await store.importar(store.leerCopia(JSON.stringify(r)), "restaurar");
     },
-    // ── copia cifrada en la nube (la clave vive aparte de los datos y no se exporta) ──
-    async claveNube() { const n = await repos.leerNube(); return n && n.frase ? n.frase : null; },
-    guardarClaveNube: (frase) => repos.guardarNube(frase ? { frase } : null),
-    /**
-     * Cifra y sube la copia actual. Lanza Error con el motivo si no se puede.
-     * Si el servidor tiene una copia más reciente que la última que subió o restauró este dispositivo, no la pisa:
-     * lanza un Error con `conflicto = true` (con `{ forzar: true }` la sobrescribe).
-     */
-    async subirNube({ forzar = false } = {}) {
-      const n = estado.ajustes.nube, frase = await store.claveNube();
-      if (!n.url || !frase) throw new Error("Falta la dirección del servidor o la clave.");
-      store.nubeEstado = { subiendo: true, error: null }; avisar("nube");
-      try {
-        const r = await subirSinPisar(nube, n, frase, store.textoCopia(), { forzar });
-        await store.guardarAjustes((a) => { a.nube.ultima = { at: new Date(r.at).toISOString(), bytes: r.bytes, sesiones: estado.sesiones.length }; }, { analitico: false });
-        nubePend = false;
-        store.nubeEstado = { subiendo: false, error: null }; avisar("nube");
-        return r;
-      } catch (e) { store.nubeEstado = { subiendo: false, error: e.message }; avisar("nube"); throw e; }
-    },
-    /** Anota que este dispositivo está al día con la copia del servidor (tras restaurarla). */
-    marcarNubeAlDia: (info, sesiones) => store.guardarAjustes((a) => { a.nube.ultima = { at: new Date(info.at).toISOString(), bytes: info.bytes, sesiones }; }, { analitico: false }),
-    /** Baja y descifra la copia de la nube: devuelve el modelo ya validado (no lo aplica). */
-    async bajarNube() {
-      const n = estado.ajustes.nube, frase = await store.claveNube();
-      if (!n.url || !frase) throw new Error("Falta la dirección del servidor o la clave.");
-      return store.leerCopia(await nube.bajar(n.url, frase));
-    },
-    infoNube: async () => { const n = estado.ajustes.nube, frase = await store.claveNube(); return n.url && frase ? nube.info(n.url, frase) : null; },
-    async borrarNube() { const n = estado.ajustes.nube, frase = await store.claveNube(); if (n.url && frase) await nube.borrar(n.url, frase); },
     estadoAlmacen: () => repos.estadoAlmacen(),
     pedirPersistencia: () => repos.pedirPersistencia(),
   };

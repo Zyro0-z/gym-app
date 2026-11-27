@@ -1,4 +1,4 @@
-/* Fases 4 y 5: miniaturas, bandas, franjas de reparto, tarjeta de sesión y copia en la nube. */
+/* Fases 4 y 5: miniaturas, bandas, franjas de reparto, tarjeta de sesión. */
 
 /* ── gráficas ── */
 .grafica .banda-confianza { fill: var(--graf-banda); stroke: none; }
@@ -36,8 +36,6 @@
 .banda-fila .n { color: var(--label-2); font-size: var(--f-footnote); white-space: nowrap; text-align: right; }
 
 
-/* ── copia en la nube ── */
-.clave-nube { display: block; padding: 12px; border-radius: var(--r-control); background: var(--cell-2); font: 600 var(--f-callout)/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; word-break: break-all; user-select: all; -webkit-user-select: all; text-align: center; }
 .campo-texto { width: 100%; min-height: 44px; padding: 0 12px; border-radius: var(--r-control); background: var(--cell-2); color: var(--label); font-size: var(--f-body); }
 
 

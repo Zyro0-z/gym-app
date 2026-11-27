@@ -60,7 +60,6 @@ export function ajustesBase() {
     grupos: GRUPOS_BASE.map((nombre) => ({ nombre, color: null, regiones: REGIONES_BASE[nombre].slice() })),
     copia: null,
     csv: { separador: ";", decimal: "," },
-    nube: { activa: false, url: "", auto: true, ultima: null },   // copia cifrada opcional (core/cifrado.js, data/nube.js)
   };
 }
 
@@ -69,12 +68,12 @@ export function completarAjustes(a) {
   const b = ajustesBase();
   if (!a) return b;
   const out = Object.assign({}, b, a);
-  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "copiasInternas", "avisoCopia", "csv", "analisis", "nube"]) out[k] = Object.assign({}, b[k], a[k] || {});
+  for (const k of ["apariencia", "entreno", "objetivos", "cuerpo", "copiasInternas", "avisoCopia", "csv", "analisis"]) out[k] = Object.assign({}, b[k], a[k] || {});
   // Funciones retiradas: el gimnasio activo pasa a ser la barra y los discos de Entrenamiento; el resto de sus claves se descarta
   const gs = Array.isArray(a.gimnasios) ? a.gimnasios : [], gm = gs.find((x) => x && x.id === a.gimnasioActivo) || gs[0];
   if (gm && Number.isFinite(gm.barra)) out.entreno.barra = gm.barra;
   if (gm && Array.isArray(gm.discos) && gm.discos.length) out.entreno.discos = gm.discos;
-  for (const k of ["gimnasios", "gimnasioActivo", "ligas", "estandares", "descarga", "mesociclos", "ocultos"]) delete out[k];
+  for (const k of ["gimnasios", "gimnasioActivo", "ligas", "estandares", "descarga", "mesociclos", "ocultos", "nube"]) delete out[k];
   delete out.entreno.push; delete out.entreno.controlesBloqueo;
   // Acentos y escalas del mapa retirados: pasan al más parecido que queda
   const ap = out.apariencia, ACENTO_ANTIGUO = { cian: "turquesa", menta: "turquesa", lima: "verde", coral: "naranja", violeta: "morado", marron: "naranja" };

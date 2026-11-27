@@ -34,17 +34,8 @@ contenido. Todo fichero nuevo va en `FICHEROS` (un test sigue los imports desde 
   en Archivos.
 - **Importar** valida el archivo entero (tipos, rangos, fechas, ids repetidos) antes de tocar nada.
 
-- **Copia en la nube (opcional)**: Ajustes › Datos › «Copia en la nube» sube una copia **cifrada de
-  extremo a extremo** a tu propio Worker de Cloudflare (`servidor/`, espacio KV `COPIAS`). La app cifra
-  aquí (AES-256-GCM, clave derivada con PBKDF2-SHA256 de 600 000 iteraciones); el servidor solo guarda
-  un bloque ilegible y el hash de un token. La clave se guarda en este iPhone, aparte de los datos, y
-  no va dentro de las copias. **Si la pierdes, nadie puede recuperar la copia.** La subida automática
-  espera 5 s tras guardar una sesión. No hay sincronización entre dispositivos: restaurar reemplaza los
-  datos (con copia interna antes).
-
 **Límites de la plataforma.** En iPhone, una web no puede escribir sola en iCloud Drive ni en Archivos.
-La app no sincroniza entre dispositivos: el camino soportado es la copia a mano en Archivos y, si lo
-configuras, la copia cifrada en tu servidor.
+La app no sincroniza entre dispositivos: el camino soportado es la copia a mano en Archivos.
 
 ## Análisis y registros
 
@@ -71,12 +62,6 @@ Un iPhone bloqueado congela el JavaScript de la app: ningún temporizador corre.
   terminó mientras no mirabas, dice «Descanso terminado hace 40 s».
 - **Pantalla encendida** (Ajustes › Entrenamiento, activado por defecto): pide al sistema que no
   bloquee la pantalla mientras entrenas, y lo vuelve a pedir al volver a la app.
-- **Controles en la pantalla bloqueada** (experimental, desactivado): un audio en silencio hace que
-  iOS muestre el reproductor del sistema con el descanso y botones (saltar, reiniciar, ±15 s). Pausa
-  la música que estés escuchando y iOS puede retirarlo si pasa mucho rato en segundo plano.
-- **Aviso al terminar el descanso** (opcional): una notificación aunque la pantalla esté bloqueada.
-  Necesita desplegar el servidor de `servidor/` (Cloudflare Workers, plan gratuito; pasos en
-  `servidor/README.md`) y tener la app instalada en la pantalla de inicio (iOS 16.4+).
 
 ## Fatiga y descarga
 
@@ -131,7 +116,7 @@ node tests/e2e/capturas.mjs <carpeta> [chromium|webkit]   # todas las pantallas,
 sh tests/webkit.sh e2e/entreno.mjs webkit                 # una sola prueba e2e con WebKit
 ```
 
-Las e2e cubren las vistas de análisis, la tarjeta PNG y la copia en la nube con un servidor simulado, la migración en IndexedDB real, el arranque con datos de la versión 1, la navegación,
+Las e2e cubren las vistas de análisis, la tarjeta PNG, la migración en IndexedDB real, el arranque con datos de la versión 1, la navegación,
 un entrenamiento completo con recarga a mitad, editar y borrar sesiones, exportar e importar la copia,
 el uso sin conexión y el aviso de versión nueva. Fallan con cualquier error de consola o con textos
 «NaN», «undefined» o «[object».

@@ -63,9 +63,6 @@ export const guardarPesajes = (p) => escribirKV("pesajes", plano(p));
 export const guardarAjustes = (a) => escribirKV("ajustes", plano(a));
 export const guardarMedidas = (m) => escribirKV("medidas", plano(m));
 export const guardarMolestias = (m) => escribirKV("molestias", plano(m));
-/** Clave de la copia en la nube: vive aparte de los datos (no se exporta ni se borra con ellos). */
-export const leerNube = () => leerKV("nube");
-export const guardarNube = (n) => (n ? escribirKV("nube", plano(n)) : borrarKV("nube"));
 export async function guardarBorrador(b) {
   const v = b ? Object.assign(plano(b), { cambio: Date.now() }) : null;
   guardarEspejo({ borrador: v });

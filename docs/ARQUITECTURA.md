@@ -91,7 +91,6 @@ src/
     mesociclos.js     validar, estado, bloque de descarga asociado y resumen por semanas
     molestias.js      articulaciones, validación, resumen 30 días, «persistente», por ejercicio
     tarjeta.js        datos de la tarjeta de sesión (el dibujo está en ui/tarjeta.js)
-    cifrado.js        WebCrypto: clave, identidad (id, token), cifrar/descifrar el sobre (AES-GCM + PBKDF2)
   worker/analisis.js  analizar en un Worker de módulo
   data/
     db.js             IndexedDB versionada (onupgradeneeded) y transacciones
@@ -99,9 +98,8 @@ src/
     esquema.js        validación de copias (docs/ESQUEMA.md)
     repos.js          cargar (migrando o rescatando), guardar, importar y restaurar con respaldo
     espejo.js         réplica en localStorage del borrador
-    nube.js           cliente de la copia cifrada (fetch inyectable); servidor en servidor/src/copias.js
   ui/
-    tokens.css, base.css, componentes.css, analisis.css (bandas, miniaturas, tarjeta, clave)
+    tokens.css, base.css, componentes.css, analisis.css (bandas, miniaturas, tarjeta)
     dom.js, iconos.js, navegacion.js, controles.js, calor.js
     capas.js          hojas, alertas y modales; foco atrapado, Escape y foco devuelto
     graficas.js       barras y líneas SVG con resumen textual (describirSerie) en la etiqueta
@@ -114,7 +112,7 @@ src/
   views/
     indice.js         pestañas, rutas y vistas que necesitan el análisis
     hoy.js, progreso.js, historial.js, ajustes.js, ejercicio.js, ligas.js, datos.js, …
-    rendimiento.js, molestias.js, mesociclos.js, nube.js   vistas de análisis y registros (fase 4-5)
+    rendimiento.js, molestias.js, mesociclos.js   vistas de análisis y registros (fase 4-5)
     entreno.js        API del entrenamiento; las piezas, en entreno/:
       estado.js         estado compartido (E.app, E.M) y utilidades
       pantalla.js       modal a pantalla completa, barra minimizada, Wake Lock, guardado, cabecera

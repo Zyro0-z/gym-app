@@ -49,13 +49,10 @@ async function arrancar() {
   const alVolver = () => {
     if (document.visibilityState !== "visible") return;
     if (store.hoy() !== ultimoDia) { ultimoDia = store.hoy(); nav.refrescar(); marcarAvisos(nav); }
-    store.reanudarNube();
   };
   document.addEventListener("visibilitychange", alVolver);
   window.addEventListener("pageshow", alVolver);
-  window.addEventListener("online", () => store.reanudarNube());
   await nav.iniciar(location.hash);
-  store.reanudarNube();
   marcarAvisos(nav);
   iniciarEntreno(ctx);
   store.pedirPersistencia();

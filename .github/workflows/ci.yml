@@ -36,8 +36,9 @@ jobs:
         run: npm run a11y --if-present
 
   webkit:
-    # Opcional y manual: WebKit en el contenedor oficial de Playwright
-    if: github.event_name == 'workflow_dispatch' && inputs.webkit
+    # WebKit (el motor de Safari) en el contenedor oficial de Playwright; no bloquea la publicación
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.webkit)
+    continue-on-error: true
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.65.1-noble
     steps:
